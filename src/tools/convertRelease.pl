@@ -121,7 +121,7 @@ sub dllPath {
     unlink $outfile;
     open(OUT, ">$outfile") or die "$! creating $outfile";
     print OUT "\@ECHO OFF\n";
-    print OUT "PATH \%PATH\%;", join(';', binDirs()), "\n";
+    print OUT "PATH ", join(';', binDirs()), ";\%PATH\%\n";
     close OUT;
 }
 

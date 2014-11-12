@@ -21,11 +21,11 @@
 #define EPICS_COMMANDLINE_LIBRARY_READLINE  2
 #define EPICS_COMMANDLINE_LIBRARY_READLINE_CURSES  2
 #define EPICS_COMMANDLINE_LIBRARY_READLINE_NCURSES 2
+#define EPICS_COMMANDLINE_LIBRARY_WINEDITLINE  3
 
 #ifndef EPICS_COMMANDLINE_LIBRARY
 #define EPICS_COMMANDLINE_LIBRARY EPICS_COMMANDLINE_LIBRARY_EPICS
 #endif
-
 
 
 #if EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_LIBTECLA
@@ -74,15 +74,23 @@ epicsReadlineEnd(void *context)
 }
 
 
-#elif EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_READLINE
+#elif (EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_READLINE || EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_WINEDITLINE)
 
+#if EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_WINEDITLINE
+#include <io.h> /* for isatty() */
+#include <editline/readline.h>
+#else
 #include <readline/readline.h>
 #include <readline/history.h>
+#endif /* EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_WINEDITLINE */
+
 
 struct readlineContext {
     FILE    *in;
     char    *line;
 };
+
+static const char* history_file = "c:/windows/temp/epics.history";
 
 /*
  * Create a command-line context
@@ -91,21 +99,78 @@ void * epicsShareAPI
 epicsReadlineBegin(FILE *in)
 {
     struct readlineContext *readlineContext;
-
     readlineContext = malloc(sizeof *readlineContext);
     if (readlineContext != NULL) {
         readlineContext->in = in;
         readlineContext->line = NULL;
         if (in == NULL) {
             long i = 50;
-
             envGetLongConfigParam(&IOCSH_HISTSIZE, &i);
             if (i < 0) i = 0;
+            using_history();
+            read_history(history_file);
+            /* WinEditLine does not have rl_bind_key() or stifle_history() - it has a compiled in history length */
+#if EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_READLINE
             stifle_history (i);
             rl_bind_key ('\t', rl_insert);
+#endif /* EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_READLINE */
         }
     }
     return readlineContext;
+}
+
+static char * epicsReadline2 (const char *prompt, void *context)
+{
+    struct readlineContext *readlineContext = context;
+
+    int c;      /* char is unsigned on some archs, EOF is -ve */
+    char *line = NULL;
+    int linelen = 0;
+    int linesize = 50;
+    FILE *in;
+
+    free (readlineContext->line);
+    readlineContext->line = NULL;
+    if ((in = readlineContext->in) == NULL) {
+        in = stdin;
+        if (prompt != NULL) {
+            fputs (prompt, stdout);
+            fflush (stdout);
+        }
+    }
+    line = (char *)malloc (linesize * sizeof *line);
+    if (line == NULL) {
+        printf ("Out of memory!\n");
+        return NULL;
+    }
+    while ((c = getc (in)) !=  '\n') {
+        if (c == EOF) {
+            if (ferror(in)) {
+                if ((errno == EINTR) || (errno == EPIPE)) {
+                    clearerr(in);
+                    continue;
+                }
+            }
+            free (line);
+            return NULL;
+        }
+        if ((linelen + 1) >= linesize) {
+            char *cp;
+
+            linesize += 50;
+            cp = (char *)realloc (line, linesize * sizeof *line);
+            if (cp == NULL) {
+                printf ("Out of memory!\n");
+                free (line);
+                return NULL;
+            }
+            line = cp;
+        }
+        line[linelen++] = c;
+    }
+    line[linelen] = '\0';
+    readlineContext->line = line;
+    return line;
 }
 
 /*
@@ -120,11 +185,18 @@ epicsReadline (const char *prompt, void *context)
     char *line = NULL;
     int linelen = 0;
     int linesize = 50;
+    if ( !isatty(fileno(stdin)) /*&& readlineContext->in == NULL*/ )
+	{
+	    return epicsReadline2(prompt, context);
+	}
+	/* check if GetFileType((HANDLE)_get_osfhandle(fileno(stdin))) is a pipe? */
 
     free (readlineContext->line);
     readlineContext->line = NULL;
     if (readlineContext->in == NULL) {
         line = readline (prompt);
+        if (line && line[0] != '\0')
+            add_history (line);
     }
     else {
         line = (char *)malloc (linesize * sizeof *line);
@@ -161,8 +233,9 @@ epicsReadline (const char *prompt, void *context)
             line[linelen] = '\0';
     }
     readlineContext->line = line;
-    if (line && line[0] != '\0')
-        add_history (line);
+// moved earlier so we only save interactive commands and not those from files
+//    if (line && line[0] != '\0')
+//        add_history (line);
     return line;
 }
 
@@ -178,6 +251,7 @@ epicsReadlineEnd (void *context)
         free(readlineContext->line);
         free(readlineContext);
     }
+    write_history(history_file);
 }
 
 

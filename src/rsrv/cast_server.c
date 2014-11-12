@@ -122,6 +122,7 @@ void cast_server(void *pParm)
     osiSocklen_t        recv_addr_size;
     unsigned short      port;
     osiSockIoctl_t      nchars;
+    const char*         pStr;
 
     if ( envGetConfigParamPtr ( &EPICS_CAS_SERVER_PORT ) ) {
         port = envGetInetPortConfigParam ( &EPICS_CAS_SERVER_PORT, 
@@ -178,15 +179,28 @@ void cast_server(void *pParm)
     /*  Zero the sock_addr structure */
     memset((char *)&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = htonl(INADDR_ANY);
-    sin.sin_port = htons(port);
+    pStr = envGetConfigParamPtr ( & EPICS_CAS_INTF_ADDR_LIST );
+    if (pStr) {
+        /* this implementation only allows for specifying a single address in EPICS_CAS_INTF_ADDR_LIST */
+        status = aToIPAddr (pStr, port, &sin);
+        if (status) {
+            epicsPrintf("CAS: Error parsing %s '%s'\n", EPICS_CAS_INTF_ADDR_LIST.name, pStr);
+            sin.sin_addr.s_addr = htonl(INADDR_ANY);
+            sin.sin_port = htons(port);
+        }
+    } else {
+        sin.sin_addr.s_addr = htonl(INADDR_ANY);
+        sin.sin_port = htons(port);
+    }
     
     /* get server's Internet address */
     if( bind(IOC_cast_sock, (struct sockaddr *)&sin, sizeof (sin)) < 0){
         char sockErrBuf[64];
+        char buffer[64];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
-        epicsPrintf ("CAS: UDP server port bind error was \"%s\"\n", sockErrBuf );
+        ipAddrToA(&sin, buffer, sizeof(buffer));
+        epicsPrintf ("CAS: UDP server port bind error was \"%s\" for \"%s:%d\"\n", sockErrBuf, buffer, ntohs(sin.sin_port));
         epicsSocketDestroy ( IOC_cast_sock );
         epicsThreadSuspendSelf ();
     }

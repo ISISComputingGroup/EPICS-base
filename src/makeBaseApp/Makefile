@@ -22,6 +22,7 @@ TEMPLATES += top/supportApp/src/_APPNAME_.dbd
 TEMPLATES += top/iocApp/Makefile
 TEMPLATES += top/iocApp/Db/Makefile
 TEMPLATES += top/iocApp/src/Makefile
+TEMPLATES += top/iocApp/src/build.mak
 TEMPLATES += top/iocApp/src/_APPNAME_Main.cpp
 
 TEMPLATES += top/exampleApp/Makefile
@@ -83,6 +84,7 @@ TEMPLATES += top/iocBoot/nfsCommands@RTEMS
 TEMPLATES += top/iocBoot/ioc/Makefile@Common
 TEMPLATES += top/iocBoot/ioc/Makefile@vxWorks
 TEMPLATES += top/iocBoot/ioc/Makefile@win32
+TEMPLATES += top/iocBoot/ioc/Makefile@windows
 TEMPLATES += top/iocBoot/ioc/Makefile@cygwin
 TEMPLATES += top/iocBoot/ioc/st.cmd@Common
 TEMPLATES += top/iocBoot/ioc/st.cmd@Cross

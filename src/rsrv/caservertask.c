@@ -69,7 +69,7 @@ static void req_server (void *pParm)
     SOCKET clientSock;
     epicsThreadId tid;
     int portChange;
-
+    const char* pStr;
     epicsSignalInstallSigPipeIgnore ();
 
     taskwdInsert ( epicsThreadGetIdSelf (), NULL, NULL );
@@ -103,28 +103,42 @@ static void req_server (void *pParm)
     /* Zero the sock_addr structure */
     memset ( (void *) &serverAddr, 0, sizeof ( serverAddr ) );
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = htonl (INADDR_ANY); 
-    serverAddr.sin_port = htons ( ca_server_port );
+    pStr = envGetConfigParamPtr ( & EPICS_CAS_INTF_ADDR_LIST );
+    if (pStr) {
+        /* this implementation only allows for specifying a single address in EPICS_CAS_INTF_ADDR_LIST */
+        status = aToIPAddr (pStr, ca_server_port, &serverAddr);
+        if (status) {
+            epicsPrintf("CAS: Error parsing %s '%s'\n", EPICS_CAS_INTF_ADDR_LIST.name, pStr);
+            serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+            serverAddr.sin_port = htons(ca_server_port);
+        }
+    } else {
+        serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+        serverAddr.sin_port = htons(ca_server_port);
+    }
 
     /* get server's Internet address */
     status = bind ( IOC_sock, (struct sockaddr *) &serverAddr, sizeof ( serverAddr ) );
 	if ( status < 0 ) {
-		if ( SOCKERRNO == SOCK_EADDRINUSE ) {
+        /* on windows we also saw WSAEACCES which may have been due to an application/driver 
+         * using SO_EXCLUSIVEADDRUSE so we will retry in all error cases 
+         */
+		/*if ( SOCKERRNO == SOCK_EADDRINUSE ) {*/
 			/*
 			 * enable assignment of a default port
 			 * (so the getsockname() call below will
 			 * work correctly)
 			 */
-			serverAddr.sin_port = ntohs (0);
+			serverAddr.sin_port = htons (0);
 			status = bind ( IOC_sock, 
                 (struct sockaddr *) &serverAddr, sizeof ( serverAddr ) );
-		}
+		/*}*/
 		if ( status < 0 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ( "CAS: Socket bind error was \"%s\"\n",
-                sockErrBuf );
+                sockErrBuf);
             epicsThreadSuspendSelf ();
 		}
         portChange = 1;

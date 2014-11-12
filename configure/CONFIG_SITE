@@ -192,3 +192,4 @@ GCC_PIPE = NO
 #  run at build-time, e.g. set the LD_LIBRARY_PATH environment variable.
 LINKER_USE_RPATH = YES
 
+include $(CONFIG)/CONFIG_SITE_ISIS

@@ -47,7 +47,7 @@ WARN_CFLAGS_NO =  /W1
 # /MD use MSVCRT (run-time as DLL, multi-thread support)
 # /GL whole program optimization
 # /Zi generate program database for debugging information
-OPT_CFLAGS_YES = /Ox /GL
+OPT_CFLAGS_YES = /Ox /GL /Zi
 
 #
 # /Zi generate program database for debugging information
@@ -113,7 +113,7 @@ WARN_CXXFLAGS_NO =  /W1
 # /Ox maximum optimizations
 # /GL whole program optimization
 # /Zi generate program database for debugging information
-OPT_CXXFLAGS_YES = /Ox /GL
+OPT_CXXFLAGS_YES = /Ox /GL /Zi
 
 #
 # /Zi generate program database for debugging information
@@ -142,13 +142,15 @@ STATIC_CXXFLAGS_NO= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 STATIC_LDLIBS_YES=ws2_32.lib advapi32.lib user32.lib kernel32.lib winmm.lib
 STATIC_LDLIBS_NO=
 STATIC_LDFLAGS=
+STATIC_LDFLAGS_EXTRA_YES=/NODEFAULTLIB:MSVCRT.LIB /NODEFAULTLIB:MSVCRTD.LIB
+STATIC_LDFLAGS_EXTRA_NO=/NODEFAULTLIB:LIBCMT.LIB /NODEFAULTLIB:LIBCMTD.LIB
 RANLIB=
 
 # add /profile here to run the ms profiler
 # /LTCG - whole program optimization
 # /fixed:no good for programs such as purify and quantify
 # /debug good for programs such as purify and quantify
-LINK_OPT_FLAGS_YES = /LTCG /incremental:no /opt:ref /release $(PROD_VERSION:%=/version:%) 
+LINK_OPT_FLAGS_YES = /LTCG /debug /opt:icf /incremental:no /opt:ref /release $(PROD_VERSION:%=/version:%) 
 LINK_OPT_FLAGS_NO = /debug /incremental:no /fixed:no
 OPT_LDFLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT))
 LIB_OPT_FLAGS_YES =  /LTCG
@@ -189,7 +191,7 @@ OP_SYS_CXXFLAGS = $(COMPILER_CXXFLAGS)
 #		'-entry:_DllMainCRTStartup$(DLLENTRY)'
 DLLENTRY = @12
 
-WIN32_DLLFLAGS = /subsystem:windows /dll $(OPT_LDFLAGS) $(USR_LDFLAGS) $(TARGET_LDFLAGS) $(LIB_LDFLAGS)
+WIN32_DLLFLAGS = /subsystem:windows /dll /NODEFAULTLIB:LIBCMT.LIB /NODEFAULTLIB:LIBCMTD.LIB $(OPT_LDFLAGS) $(USR_LDFLAGS) $(TARGET_LDFLAGS) $(LIB_LDFLAGS)
 
 #
 # specify dll .def file only if it exists
@@ -279,7 +281,7 @@ SHRLIB_LDLIBS += $(addsuffix .lib, \
 
 #--------------------------------------------------
 # Linker definition
-LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) -out:$@ \
+LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(STATIC_LDFLAGS_EXTRA_$(STATIC_BUILD)) $(LDFLAGS) $(PROD_LDFLAGS) -out:$@ \
 	$(call PATH_FILTER, $(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS))
 
 #--------------------------------------------------

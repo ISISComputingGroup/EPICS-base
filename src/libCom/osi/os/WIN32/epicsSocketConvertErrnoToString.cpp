@@ -35,7 +35,7 @@ void epicsSocketConvertErrnoToString (
 		    NULL, theSockError,
 		    MAKELANGID ( LANG_NEUTRAL, SUBLANG_DEFAULT ), /* Default language */
 		    pBuf, bufSize, NULL );
-	    if ( ! success ) {
+	    if ( success == 0 ) {
             int status = epicsSnprintf (
                 pBuf, bufSize, "WINSOCK Error %d", theSockError );
             if ( status <= 0 ) {

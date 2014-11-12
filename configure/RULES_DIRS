@@ -10,6 +10,7 @@
 #  Revision-Id: anj@aps.anl.gov-20101005192737-disfz3vs0f3fiixd
 #
 
+include $(CONFIG)/RULES_DIRS_ISIS
 
 ARCHS += $(BUILD_ARCHS)
 ACTIONS += inc build install buildInstall clean realclean archclean runtests

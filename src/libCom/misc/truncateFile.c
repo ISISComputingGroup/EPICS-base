@@ -42,7 +42,7 @@ epicsShareFunc enum TF_RETURN  truncateFile (const char *pFileName, unsigned siz
 		return TF_ERROR;
 	}
 	
-	pFile = fopen(pFileName, "r");
+	pFile = fopen(pFileName, "rb");
 	if (!pFile) {
 		fprintf (stderr,
 			"File access problems to `%s' because `%s'\n", 
@@ -74,7 +74,7 @@ epicsShareFunc enum TF_RETURN  truncateFile (const char *pFileName, unsigned siz
 		return TF_ERROR;
 	}
 
-	ptmp = fopen (tmpName, "w");
+	ptmp = fopen (tmpName, "wb");
 	if (!ptmp) {
 		fprintf (stderr,
 			"File access problems to `%s' because `%s'\n", 

@@ -61,18 +61,20 @@ casIntfIO::casIntfIO ( const caNetAddr & addrIn ) :
                       reinterpret_cast <sockaddr *> (&this->addr),
                       sizeof(this->addr) );
 	if (status<0) {
-		if (SOCKERRNO == SOCK_EADDRINUSE) {
+// on windows we also saw WSAEACCES which may have been due to an application/driver using SO_EXCLUSIVEADDRUSE
+// so we will retry in all error cases 
+//		if (SOCKERRNO == SOCK_EADDRINUSE) {
 			//
 			// enable assignment of a default port
 			// (so the getsockname() call below will
 			// work correctly)
 			//
-			this->addr.sin_port = ntohs (0);
+			this->addr.sin_port = htons (0);
 			status = bind(
                     this->sock,
                     reinterpret_cast <sockaddr *> (&this->addr),
                     sizeof(this->addr) );
-		}
+//		}
 		if (status<0) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );

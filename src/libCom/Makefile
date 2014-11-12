@@ -283,6 +283,8 @@ LIBRARY=Com
 
 Com_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
 
+Com_LIBS_WIN32 = WinEditLine
+
 Com_RCS = Com.rc
 
 # For R3.13 compatibility only
@@ -293,6 +295,7 @@ endif
 
 #   libs needed for PROD and TESTPRODUCT
 PROD_LIBS = Com
+PROD_LIBS_WIN32 = WinEditLine
 PROD_SYS_LIBS_WIN32 = ws2_32 advapi32
 
 #	for bldErrSymTbl:

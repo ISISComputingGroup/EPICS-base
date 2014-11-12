@@ -43,7 +43,10 @@
 #include "dbFldTypes.h"
 #include "special.h"
 #include "errMdef.h"
+
 #define epicsExportSharedSymbols
+#include "shareLib.h"
+
 #include "dbAddr.h"
 #include "callback.h"
 #include "dbScan.h"
@@ -744,7 +747,7 @@ static char * dbCopyInNameComponentOfPV (
  *      not including null termination.
  *  JOH 10-19-04 
  */
-unsigned dbNameOfPV (
+epicsShareFunc unsigned epicsShareAPI dbNameOfPV (
     const dbAddr * paddr, char * pBuf, unsigned bufLen )
 {
     dbFldDes * pfldDes = paddr->pfldDes;

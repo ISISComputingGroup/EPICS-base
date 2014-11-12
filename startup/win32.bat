@@ -26,7 +26,9 @@ REM set PATH=C:\WINDOWS;C:\WINDOWS\COMMAND
 REM ----- WINNT, WIN2000  -----
 REM set PATH=C:\WINNT;C:\WINNT\SYSTEM32
 REM ----- WINXP, Vista, Windows 7 -----
-set PATH=C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\SYSTEM32\Wbem
+
+REM leave base path alone!
+REM set PATH=C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\SYSTEM32\Wbem
 
 REM ======================================================
 REM   ---------------- make and perl ---------------------
@@ -53,6 +55,16 @@ REM set PATH=%PATH%;.;..
 REM set PATH=%PATH%;c:\cygwin\bin
 
 REM ======================================================
+REM --------------- EPICS 1--------------------------------
+REM ======================================================
+if "%EPICS_HOST_ARCH%" == "" (
+    set EPICS_HOST_ARCH=windows-x64
+REM set EPICS_HOST_ARCH=windows-x64-debug
+REM set EPICS_HOST_ARCH=win32-x86
+REM set EPICS_HOST_ARCH=win32-x86-debug
+)
+
+REM ======================================================
 REM   --------------- Visual c++ -------------------------
 REM ======================================================
 
@@ -71,19 +83,34 @@ REM set INCLUDE=C:\Program Files\Microsoft SDKs\Windows\v7.0\include;%INCLUDE%
 REM set LIBPATH=C:\Program Files\Microsoft SDKs\Windows\v7.0\lib;%LIBPATH%
 REM set     LIB=C:\Program Files\Microsoft SDKs\Windows\v7.0\lib;%LIB%
 
-REM    ----- Visual Studion 2010 -----
-REM --  windows-x64 ---
-REM call "C:\Program files\Microsoft Visual Studio 10.0\VC\vcvarsall.bat" x64
-REM --  win32-x86 ---
-call "C:\Program files\Microsoft Visual Studio 10.0\VC\vcvarsall.bat" x86
+REM    ----- Visual Studio 2010 or 2012, prefer 2010 if both exist -----
+if exist "C:\Program files (x86)\Microsoft Visual Studio 13.0\VC\vcvarsall.bat" set VCVERSION=13.0
+if exist "C:\Program files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" set VCVERSION=12.0
+if exist "C:\Program files (x86)\Microsoft Visual Studio 11.0\VC\vcvarsall.bat" set VCVERSION=11.0
+if exist "C:\Program files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat" set VCVERSION=10.0
+
+if exist "C:\Program files (x86)\Microsoft Visual Studio %VCVERSION%\VC\vcvarsall.bat" (
+  if "%EPICS_HOST_ARCH:~0,11%" == "windows-x64" (
+REM -- express 2012 provides a 32->64 cross compiler, the full visual studio has both a cross and native compiler
+    if exist "C:\Program files (x86)\Microsoft Visual Studio %VCVERSION%\VC\bin\amd64" (
+	    @echo Using Visual Studio %VCVERSION% x64 native compiler
+        call "C:\Program files (x86)\Microsoft Visual Studio %VCVERSION%\VC\vcvarsall.bat" x64
+	) else (
+	    @echo Using Visual Studio %VCVERSION% x64 cross compiler
+        call "C:\Program files (x86)\Microsoft Visual Studio %VCVERSION%\VC\vcvarsall.bat" x86_amd64
+	)
+  )
+  if "%EPICS_HOST_ARCH:~0,9%" == "win32-x86" (
+	 @echo Using Visual Studio %VCVERSION% x86 native compiler
+     call "C:\Program files (x86)\Microsoft Visual Studio %VCVERSION%\VC\vcvarsall.bat" x86
+  )
+)
 
 REM ======================================================
-REM --------------- EPICS --------------------------------
+REM --------------- EPICS 2--------------------------------
 REM ======================================================
-REM set EPICS_HOST_ARCH=windows-x64
-set EPICS_HOST_ARCH=win32-x86
-set PATH=%PATH%;G:\epics\base\bin\%EPICS_HOST_ARCH%
-set PATH=%PATH%;G:\epics\extensions\bin\%EPICS_HOST_ARCH%
+REM set PATH=%PATH%;G:\epics\base\bin\%EPICS_HOST_ARCH%
+REM set PATH=%PATH%;G:\epics\extensions\bin\%EPICS_HOST_ARCH%
 
 REM ======================================================
 REM ------- OPTIONAL ENVIRONMENT VARIABLES FOLLOW --------

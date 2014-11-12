@@ -82,3 +82,4 @@ help:
 .PHONY: cleandirs distclean cvsclean realuninstall archuninstall uninstallDirs
 .PHONY: uninstall help
 
+include $(CONFIG)/RULES_TOP_ISIS

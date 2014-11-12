@@ -16,6 +16,11 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
+#ifdef _WIN32
+#include <io.h> /* for isatty() */
+#include <string>
+#include <windows.h>
+#endif /* _WIN32 */
 
 #define epicsExportSharedSymbols
 #include "errlog.h"
@@ -830,6 +835,65 @@ iocshBody (const char *pathname, const char *commandLine)
 int epicsShareAPI
 iocsh (const char *pathname)
 {
+#ifdef _WIN32
+// Adjust stdout and stderr buffering for use with non-terminal programs such as procServ
+    static int first_call = 1;
+	if (first_call)
+	{
+		if (setvbuf(stderr, NULL, _IONBF, BUFSIZ) != 0)
+		{
+		    fprintf(stderr, "iocsh: error setting stderr buffering\n");
+			fflush(stderr);
+		}
+		if (setvbuf(stdout, NULL, _IONBF, BUFSIZ) != 0)
+		{
+		    fprintf(stderr, "iocsh: error setting stdout buffering\n");
+			fflush(stderr);
+		}
+//		if ( !isatty(fileno(stdout)) )
+//		{
+//			if (setvbuf(stdout, NULL, _IOFBF, 256) != 0) // set a small buffer size to try and emulate line buffering (Windows does not support _IOLBF)
+//			{
+//				fprintf(stderr, "iocsh: error setting stdout buffering\n");
+//				fflush(stderr);
+//			}
+//		}
+		// set console title to executable name - will not get done automatically if we run executable from a batch file
+		char module_path[256];
+		GetModuleFileName(NULL, module_path, sizeof(module_path));
+		const char* module_name = strrchr(module_path, '\\');
+		if (module_name != NULL)
+		{
+			++module_name; // move past \ to real name
+		}
+		else
+		{
+			module_name = module_path;
+		}
+		SetConsoleTitle((std::string("IOC: ") + module_name).c_str());
+		const char* iocsh_showwin = macEnvExpand("$(IOCSH_SHOWWIN=)");
+		HWND conwin = GetConsoleWindow();
+		if ( conwin != NULL && iocsh_showwin != NULL )
+		{
+			switch(iocsh_showwin[0])
+			{
+				case 'M': // minimise
+				case 'm': 
+			        ShowWindowAsync(conwin, SW_MINIMIZE);
+					break;
+
+				case 'H': // hide
+				case 'h':
+					ShowWindowAsync(conwin, SW_HIDE);
+					break;
+
+				default:
+					break;
+			}
+		}
+		first_call = 0;
+	}
+#endif /* _WIN32 */
     if (pathname)
         epicsEnvSet("IOCSH_STARTUP_SCRIPT", pathname);
     return iocshBody(pathname, NULL);
