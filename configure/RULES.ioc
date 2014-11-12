@@ -32,3 +32,4 @@ cdCommands envPaths dllPath.bat relPaths.sh: \
 realclean:
 	$(RM) cdCommands envPaths dllPath.bat relPaths.sh runIOC.bat
 
+include $(CONFIG)/RULES.ioc.ISIS
