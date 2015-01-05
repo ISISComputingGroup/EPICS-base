@@ -98,16 +98,16 @@ typedef enum {
 #define lastEpicsAlarmCond  epicsAlarmWriteAccess
 
 
-#ifdef __cplusplus
-}
-#endif
 
 #ifdef epicsAlarmGLOBAL
 #  include "alarmString.h"
 #else
-epicsShareExtern const char *epicsAlarmSeverityStrings [ALARM_NSEV];
-epicsShareExtern const char *epicsAlarmConditionStrings [ALARM_NSTATUS];
+extern const char *epicsAlarmSeverityStrings [ALARM_NSEV];
+extern const char *epicsAlarmConditionStrings [ALARM_NSTATUS];
 #endif
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* INC_alarm_H */
