@@ -43,6 +43,7 @@ typedef enum {
 #define INVALID_ALARM       epicsSevInvalid
 #define lastEpicsAlarmSev   epicsSevInvalid
 
+epicsShareExtern const char *epicsAlarmSeverityStrings [ALARM_NSEV];
 
 
 /* ALARM STATUS - must match menuAlarmStat.dbd */
@@ -97,17 +98,15 @@ typedef enum {
 #define WRITE_ACCESS_ALARM  epicsAlarmWriteAccess
 #define lastEpicsAlarmCond  epicsAlarmWriteAccess
 
-
-
-#ifdef epicsAlarmGLOBAL
-#  include "alarmString.h"
-#else
-extern const char *epicsAlarmSeverityStrings [ALARM_NSEV];
-extern const char *epicsAlarmConditionStrings [ALARM_NSTATUS];
-#endif
+epicsShareExtern const char *epicsAlarmConditionStrings [ALARM_NSTATUS];
 
 #ifdef __cplusplus
 }
 #endif
+
+#ifdef epicsAlarmGLOBAL
+#  include "alarmString.h"
+#endif
+
 
 #endif /* INC_alarm_H */
