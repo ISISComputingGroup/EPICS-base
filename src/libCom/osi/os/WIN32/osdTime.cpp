@@ -366,11 +366,11 @@ void currentTime::getCurrentTime ( epicsTimeStamp & dest )
         LONGLONG epicsTimeCurrent = this->epicsTimeLast + offset;
         if ( this->epicsTimeLast > epicsTimeCurrent ) {
             double diff = static_cast < double >
-                ( this->epicsTimeLast - epicsTimeCurrent );
+                ( this->epicsTimeLast - epicsTimeCurrent ) / EPICS_TIME_TICKS_PER_SEC;
             errlogPrintf (
-                "currentTime::getCurrentTime(): %f sec "
+                "currentTime::getCurrentTime(): %g sec "
                 "time discontinuity detected\n",
-                diff );
+                diff);
         }
         this->epicsTimeLast = epicsTimeCurrent;
         this->lastPerfCounter = curPerfCounter.QuadPart;
