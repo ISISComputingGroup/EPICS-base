@@ -592,7 +592,7 @@ void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
 		 * look for a caRepeater in the same directory as CA.DLL 
 		 * and use this if present instead of a PATH search
 		 */
-		char carep_path[MAX_PATH];
+		char carep_path[256];
 		strcpy(carep_path, "caRepeater");
 #ifdef _WIN32		
 		char caDLLPath[MAX_PATH];
