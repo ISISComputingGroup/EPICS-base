@@ -22,14 +22,22 @@
 #include "osiSock.h"
 
 /*
- * epicsSocketConvertErrnoToString()
+ * epicsSocketConvertErrorToString()
  */
-void epicsSocketConvertErrnoToString ( 
-        char * pBuf, unsigned bufSize )
+void epicsSocketConvertErrorToString (
+        char * pBuf, unsigned bufSize, int theSockError )
 {
     if ( bufSize ) {
-        strncpy ( pBuf, strerror ( SOCKERRNO ), bufSize );
+        strncpy ( pBuf, strerror ( theSockError ), bufSize );
         pBuf[bufSize-1] = '\0';
     }
 }
 
+/*
+ * epicsSocketConvertErrnoToString()
+ */
+void epicsSocketConvertErrnoToString (
+        char * pBuf, unsigned bufSize )
+{
+    epicsSocketConvertErrorToString ( pBuf, bufSize, SOCKERRNO );
+}

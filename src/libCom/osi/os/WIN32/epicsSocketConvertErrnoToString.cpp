@@ -20,16 +20,15 @@
 #include "epicsStdio.h"
 
 /*
- * epicsSocketConvertErrnoToString ()
+ * epicsSocketConvertErrorToString ()
  */
-void epicsSocketConvertErrnoToString ( 
-        char * pBuf, unsigned bufSize )
+void epicsSocketConvertErrorToString (
+        char * pBuf, unsigned bufSize, int theSockError )
 {
     if ( bufSize ) {
 	    /*
 	     * this does not work on systems prior to W2K
 	     */
-        int theSockError = SOCKERRNO;
 	    DWORD success = FormatMessage ( 
 		    FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
 		    NULL, theSockError,
@@ -44,4 +43,13 @@ void epicsSocketConvertErrnoToString (
             }
 	    }
     }
+}
+
+/*
+ * epicsSocketConvertErrnoToString ()
+ */
+void epicsSocketConvertErrnoToString (
+        char * pBuf, unsigned bufSize )
+{
+    epicsSocketConvertErrorToString ( pBuf, bufSize, SOCKERRNO );
 }

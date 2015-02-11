@@ -108,7 +108,7 @@ static const unsigned short PORT_ANY = 0u;
 /*
  * makeSocket()
  */
-static bool makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
+static int makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
 {
     int status;
 	union {
@@ -118,7 +118,7 @@ static bool makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
 
     SOCKET sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, 0 );     
     if ( sock == INVALID_SOCKET ) {
-        return false;
+        return SOCKERRNO;
     }
 
     /*
@@ -132,15 +132,16 @@ static bool makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
         bd.ia.sin_port = htons ( port );  
         status = bind ( sock, &bd.sa, (int) sizeof(bd) );
         if ( status < 0 ) {
+            status = SOCKERRNO;
             epicsSocketDestroy ( sock );
-            return false;
+            return status;
         }
         if ( reuseAddr ) {
             epicsSocketEnableAddressReuseDuringTimeWaitState ( sock );
         }
     }
     *pSock = sock;
-    return true;
+    return 0;
 }
 
 repeaterClient::repeaterClient ( const osiSockAddr &fromIn ) :
@@ -156,10 +157,10 @@ bool repeaterClient::connect ()
 {
     int status;
 
-    if ( ! makeSocket ( PORT_ANY, false, & this->sock ) ) {
+    if ( int sockerrno = makeSocket ( PORT_ANY, false, & this->sock ) ) {
         char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
-            sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
         fprintf ( stderr, "%s: no client sock because \"%s\"\n",
                 __FILE__, sockErrBuf );
         return false;
@@ -300,20 +301,20 @@ inline bool repeaterClient::identicalPort ( const osiSockAddr &fromIn )
 bool repeaterClient::verify ()
 {
     SOCKET tmpSock;
-    bool success = makeSocket ( this->port (), false, & tmpSock );
-    if ( success ) {
+    int sockerrno = makeSocket ( this->port (), false, & tmpSock );
+    if ( sockerrno == 0 ) {
         epicsSocketDestroy ( tmpSock );
     }
     else {
-        if ( SOCKERRNO != SOCK_EADDRINUSE ) {
+        if ( sockerrno != SOCK_EADDRINUSE ) {
             char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( 
-                sockErrBuf, sizeof ( sockErrBuf ) );
+            epicsSocketConvertErrorToString (
+                sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
             fprintf ( stderr, "CA Repeater: bind test err was \"%s\"\n", 
                 sockErrBuf );
         }
     }
-    return ! success;
+    return !!sockerrno; /* No socket errors => verification failed */
 }
 
 
@@ -387,10 +388,10 @@ static void register_new_client ( osiSockAddr & from,
 
         if ( ! init ) {
             SOCKET sock;
-            if ( ! makeSocket ( PORT_ANY, true, & sock ) ) {
+            if ( int sockerrno = makeSocket ( PORT_ANY, true, & sock ) ) {
                 char sockErrBuf[64];
-                epicsSocketConvertErrnoToString ( 
-                    sockErrBuf, sizeof ( sockErrBuf ) );
+                epicsSocketConvertErrorToString ( 
+                    sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
                 fprintf ( stderr, "%s: Unable to create repeater bind test socket because \"%s\"\n",
                     __FILE__, sockErrBuf );
             }
@@ -512,18 +513,18 @@ void ca_repeater ()
 
     port = envGetInetPortConfigParam ( & EPICS_CA_REPEATER_PORT,
                                        static_cast <unsigned short> (CA_REPEATER_PORT) );
-    if ( ! makeSocket ( port, true, & sock ) ) {
+    if ( int sockerrno = makeSocket ( port, true, & sock ) ) {
         /*
          * test for server was already started
          */
-        if ( SOCKERRNO == SOCK_EADDRINUSE ) {
+        if ( sockerrno == SOCK_EADDRINUSE ) {
             osiSockRelease ();
             debugPrintf ( ( "CA Repeater: exiting because a repeater is already running\n" ) );
             return;
         }
         char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
-            sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
         fprintf ( stderr, "%s: Unable to create repeater socket because \"%s\" - fatal\n",
             __FILE__, sockErrBuf );
         osiSockRelease ();
