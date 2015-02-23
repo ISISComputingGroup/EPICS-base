@@ -126,7 +126,7 @@ int epicsStrnEscapedFromRaw(char *outbuf, size_t outsize, const char *inbuf,
             case '\'':  len = epicsSnprintf(outpos, maxout, "\\'"); break;
             case '\"':  len = epicsSnprintf(outpos, maxout, "\\\""); break;
             default:
-                if (isprint((int)c))
+                if ( c >= 0 && isprint((int)c) )
                     len = epicsSnprintf(outpos, maxout, "%c", c);
                 else
                     len = epicsSnprintf(outpos, maxout, "\\%03o",
@@ -161,7 +161,7 @@ size_t epicsStrnEscapedFromRawSize(const char *inbuf, size_t inlen)
             nout++;
             break;
         default:
-            if (!isprint((int)c))
+            if ( c < 0 || !isprint((int)c) )
                 nout += 3;
         }
     }
@@ -225,7 +225,7 @@ int epicsStrPrintEscaped(FILE *fp, const char *s, size_t len)
        case '\'':  nout += fprintf(fp, "\\'");  break;
        case '\"':  nout += fprintf(fp, "\\\"");  break;
        default:
-           if (isprint((int)c))
+           if ( c >= 0 && isprint((int)c) )
                nout += fprintf(fp, "%c", c);
            else
                nout += fprintf(fp, "\\%03o", (unsigned char)c);
