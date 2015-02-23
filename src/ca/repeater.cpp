@@ -502,7 +502,6 @@ void ca_repeater ()
     osiSockAddr from;
     unsigned short port;
     char * pBuf; 
-	char addrBuffer[64];
 
     pBuf = new char [MAX_UDP_RECV];
 
@@ -556,12 +555,6 @@ void ca_repeater ()
             continue;
         }
 		
-		sockAddrToDottedIP(&from.sa, addrBuffer, sizeof(addrBuffer)); 
-		if ( 0 == strncmp(addrBuffer, "192.168.", strlen("192.168.")) )
-		{
-            continue;
-		}
-
         caHdr * pMsg = ( caHdr * ) pBuf;
 
         /*
