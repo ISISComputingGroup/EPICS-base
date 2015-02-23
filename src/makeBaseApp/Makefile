@@ -18,12 +18,14 @@ TEMPLATES += top/supportApp/Makefile
 TEMPLATES += top/supportApp/Db/Makefile
 TEMPLATES += top/supportApp/src/Makefile
 TEMPLATES += top/supportApp/src/_APPNAME_.dbd
+TEMPLATES += top/supportApp/protocol/Makefile
 
 TEMPLATES += top/iocApp/Makefile
 TEMPLATES += top/iocApp/Db/Makefile
 TEMPLATES += top/iocApp/src/Makefile
 TEMPLATES += top/iocApp/src/build.mak
 TEMPLATES += top/iocApp/src/_APPNAME_Main.cpp
+TEMPLATES += top/iocApp/protocol/Makefile
 
 TEMPLATES += top/exampleApp/Makefile
 TEMPLATES += top/exampleApp/Db/Makefile
@@ -47,6 +49,7 @@ TEMPLATES += top/exampleApp/src/_APPNAME_Hello.c
 TEMPLATES += top/exampleApp/src/_APPNAME_Hello.dbd
 TEMPLATES += top/exampleApp/src/initTrace.c
 TEMPLATES += top/exampleApp/src/initTrace.dbd
+TEMPLATES += top/exampleApp/protocol/Makefile
 
 TEMPLATES += top/exampleBoot/Makefile
 TEMPLATES += top/exampleBoot/nfsCommands@vxWorks
