@@ -162,12 +162,12 @@ static void req_server (void *pParm)
     ca_server_port = ntohs (serverAddr.sin_port);
 
     if ( portChange ) {
-        errlogPrintf ( "cas warning: Configured TCP port was unavailable.\n");
-        errlogPrintf ( "cas warning: Using dynamically assigned TCP port %hu,\n", 
+        errlogSevPrintf (errlogInfo, "cas warning: Configured TCP port was unavailable.\n");
+        errlogSevPrintf (errlogInfo, "cas warning: Using dynamically assigned TCP port %hu,\n", 
             ca_server_port );
-        errlogPrintf ( "cas warning: but now two or more servers share the same UDP port.\n");
-        errlogPrintf ( "cas warning: Depending on your IP kernel this server may not be\n" );
-        errlogPrintf ( "cas warning: reachable with UDP unicast (a host's IP in EPICS_CA_ADDR_LIST)\n" );
+        errlogSevPrintf (errlogInfo, "cas warning: but now two or more servers share the same UDP port.\n");
+        errlogSevPrintf (errlogInfo, "cas warning: Depending on your IP kernel this server may not be\n" );
+        errlogSevPrintf (errlogInfo, "cas warning: reachable with UDP unicast (a host's IP in EPICS_CA_ADDR_LIST)\n" );
     }
 
     /* listen and accept new connections */
