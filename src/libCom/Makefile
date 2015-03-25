@@ -283,7 +283,9 @@ LIBRARY=Com
 
 Com_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
 
+ifeq ($(COMMANDLINE_LIBRARY),WINEDITLINE)
 Com_LIBS_WIN32 = WinEditLine
+endif
 
 Com_RCS = Com.rc
 
@@ -295,7 +297,9 @@ endif
 
 #   libs needed for PROD and TESTPRODUCT
 PROD_LIBS = Com
+ifeq ($(COMMANDLINE_LIBRARY),WINEDITLINE)
 PROD_LIBS_WIN32 = WinEditLine
+endif
 PROD_SYS_LIBS_WIN32 = ws2_32 advapi32
 
 #	for bldErrSymTbl:

@@ -21,13 +21,10 @@ makeBaseApp_DEPEND_DIRS = tools
 DIRS += makeBaseExt
 makeBaseExt_DEPEND_DIRS = tools
 
-ifneq ($(findstring win32-x86,$(EPICS_HOST_ARCH)),) 
+ifeq ($(COMMANDLINE_LIBRARY),WINEDITLINE)
 DIRS += WinEditLine
-endif
-ifneq ($(findstring windows-x64,$(EPICS_HOST_ARCH)),) 
-DIRS += WinEditLine
-endif
 WinEditLine_DEPEND_DIRS = tools
+endif
 
 DIRS += libCom
 libCom_DEPEND_DIRS = tools

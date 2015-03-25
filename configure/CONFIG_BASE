@@ -25,10 +25,10 @@ EPICS_BASE_IOC_LIBS += recIoc softDevIoc
 EPICS_BASE_IOC_LIBS += miscIoc rsrvIoc dbtoolsIoc asIoc
 EPICS_BASE_IOC_LIBS += dbIoc registryIoc dbStaticIoc ca Com
 ifneq ($(findstring windows,$(EPICS_HOST_ARCH)),) 
-EPICS_BASE_IOC_LIBS += WinEditLine 
+#EPICS_BASE_IOC_LIBS += WinEditLine 
 endif
 ifneq ($(findstring win32,$(EPICS_HOST_ARCH)),) 
-EPICS_BASE_IOC_LIBS += WinEditLine 
+#EPICS_BASE_IOC_LIBS += WinEditLine 
 endif
 #---------------------------------------------------------------
 # Epics base Host libraries 
@@ -36,10 +36,10 @@ endif
 EPICS_BASE_HOST_LIBS += cas gdd asHost dbStaticHost registryIoc
 EPICS_BASE_HOST_LIBS += ca Com
 ifneq ($(findstring windows,$(EPICS_HOST_ARCH)),) 
-EPICS_BASE_HOST_LIBS += WinEditLine
+#EPICS_BASE_HOST_LIBS += WinEditLine
 endif
 ifneq ($(findstring win32,$(EPICS_HOST_ARCH)),) 
-EPICS_BASE_HOST_LIBS += WinEditLine
+#EPICS_BASE_HOST_LIBS += WinEditLine
 endif
 
 #---------------------------------------------------------------
