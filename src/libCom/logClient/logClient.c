@@ -181,7 +181,7 @@ static char* ISOtime(struct timeb* the_time)
 	char buffer1[32];
 	char* buffer2 = (char*)malloc(32);
 	struct tm tm_struct, tm_struct_gm;
-	int tzhdiff, tzmdiff;
+	int tzhdiff, tzmdiff, tzddiff;
 	unsigned millisec;
 #ifdef _WIN32
 	/* warning: localtime and gmtime share internal static structures, so need to make copies */
@@ -194,7 +194,8 @@ static char* ISOtime(struct timeb* the_time)
     millisec = the_time->millitm;
 	strftime(buffer1, sizeof(buffer1), "%Y-%m-%dT%H:%M:%S", &tm_struct);
 	buffer1[sizeof(buffer1)-1] = '\0';
-	tzhdiff = tm_struct.tm_hour - tm_struct_gm.tm_hour;
+    tzddiff = (7 + tm_struct.tm_wday - tm_struct_gm.tm_wday) % 7;  /* allow for day wrap */
+	tzhdiff = 24 * tzddiff + (tm_struct.tm_hour - tm_struct_gm.tm_hour);
 	tzmdiff = tm_struct.tm_min - tm_struct_gm.tm_min;
 	epicsSnprintf(buffer2, 32, "%s.%03u%c%02d:%02d", buffer1, millisec, (tzhdiff < 0 ? '-' : '+'), tzhdiff, tzmdiff);
 	buffer2[31] = '\0';
