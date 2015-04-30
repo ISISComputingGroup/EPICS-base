@@ -15,6 +15,8 @@ sub readReleaseFiles {
 
     my $hostarch = $ENV{'EPICS_HOST_ARCH'};
     $Rmacros->{'EPICS_HOST_ARCH'} = $hostarch if $hostarch;
+    my $kitroot = $ENV{'EPICS_KIT_ROOT'};
+    $Rmacros->{'EPICS_KIT_ROOT'} = $kitroot if $kitroot;
 
     return unless (-e $relfile);
     &readRelease($relfile, $Rmacros, $Rapps);
