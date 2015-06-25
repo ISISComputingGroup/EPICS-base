@@ -818,9 +818,16 @@ int epicsShareAPI dbLoadDatabase(const char *file, const char *path, const char 
     return dbReadDatabase(&pdbbase, file, path, subs);
 }
 
+/* dbLoadRecordsHook from base-3.15 */
+epicsShareDef DB_LOAD_RECORDS_HOOK_ROUTINE dbLoadRecordsHook = NULL;
+
 int epicsShareAPI dbLoadRecords(const char* file, const char* subs)
 {
-    return dbReadDatabase(&pdbbase, file, 0, subs);
+    int status = dbReadDatabase(&pdbbase, file, 0, subs);
+
+    if (!status && dbLoadRecordsHook)
+        dbLoadRecordsHook(file, subs);
+    return status;
 }
 
 
