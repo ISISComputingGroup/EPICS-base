@@ -1,0 +1,13 @@
+O.*/
+/db
+/bin
+/dbd
+/include
+/lib
+/templates
+envPaths
+cdCommands
+dllPath.bat
+runIoc.bat
+/configure/CONFIG_SITE_ISIS
+/html/
