@@ -31,21 +31,13 @@ EPICS_BASE=_EPICS_BASE_
 # other than EPICS_BASE:
 #RULES=/path/to/epics/support/module/rules/x-y
 
-## ISIS standard modules ##
-PUGIXML=$(SUPPORT)/pugixml
-ICPCONFIG=$(SUPPORT)/icpconfig
-PVDUMP=$(SUPPORT)/pvdump
-DEVIOCSTATS=$(SUPPORT)/devIocStats/3-1-11
-AUTOSAVE=$(SUPPORT)/autosave/R5_6_1
-SNCSEQ=$(SUPPORT)/seq/2-1-11
-CAPUTLOG=$(SUPPORT)/caPutLog/3-3-3
-SQLITE=$(SUPPORT)/sqlite
-LIBJSON=$(SUPPORT)/libjson
-UTILITIES=$(SUPPORT)/utilities
-PCRE=$(SUPPORT)/pcre
-MYSQL=$(SUPPORT)/MySQL
-ZLIB=$(SUPPORT)/zlib/1-2-8
+# top level master release and local private options 
+include $(TOP)/../../../configure/MASTER_RELEASE
+-include $(TOP)/../../../configure/MASTER_RELEASE.$(EPICS_HOST_ARCH)
+-include $(TOP)/../../../configure/MASTER_RELEASE.private
+-include $(TOP)/../../../configure/MASTER_RELEASE.private.$(EPICS_HOST_ARCH)
 
-## add other modules here ##
+# optional extra local definitions here
+-include $(TOP)/configure/RELEASE.private
 
-include $(TOP)/../../ISIS_CONFIG.$(EPICS_HOST_ARCH)
+include $(TOP)/../../../ISIS_CONFIG.$(EPICS_HOST_ARCH)
