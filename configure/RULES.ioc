@@ -18,7 +18,7 @@ ifeq ($(filter $(ARCH),$(BUILD_ARCHS)),$(ARCH))
     buildInstall$(DIVIDER)$(ARCH) buildInstall: $(TARGETS)
 
     clean$(DIVIDER)$(ARCH) clean:
-	$(RM) cdCommands envPaths dllPath.bat relPaths.sh runIOC.bat
+	$(RM) cdCommands envPaths dllPath.bat relPaths.sh runIOC.bat runIOC.sh
 else
     buildInstall$(DIVIDER)$(ARCH) buildInstall:
     clean$(DIVIDER)$(ARCH) clean:
@@ -30,6 +30,6 @@ cdCommands envPaths dllPath.bat relPaths.sh: \
 	$(CONVERTRELEASE) -a $(ARCH) -t $(IOCS_APPL_TOP) $@
 
 realclean:
-	$(RM) cdCommands envPaths dllPath.bat relPaths.sh runIOC.bat
+	$(RM) cdCommands envPaths dllPath.bat relPaths.sh runIOC.bat runIOC.sh
 
 include $(CONFIG)/RULES.ioc.ISIS
