@@ -12,6 +12,7 @@ ifeq ($(findstring cygwin,$(EPICS_HOST_ARCH)),)
 	@echo set OLDEPICS_CAS_BEACON_ADDR_LIST=%%EPICS_CAS_BEACON_ADDR_LIST%%>> $@
 	@echo set EPICS_CAS_INTF_ADDR_LIST=127.0.0.1>> $@
 	@echo set EPICS_CAS_BEACON_ADDR_LIST=127.255.255.255>> $@
+	@echo set EPICS_CAS_AUTO_BEACON_ADDR_LIST=NO>> $@
 	@echo for /F %%%%I in ( "%%MYDIRROOT%%" ) do set IOCDIRNAME=%%%%~nI>> $@
 	@echo set IOCEXE=%%IOCDIRNAME:~3%%.exe>>$@
 	@echo set OLDPATH=%%PATH%%>> $@
@@ -37,6 +38,7 @@ ifneq ($(findstring linux,$(EPICS_HOST_ARCH)),)
 	@echo 'OLDEPICS_CAS_BEACON_ADDR_LIST="$$EPICS_CAS_BEACON_ADDR_LIST"'>> $@
 	@echo 'export EPICS_CAS_INTF_ADDR_LIST="127.0.0.1"'>> $@
 	@echo 'export EPICS_CAS_BEACON_ADDR_LIST="127.255.255.255"'>> $@
+	@echo 'export EPICS_CAS_AUTO_BEACON_ADDR_LIST="NO"'>> $@
 	@echo 'IOCDIRNAME=`basename $$MYDIR`'>> $@
 	@echo 'IOCEXE=`echo $$IOCDIRNAME | sed -e "s/^ioc//"`'>>$@
 	@echo 'OLDPATH=$$PATH'>> $@
