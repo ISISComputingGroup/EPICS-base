@@ -13,6 +13,9 @@
 sub readReleaseFiles {
     my ($relfile, $Rmacros, $Rapps, $arch) = @_;
 
+#    foreach my $e (keys(%ENV)) {
+#        $Rmacros->{$e} = $ENV{$e};
+#    }
     my $hostarch = $ENV{'EPICS_HOST_ARCH'};
     $Rmacros->{'EPICS_HOST_ARCH'} = $hostarch if $hostarch;
     my $kitroot = $ENV{'EPICS_KIT_ROOT'};
