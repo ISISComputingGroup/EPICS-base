@@ -300,6 +300,7 @@ epicsShareFunc void epicsShareAPI errlogAddListener(
     plistenerNode->pPrivate = pPrivate;
     ellAdd(&pvtData.listenerList,&plistenerNode->node);
     epicsMutexUnlock(pvtData.listenerLock);
+	epicsAtExit(errlogRemoveListener, (void*)listener);
 }
     
 epicsShareFunc void epicsShareAPI errlogRemoveListener(
