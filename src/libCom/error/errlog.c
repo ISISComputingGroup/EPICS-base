@@ -286,6 +286,12 @@ epicsShareFunc errlogSevEnum epicsShareAPI errlogGetSevToLog(void)
     return pvtData.sevToLog;
 }
 
+/* need this as function prototype for errlogRemoveListener on WIN32 isn't quite right due to epicsShareAPI */
+static void errlogAddListenerAtExit(void* arg)
+{
+    errlogRemoveListener((errlogListener)arg);
+}
+
 epicsShareFunc void epicsShareAPI errlogAddListener(
     errlogListener listener, void *pPrivate)
 {
@@ -300,7 +306,7 @@ epicsShareFunc void epicsShareAPI errlogAddListener(
     plistenerNode->pPrivate = pPrivate;
     ellAdd(&pvtData.listenerList,&plistenerNode->node);
     epicsMutexUnlock(pvtData.listenerLock);
-	epicsAtExit(errlogRemoveListener, (void*)listener);
+	epicsAtExit(errlogAddListenerAtExit, (void*)listener);
 }
     
 epicsShareFunc void epicsShareAPI errlogRemoveListener(
