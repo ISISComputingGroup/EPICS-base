@@ -176,30 +176,20 @@ static const char* xml_format = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 "<eventTime>%s</eventTime>"
 "</message>\n";
 
-static char* ISOtime(struct timeb* the_time)
+
+static int timezoneOffset(char* buffer, int len_buffer, epicsTimeStamp* the_time)
 {
-	char buffer1[32];
-	char* buffer2 = (char*)malloc(32);
-	struct tm tm_struct, tm_struct_gm;
-	int tzhdiff, tzmdiff, tzddiff;
-	unsigned millisec;
-#ifdef _WIN32
-	/* warning: localtime and gmtime share internal static structures, so need to make copies */
-	memcpy(&tm_struct, localtime(&(the_time->time)), sizeof(struct tm));
-	memcpy(&tm_struct_gm, gmtime(&(the_time->time)), sizeof(struct tm));
-#else
-    localtime_r(&(the_time->time), &tm_struct);
-    gmtime_r(&(the_time->time), &tm_struct_gm);
-#endif /* _WIN32 */
-    millisec = the_time->millitm;
-	strftime(buffer1, sizeof(buffer1), "%Y-%m-%dT%H:%M:%S", &tm_struct);
-	buffer1[sizeof(buffer1)-1] = '\0';
+    time_t ansi_time;
+    struct tm tm_struct, tm_struct_gm;
+    int tzhdiff, tzmdiff, tzddiff;
+    epicsTimeToTime_t(&ansi_time, the_time);
+    epicsTime_gmtime(&ansi_time, &tm_struct_gm);
+    epicsTime_localtime(&ansi_time, &tm_struct);
     tzddiff = (7 + tm_struct.tm_wday - tm_struct_gm.tm_wday) % 7;  /* allow for day wrap */
 	tzhdiff = 24 * tzddiff + (tm_struct.tm_hour - tm_struct_gm.tm_hour);
-	tzmdiff = tm_struct.tm_min - tm_struct_gm.tm_min;
-	epicsSnprintf(buffer2, 32, "%s.%03u%c%02d:%02d", buffer1, millisec, (tzhdiff < 0 ? '-' : '+'), tzhdiff, tzmdiff);
-	buffer2[31] = '\0';
-	return buffer2;
+    tzmdiff = tm_struct.tm_min - tm_struct_gm.tm_min;
+    epicsSnprintf(buffer, len_buffer, "%c%02d:%02d", (tzhdiff < 0 ? '-' : '+'), tzhdiff, tzmdiff);
+	return 0;
 }
 
 void epicsShareAPI logClientSend ( logClientId id, const char * orig_message )
@@ -207,16 +197,18 @@ void epicsShareAPI logClientSend ( logClientId id, const char * orig_message )
     int i;
     logClient * pClient = ( logClient * ) id;
     unsigned int strSize, len_msg;
-    char *ioc, *iocname, *event_time; 
+    char *ioc, *iocname; 
 	char *message, *message_ptr;
 	char sev_str[16];
-	struct timeb the_time;
-
+	char event_time[32];
+    epicsTimeStamp the_time;
+	
     if ( ! pClient || ! orig_message ) {
         return;
     }
-	ftime(&the_time);
-	event_time = ISOtime(&the_time);
+    epicsTimeGetCurrent(&the_time);
+	i = epicsTimeToStrftime(event_time, sizeof(event_time), "%Y-%m-%dT%H:%M:%S.%03f", &the_time);
+	timezoneOffset(event_time + i, sizeof(event_time) - i, &the_time); 
 	iocname = macEnvExpand("$(IOCNAME)");
 	if (iocname == NULL)
 	{
@@ -246,7 +238,6 @@ void epicsShareAPI logClientSend ( logClientId id, const char * orig_message )
 	message = message_ptr = (char*)malloc(len_msg + 1);
 	epicsSnprintf(message, len_msg, xml_format, (iocname != NULL ? iocname : "UNKNOWN"), sev_str, orig_message, event_time);
 	message[len_msg] = '\0';
-	free(event_time);
 	if (iocname != NULL)
 	{
 	    free(iocname);
