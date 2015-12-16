@@ -83,10 +83,11 @@ REM set INCLUDE=C:\Program Files\Microsoft SDKs\Windows\v7.0\include;%INCLUDE%
 REM set LIBPATH=C:\Program Files\Microsoft SDKs\Windows\v7.0\lib;%LIBPATH%
 REM set     LIB=C:\Program Files\Microsoft SDKs\Windows\v7.0\lib;%LIB%
 
-REM    ----- Visual Studio 2010 or 2012, prefer 2010 if both exist -----
-if exist "C:\Program files (x86)\Microsoft Visual Studio 13.0\VC\vcvarsall.bat" set VCVERSION=13.0
-if exist "C:\Program files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" set VCVERSION=12.0
+REM    ----- Prefer Visual Studio 2010, otherwise most recent version -----
 if exist "C:\Program files (x86)\Microsoft Visual Studio 11.0\VC\vcvarsall.bat" set VCVERSION=11.0
+if exist "C:\Program files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" set VCVERSION=12.0
+if exist "C:\Program files (x86)\Microsoft Visual Studio 13.0\VC\vcvarsall.bat" set VCVERSION=13.0
+if exist "C:\Program files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" set VCVERSION=14.0
 if exist "C:\Program files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat" set VCVERSION=10.0
 
 if exist "C:\Program files (x86)\Microsoft Visual Studio %VCVERSION%\VC\vcvarsall.bat" (
