@@ -36,6 +36,7 @@
 #include <string.h>
 #include <errno.h>
 
+
 #include "osiSock.h"
 #include "epicsMutex.h"
 #include "dbDefs.h"
@@ -123,6 +124,11 @@ void cast_server(void *pParm)
     unsigned short      port;
     osiSockIoctl_t      nchars;
     const char*         pStr;
+    struct msghdr msgh;
+    struct cmsghdr *cmsg;
+    struct iovec iov;
+    char cbuf[256];
+    struct in_addr to_addr;
 
     if ( envGetConfigParamPtr ( &EPICS_CAS_SERVER_PORT ) ) {
         port = envGetInetPortConfigParam ( &EPICS_CAS_SERVER_PORT, 
@@ -180,7 +186,7 @@ void cast_server(void *pParm)
     memset((char *)&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;
     pStr = envGetConfigParamPtr ( & EPICS_CAS_INTF_ADDR_LIST );
-    if (pStr) {
+    if (0) {
         /* this implementation only allows for specifying a single address in EPICS_CAS_INTF_ADDR_LIST */
         status = aToIPAddr (pStr, port, &sin);
         if (status) {
@@ -191,6 +197,11 @@ void cast_server(void *pParm)
     } else {
         sin.sin_addr.s_addr = htonl(INADDR_ANY);
         sin.sin_port = htons(port);
+    }
+    
+    {
+        int opt = 1;
+        setsockopt(IOC_cast_sock, SOL_IP, IP_PKTINFO, &opt, sizeof(opt));
     }
     
     /* get server's Internet address */
@@ -227,14 +238,20 @@ void cast_server(void *pParm)
 
     epicsEventSignal(casudp_startStopEvent);
 
+    /* Set up iov and msgh structures. */
+    memset(&msgh, 0, sizeof(struct msghdr));
+    iov.iov_base = prsrv_cast_client->recv.buf;
+    iov.iov_len  = prsrv_cast_client->recv.maxstk;
+    msgh.msg_control = cbuf;
+    msgh.msg_controllen = sizeof(cbuf);
+    msgh.msg_name = &new_recv_addr;
+    msgh.msg_namelen = recv_addr_size;
+    msgh.msg_iov  = &iov;
+    msgh.msg_iovlen = 1;
+    msgh.msg_flags = 0;
+
     while (TRUE) {
-        status = recvfrom (
-            IOC_cast_sock,
-            prsrv_cast_client->recv.buf,
-            prsrv_cast_client->recv.maxstk,
-            0,
-            (struct sockaddr *)&new_recv_addr, 
-            &recv_addr_size);
+        status = recvmsg(IOC_cast_sock, &msgh, 0);
         if (status < 0) {
             if (SOCKERRNO != SOCK_EINTR) {
                 char sockErrBuf[64];
@@ -246,6 +263,20 @@ void cast_server(void *pParm)
             }
         }
         else if (casudp_ctl == ctlRun) {
+            /* Process additional data in msgh */
+            memset(&to_addr, 0, sizeof(to_addr));
+            for (cmsg = CMSG_FIRSTHDR(&msgh); cmsg != NULL; cmsg = CMSG_NXTHDR(&msgh,cmsg)) {
+                if ((cmsg->cmsg_level == SOL_IP) && (cmsg->cmsg_type == IP_PKTINFO)) {
+                    struct in_pktinfo *i = (struct in_pktinfo *) CMSG_DATA(cmsg);
+                    to_addr = i->ipi_addr;
+                    break;
+                }
+            }
+            if (strcmp(inet_ntoa(to_addr), "127.0.0.1") && strcmp(inet_ntoa(to_addr), "127.255.255.255"))
+            {
+                continue;
+            }
+            recv_addr_size = msgh.msg_namelen;
             prsrv_cast_client->recv.cnt = (unsigned) status;
             prsrv_cast_client->recv.stk = 0ul;
             epicsTimeGetCurrent(&prsrv_cast_client->time_at_last_recv);
