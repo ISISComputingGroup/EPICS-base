@@ -62,6 +62,9 @@ static struct ifreq * ifreqNext ( struct ifreq *pifreq )
 /*
  * osiSockDiscoverBroadcastAddresses ()
  */
+
+#define INADDR_LOOPBACK_BCAST ((unsigned long)0x7fffffff)
+
 epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
 {
@@ -83,7 +86,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
             }
             pNewNode->addr.ia.sin_family = AF_INET;
             pNewNode->addr.ia.sin_port = htons ( 0 );
-            pNewNode->addr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+            pNewNode->addr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK_BCAST);
             ellAdd ( pList, &pNewNode->node );
             return;
         }

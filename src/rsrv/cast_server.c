@@ -129,6 +129,9 @@ void cast_server(void *pParm)
     struct iovec iov;
     char cbuf[256];
     struct in_addr to_addr;
+    ELLLIST valid_addrs;
+    osiSockAddrNode *pNewNode;
+    ellInit(&valid_addrs);
 
     if ( envGetConfigParamPtr ( &EPICS_CAS_SERVER_PORT ) ) {
         port = envGetInetPortConfigParam ( &EPICS_CAS_SERVER_PORT, 
@@ -186,18 +189,22 @@ void cast_server(void *pParm)
     memset((char *)&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;
     pStr = envGetConfigParamPtr ( & EPICS_CAS_INTF_ADDR_LIST );
-    if (0) {
+    if (pStr) {
         /* this implementation only allows for specifying a single address in EPICS_CAS_INTF_ADDR_LIST */
         status = aToIPAddr (pStr, port, &sin);
         if (status) {
             epicsPrintf("CAS: Error parsing %s '%s'\n", EPICS_CAS_INTF_ADDR_LIST.name, pStr);
-            sin.sin_addr.s_addr = htonl(INADDR_ANY);
-            sin.sin_port = htons(port);
         }
-    } else {
-        sin.sin_addr.s_addr = htonl(INADDR_ANY);
-        sin.sin_port = htons(port);
+        else
+        {
+            pNewNode = (osiSockAddrNode *) calloc (1, sizeof(*pNewNode));
+            memcpy(&(pNewNode->addr.ia), &sin, sizeof(pNewNode->addr.ia));
+            ellAdd(&valid_addrs, &(pNewNode->node));
+            osiSockDiscoverBroadcastAddresses(&valid_addrs, IOC_cast_sock, &(pNewNode->addr));
+        }
     }
+    sin.sin_addr.s_addr = htonl(INADDR_ANY);
+    sin.sin_port = htons(port);
     
     {
         int opt = 1;
@@ -272,9 +279,26 @@ void cast_server(void *pParm)
                     break;
                 }
             }
-            if (strcmp(inet_ntoa(to_addr), "127.0.0.1") && strcmp(inet_ntoa(to_addr), "127.255.255.255"))
+            if (ellCount(&valid_addrs) > 0)
             {
-                continue;
+                int valid_addr = 0;
+                pNewNode = (osiSockAddrNode*)ellFirst(&valid_addrs);
+                while(pNewNode != NULL)
+                {
+                    if (pNewNode->addr.ia.sin_addr.s_addr == to_addr.s_addr)
+                    {
+                        valid_addr = 1;
+                        break;
+                    }
+                    else
+                    {
+                    }
+                    pNewNode = (osiSockAddrNode*)ellNext(&(pNewNode->node));
+                }
+                if (!valid_addr)
+                {
+                    continue;
+                } 
             }
             recv_addr_size = msgh.msg_namelen;
             prsrv_cast_client->recv.cnt = (unsigned) status;
