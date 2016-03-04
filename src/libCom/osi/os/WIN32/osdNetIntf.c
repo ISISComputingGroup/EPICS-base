@@ -117,6 +117,8 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr ( SOCKET socket )
 	return addr;
 }
 
+#define INADDR_LOOPBACK_BCAST ((unsigned long)0x7fffffff)
+
 /*
  * osiSockDiscoverBroadcastAddresses ()
  */
@@ -139,7 +141,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
             }
             pNewNode->addr.ia.sin_family = AF_INET;
             pNewNode->addr.ia.sin_port = htons ( 0 );
-            pNewNode->addr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+            pNewNode->addr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK_BCAST);
             ellAdd ( pList, &pNewNode->node );
             return;
         }

@@ -36,6 +36,7 @@
 #include <string.h>
 #include <errno.h>
 
+
 #include "osiSock.h"
 #include "epicsMutex.h"
 #include "dbDefs.h"
@@ -123,6 +124,16 @@ void cast_server(void *pParm)
     unsigned short      port;
     osiSockIoctl_t      nchars;
     const char*         pStr;
+#ifndef _WIN32
+    struct msghdr msgh;
+    struct cmsghdr *cmsg;
+    struct iovec iov;
+    char cbuf[256];
+    struct in_addr to_addr;
+#endif /* _WIN32 */
+    osiSockAddrNode *pNewNode;
+    ELLLIST valid_addrs;
+    ellInit(&valid_addrs);
 
     if ( envGetConfigParamPtr ( &EPICS_CAS_SERVER_PORT ) ) {
         port = envGetInetPortConfigParam ( &EPICS_CAS_SERVER_PORT, 
@@ -185,14 +196,32 @@ void cast_server(void *pParm)
         status = aToIPAddr (pStr, port, &sin);
         if (status) {
             epicsPrintf("CAS: Error parsing %s '%s'\n", EPICS_CAS_INTF_ADDR_LIST.name, pStr);
-            sin.sin_addr.s_addr = htonl(INADDR_ANY);
-            sin.sin_port = htons(port);
+            sin.sin_addr.s_addr = htonl(INADDR_ANY);    
+            sin.sin_port = htons(port);  
         }
-    } else {
-        sin.sin_addr.s_addr = htonl(INADDR_ANY);
-        sin.sin_port = htons(port);
+        else
+        {
+            pNewNode = (osiSockAddrNode *) calloc (1, sizeof(*pNewNode));
+            memcpy(&(pNewNode->addr.ia), &sin, sizeof(pNewNode->addr.ia));
+            ellAdd(&valid_addrs, &(pNewNode->node));
+            osiSockDiscoverBroadcastAddresses(&valid_addrs, IOC_cast_sock, &(pNewNode->addr));
+        }
     }
+#ifdef _WIN32
+	else
+	{
+        sin.sin_addr.s_addr = htonl(INADDR_ANY);
+        sin.sin_port = htons(port);  
+	}
+#else
+    sin.sin_addr.s_addr = htonl(INADDR_ANY);
+    sin.sin_port = htons(port);
     
+    {
+        int opt = 1;
+        setsockopt(IOC_cast_sock, SOL_IP, IP_PKTINFO, &opt, sizeof(opt));
+    }
+#endif  /* ifdef _WIN32 */  
     /* get server's Internet address */
     if( bind(IOC_cast_sock, (struct sockaddr *)&sin, sizeof (sin)) < 0){
         char sockErrBuf[64];
@@ -226,15 +255,31 @@ void cast_server(void *pParm)
     rsrv_version_reply ( prsrv_cast_client );
 
     epicsEventSignal(casudp_startStopEvent);
-
+#ifndef _WIN32
+    /* Set up iov and msgh structures. */
+    memset(&msgh, 0, sizeof(struct msghdr));
+    iov.iov_base = prsrv_cast_client->recv.buf;
+    iov.iov_len  = prsrv_cast_client->recv.maxstk;
+    msgh.msg_control = cbuf;
+    msgh.msg_controllen = sizeof(cbuf);
+    msgh.msg_name = &new_recv_addr;
+    msgh.msg_namelen = recv_addr_size;
+    msgh.msg_iov  = &iov;
+    msgh.msg_iovlen = 1;
+    msgh.msg_flags = 0;
+#endif /* ifndef _WIN32 */
     while (TRUE) {
-        status = recvfrom (
-            IOC_cast_sock,
-            prsrv_cast_client->recv.buf,
-            prsrv_cast_client->recv.maxstk,
-            0,
-            (struct sockaddr *)&new_recv_addr, 
+#ifdef _WIN32
+        status = recvfrom ( 
+            IOC_cast_sock,    
+            prsrv_cast_client->recv.buf,    
+            prsrv_cast_client->recv.maxstk,    
+            0,    
+            (struct sockaddr *)&new_recv_addr,     
             &recv_addr_size);
+#else			
+        status = recvmsg(IOC_cast_sock, &msgh, 0);
+#endif /* ifdef _WIN32 */
         if (status < 0) {
             if (SOCKERRNO != SOCK_EINTR) {
                 char sockErrBuf[64];
@@ -246,6 +291,39 @@ void cast_server(void *pParm)
             }
         }
         else if (casudp_ctl == ctlRun) {
+#ifndef _WIN32
+            /* Process additional data in msgh */
+            memset(&to_addr, 0, sizeof(to_addr));
+            for (cmsg = CMSG_FIRSTHDR(&msgh); cmsg != NULL; cmsg = CMSG_NXTHDR(&msgh,cmsg)) {
+                if ((cmsg->cmsg_level == SOL_IP) && (cmsg->cmsg_type == IP_PKTINFO)) {
+                    struct in_pktinfo *i = (struct in_pktinfo *) CMSG_DATA(cmsg);
+                    to_addr = i->ipi_addr;
+                    break;
+                }
+            }
+            if (ellCount(&valid_addrs) > 0)
+            {
+                int valid_addr = 0;
+                pNewNode = (osiSockAddrNode*)ellFirst(&valid_addrs);
+                while(pNewNode != NULL)
+                {
+                    if (pNewNode->addr.ia.sin_addr.s_addr == to_addr.s_addr)
+                    {
+                        valid_addr = 1;
+                        break;
+                    }
+                    else
+                    {
+                    }
+                    pNewNode = (osiSockAddrNode*)ellNext(&(pNewNode->node));
+                }
+                if (!valid_addr)
+                {
+                    continue;
+                } 
+            }
+            recv_addr_size = msgh.msg_namelen;
+#endif /* ifndef _WIN32 */
             prsrv_cast_client->recv.cnt = (unsigned) status;
             prsrv_cast_client->recv.stk = 0ul;
             epicsTimeGetCurrent(&prsrv_cast_client->time_at_last_recv);
