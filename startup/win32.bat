@@ -35,14 +35,14 @@ REM   ---------------- make and perl ---------------------
 REM ======================================================
 
 REM   --------------- ActiveState perl -------------------
-set PATH=C:\Perl\bin;%PATH%
+REM set PATH=C:\Perl\bin;%PATH%
 
 REM    --------------- mingw make ------------------------
 REM set PATH=C:\mingw-make\bin;%PATH%
 REM set PATH=C:\mingw-make82-3\bin;%PATH%
 
 REM   --------------- gnuwin32 make ----------------------
-set PATH=C:\gnuwin32\bin;%PATH%
+REM set PATH=C:\gnuwin32\bin;%PATH%
 
 REM ======================================================
 REM ---------------- cygwin tools ------------------------
@@ -128,7 +128,7 @@ REM set HOME=c:/users/jba
 REM ======================================================
 REM ------------------- Bazaar ---------------------------
 REM ======================================================
-set PATH=%PATH%;C:\Program files\Bazaar
+REM set PATH=%PATH%;C:\Program files\Bazaar
 
 REM ======================================================
 REM ----------------- GNU make flags ---------------------
