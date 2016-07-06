@@ -42,7 +42,7 @@ ifneq ($(findstring linux,$(EPICS_HOST_ARCH)),)
 	@echo 'IOCDIRNAME=`basename $$MYDIR`'>> $@
 	@echo 'IOCEXE=`echo $$IOCDIRNAME | sed -e "s/^ioc//"`'>>$@
 	@echo 'OLDPATH=$$PATH'>> $@
-	@echo '. $(EPICS_ROOT)/config_env_base.sh'>> $@
+	@echo '. $(EPICS_ROOT)/config_env_base.sh ""'>> $@
 	@echo '$${MYDIR}/../../bin/$(ARCH)/$${IOCEXE} $$*'>> $@
 	@echo 'export PATH=$$OLDPATH'>> $@
 	@echo 'export EPICS_CAS_INTF_ADDR_LIST="$$OLDEPICS_CAS_INTF_ADDR_LIST"'>> $@
