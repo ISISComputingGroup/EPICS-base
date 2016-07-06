@@ -15,11 +15,11 @@ ifeq ($(findstring cygwin,$(EPICS_HOST_ARCH)),)
 	@echo set EPICS_CAS_AUTO_BEACON_ADDR_LIST=NO>> $@
 	@echo for /F %%%%I in ( "%%MYDIRROOT%%" ) do set IOCDIRNAME=%%%%~nI>> $@
 	@echo set IOCEXE=%%IOCDIRNAME:~3%%.exe>>$@
-	@echo set OLDPATH=%%PATH%%>> $@
+	@echo set "OLDPATH=%%PATH%%">> $@
 	@echo call $(subst /,\,$(EPICS_ROOT))\config_env_base.bat>> $@
 	@echo call %%MYDIR%%dllPath.bat>> $@
 	@echo %%MYDIR%%..\..\bin\$(ARCH)\%%IOCEXE%% %%*>> $@
-	@echo set PATH=%%OLDPATH%%>> $@
+	@echo set "PATH=%%OLDPATH%%">> $@
 	@echo set EPICS_CAS_INTF_ADDR_LIST=%%OLDEPICS_CAS_INTF_ADDR_LIST%%>> $@
 	@echo set EPICS_CAS_BEACON_ADDR_LIST=%%OLDEPICS_CAS_BEACON_ADDR_LIST%%>> $@
 endif
