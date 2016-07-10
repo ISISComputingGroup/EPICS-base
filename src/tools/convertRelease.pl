@@ -138,7 +138,9 @@ sub binDirs {
     my @path;
     foreach my $app (@includes) {
         my $path = $macros{$app} . "/bin/$arch";
-        next unless -d $path;
+#        next unless -d $path;
+        my @dlls = glob("$path/*.dll");
+		next unless scalar(@dlls);
         $path =~ s/^$root/$iocroot/o if ($opt_t);
         push @path, LocalPath($path);
     }
