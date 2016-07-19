@@ -24,7 +24,7 @@ ifeq ($(findstring cygwin,$(EPICS_HOST_ARCH)),)
 	@echo set "PATH=">> $@
 	@echo call %%MYDIR%%dllPath.bat>> $@
 	@echo call $(subst /,\,$(EPICS_ROOT))\utils_win32\master\bin\shorten_path.bat PATH>> $@
-	@echo set "PATH=%%PREPATH%%;%%PATH%%">> $@
+	@echo set "PATH=%%PATH%%;%%PREPATH%%">> $@
 	@echo %%MYDIR%%..\..\bin\$(ARCH)\%%IOCEXE%% %%*>> $@
 	@echo set "PATH=%%OLDPATH%%">> $@
 	@echo set EPICS_CAS_INTF_ADDR_LIST=%%OLDEPICS_CAS_INTF_ADDR_LIST%%>> $@
