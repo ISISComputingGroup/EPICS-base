@@ -121,7 +121,7 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
 	while(puagname) {
 	    pgphentry = gphAdd(pasbasenew->phash,puagname->user,puag);
 	    if(!pgphentry) {
-		epicsPrintf("Duplicated user '%s' in UAG '%s'\n",
+		errlogSevPrintf(errlogInfo, "Duplicated user '%s' in UAG '%s'\n",
 		    puagname->user, puag->name);
 	    }
 	    puagname = (UAGNAME *)ellNext((ELLNODE *)puagname);
@@ -134,7 +134,7 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
 	while(phagname) {
 	    pgphentry = gphAdd(pasbasenew->phash,phagname->host,phag);
 	    if(!pgphentry) {
-		epicsPrintf("Duplicated host '%s' in HAG '%s'\n",
+		errlogSevPrintf(errlogInfo, "Duplicated host '%s' in HAG '%s'\n",
 		    phagname->host, phag->name);
 	    }
 	    phagname = (HAGNAME *)ellNext((ELLNODE *)phagname);
