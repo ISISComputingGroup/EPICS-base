@@ -238,6 +238,7 @@ void epicsShareAPI logClientSend ( logClientId id, const char * orig_message )
 	message = message_ptr = (char*)malloc(len_msg + 1);
 	epicsSnprintf(message, len_msg, xml_format, (iocname != NULL ? iocname : "UNKNOWN"), sev_str, orig_message, event_time);
 	message[len_msg] = '\0';
+#if 0
 	// remove any invalid characters
 	for(i=0; i<len_msg; ++i)
 	{
@@ -246,6 +247,7 @@ void epicsShareAPI logClientSend ( logClientId id, const char * orig_message )
 		    message[i] = ' ';
 		}
 	}
+#endif
 	if (iocname != NULL)
 	{
 	    free(iocname);
