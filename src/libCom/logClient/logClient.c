@@ -196,7 +196,7 @@ void epicsShareAPI logClientSend ( logClientId id, const char * orig_message )
 {
     int i;
     logClient * pClient = ( logClient * ) id;
-    unsigned int strSize, len_msg;
+    unsigned int strSize, max_len_msg;
     char *ioc, *iocname; 
 	char *message, *message_ptr;
 	char sev_str[16];
@@ -234,25 +234,23 @@ void epicsShareAPI logClientSend ( logClientId id, const char * orig_message )
 	{
 	    strcpy(sev_str, "MAJOR");
 	}
-	len_msg = strlen(xml_format) + (iocname != NULL ? strlen(iocname) : 8) + strlen(sev_str) + strlen(orig_message) + strlen(event_time);
-	message = message_ptr = (char*)malloc(len_msg + 1);
-	epicsSnprintf(message, len_msg, xml_format, (iocname != NULL ? iocname : "UNKNOWN"), sev_str, orig_message, event_time);
-	message[len_msg] = '\0';
-#if 0
+	max_len_msg = strlen(xml_format) + (iocname != NULL ? strlen(iocname) : 8) + strlen(sev_str) + strlen(orig_message) + strlen(event_time) + 1;
+	message = message_ptr = (char*)malloc(max_len_msg + 1);
+	epicsSnprintf(message, max_len_msg, xml_format, (iocname != NULL ? iocname : "UNKNOWN"), sev_str, orig_message, event_time);
+	message[max_len_msg] = '\0';
+    strSize = strlen ( message );
 	// remove any invalid characters
-	for(i=0; i<len_msg; ++i)
+	for(i=0; i<strSize; ++i)
 	{
 	    if (!(isascii(message[i]) && (isprint(message[i]) || isspace(message[i]))))
 		{
 		    message[i] = ' ';
 		}
 	}
-#endif
 	if (iocname != NULL)
 	{
 	    free(iocname);
 	}
-    strSize = strlen ( message );
 
     epicsMutexMustLock ( pClient->mutex );
 
