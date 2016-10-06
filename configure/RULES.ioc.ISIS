@@ -21,6 +21,7 @@ ifeq ($(findstring cygwin,$(EPICS_HOST_ARCH)),)
 	@echo set "OLDPATH=%%PATH%%">> $@
 	@echo call $(subst /,\,$(EPICS_ROOT))\config_env_base.bat>> $@
 	@echo set "PREPATH=%%PATH%%">> $@
+	@echo call $(subst /,\,$(EPICS_ROOT))\utils_win32\master\bin\shorten_path.bat PREPATH>> $@
 	@echo set "PATH=">> $@
 	@echo call %%MYDIR%%dllPath.bat>> $@
 	@echo call $(subst /,\,$(EPICS_ROOT))\utils_win32\master\bin\shorten_path.bat PATH>> $@
