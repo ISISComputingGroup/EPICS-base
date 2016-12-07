@@ -289,7 +289,7 @@ SHRLIB_LDLIBS += $(addsuffix .lib, \
 
 #--------------------------------------------------
 # Linker definition
-LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(STATIC_LDFLAGS_EXTRA_$(STATIC_BUILD))$(LDFLAGS) $(PROD_LDFLAGS) \
+LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(STATIC_LDFLAGS_EXTRA_$(STATIC_BUILD)) $(LDFLAGS) $(PROD_LDFLAGS) \
     -out:$@ $(call PATH_FILTER, $(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS))
 
 #--------------------------------------------------
