@@ -8,7 +8,7 @@ errlogInit2(65536, 256)
 
 < envPaths
 
-cd ${TOP}
+cd "${TOP}"
 
 ## Register all support components
 dbLoadDatabase "dbd/_APPNAME_.dbd"
@@ -28,7 +28,7 @@ _CSAFEAPPNAME__registerRecordDeviceDriver pdbbase
 ##ISIS## Stuff that needs to be done after all records are loaded but before iocInit is called 
 < $(IOCSTARTUP)/preiocinit.cmd
 
-cd ${TOP}/iocBoot/${IOC}
+cd "${TOP}/iocBoot/${IOC}"
 iocInit
 
 ## Start any sequence programs
