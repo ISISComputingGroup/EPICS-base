@@ -7,8 +7,6 @@
 # in the file LICENSE that is included with this distribution. 
 #*************************************************************************
 #
-#  Revision-Id: anj@aps.anl.gov-20150307001459-5co3kfwgg1dqzqlw
-#
 
 include $(CONFIG)/RULES_DIRS_ISIS
 

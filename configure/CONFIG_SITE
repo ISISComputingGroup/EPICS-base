@@ -6,8 +6,7 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
-#
-#  Revision-Id: anj@aps.anl.gov-20150227220707-dye3cswza64b3xtj
+
 #
 #  CONFIG_SITE  - Global site configuration file
 #
@@ -122,6 +121,13 @@ CROSS_COMPILER_TARGET_ARCHS=
 #
 CROSS_COMPILER_HOST_ARCHS=
 
+#  The 'make runtests' and 'make tapfiles' build targets normally only run
+#  self-tests for the EPICS_HOST_ARCH architecture. If the host can execute
+#  the self-test programs for any other cross-built architectures such as
+#  a -debug architecture, those architectures can be named here.
+#
+CROSS_COMPILER_RUNTEST_ARCHS=
+
 #  Build shared libraries?
 #        must be either YES or NO
 #     NOTE: os/CONFIG.$(EPICS_HOST_ARCH).$(EPICS_HOST_ARCH) files and
@@ -197,4 +203,4 @@ GCC_PIPE = NO
 #  run at build-time, e.g. set the LD_LIBRARY_PATH environment variable.
 LINKER_USE_RPATH = YES
 
-include $(CONFIG)/CONFIG_SITE_ISIS
+-include $(CONFIG)/CONFIG_SITE_ISIS
