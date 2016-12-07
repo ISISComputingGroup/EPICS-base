@@ -23,7 +23,9 @@ typedef int (*PRINTFFUNC)(const char *fmt, ...);
 
 static int stderrPrintf(const char *fmt, ...);
 static int logPrintf(const char *fmt, ...);
-
+static int logPrintfInfo(const char *fmt, ...);
+static int logPrintfMinor(const char *fmt, ...);
+static int logPrintfMajor(const char *fmt, ...);
 
 static struct outStream {
     const char *name;
@@ -32,6 +34,9 @@ static struct outStream {
     {"stdout", printf},
     {"stderr", stderrPrintf},
     {"errlog", logPrintf},
+    {"errlogInfo", logPrintfInfo},
+    {"errlogMinor", logPrintfMinor},
+    {"errlogMajor", logPrintfMajor},
     {NULL, NULL}
 };
 
@@ -52,6 +57,39 @@ static int logPrintf(const char *fmt, ...) {
 
     va_start(pvar, fmt);
     retval = errlogVprintf(fmt, pvar);
+    va_end (pvar);
+
+    return retval;
+}
+
+static int logPrintfInfo(const char *fmt, ...) {
+    va_list pvar;
+    int retval;
+
+    va_start(pvar, fmt);
+    retval = errlogSevVprintf(errlogInfo, fmt, pvar);
+    va_end (pvar);
+
+    return retval;
+}
+
+static int logPrintfMinor(const char *fmt, ...) {
+    va_list pvar;
+    int retval;
+
+    va_start(pvar, fmt);
+    retval = errlogSevVprintf(errlogMinor, fmt, pvar);
+    va_end (pvar);
+
+    return retval;
+}
+
+static int logPrintfMajor(const char *fmt, ...) {
+    va_list pvar;
+    int retval;
+
+    va_start(pvar, fmt);
+    retval = errlogSevVprintf(errlogMajor, fmt, pvar);
     va_end (pvar);
 
     return retval;
