@@ -409,7 +409,7 @@ caStatus casStrmClient::verifyRequest (casChannelI * & pChan , bool allowdyn)
     //
     // element count out of range ?
     //
-    if ( ctx.msg.m_count > pChan->getPVI().nativeCount() ||
+    if ( ctx.msg.m_count > pChan->getMaxElem() ||
          ( !allowdyn && ctx.msg.m_count == 0u ) ) {
         return ECA_BADCOUNT;
     }
@@ -856,8 +856,20 @@ caStatus casStrmClient::monitorResponse (
     casChannelI & chan, const caHdrLargeArray & msg, 
     const gdd & desc, const caStatus completionStatus )
 {
+    aitUint32 elementCount = 0;
+    if (desc.isContainer()) {
+        aitUint32 index;
+        int gdds = gddApplicationTypeTable::app_table.mapAppToIndex
+            ( desc.applicationType(), gddAppType_value, index );
+        if ( gdds ) {
+            return S_cas_badType;
+        }
+        elementCount = desc.getDD(index)->getDataSizeElements();
+    } else {
+        elementCount = desc.getDataSizeElements();
+    }
     ca_uint32_t count = (msg.m_count == 0) ?
-                            (ca_uint32_t)desc.getDataSizeElements() :
+                            (ca_uint32_t)elementCount :
                              msg.m_count;
 
     void * pPayload = 0;
@@ -883,7 +895,7 @@ caStatus casStrmClient::monitorResponse (
     gdd * pDBRDD = 0;
     if ( completionStatus == S_cas_success ) {
         caStatus status = createDBRDD ( msg.m_dataType, count,
-                chan.getPVI().nativeCount(), pDBRDD );
+                chan.getMaxElem(), pDBRDD );
         if ( status != S_cas_success ) {
             caStatus ecaStatus;
             if ( status == S_cas_badType ) {
@@ -1854,7 +1866,7 @@ caStatus casStrmClient::privateCreateChanResponse (
     // the protocol buffer.
     //
     assert ( nativeTypeDBR <= 0xffff );
-    aitIndex nativeCount = chan.getPVI().nativeCount();
+    aitIndex nativeCount = chan.getMaxElem();
     assert ( nativeCount <= 0xffffffff );
     assert ( hdr.m_cid == chan.getCID() );
     status = this->out.copyInHeader ( CA_PROTO_CREATE_CHAN, 0,
@@ -2614,7 +2626,7 @@ caStatus casStrmClient::read ()
     {
         gdd * pDD = 0;
         caStatus status = createDBRDD ( pHdr->m_dataType, pHdr->m_count,
-                this->ctx.getChannel()->getPVI().nativeCount(), pDD );
+                this->ctx.getChannel()->getMaxElem(), pDD );
         if ( status != S_cas_success ) {
             return status;
         }
@@ -2761,6 +2773,7 @@ caStatus casStrmClient::sendErr ( epicsGuard <casClientMutex> &,
         else {
             stringSize = 1u + (unsigned) status;
         }
+        va_end ( args );
     }
     else {
         stringSize = 0u;
