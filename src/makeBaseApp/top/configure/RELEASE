@@ -36,6 +36,11 @@ EPICS_BASE = _EPICS_BASE_
 # other than EPICS_BASE:
 #RULES = $(MODULES)/build-rules
 
+# These allow developers to override the RELEASE variable settings
+# without having to modify the configure/RELEASE file itself.
+-include $(TOP)/../RELEASE.local
+-include $(TOP)/configure/RELEASE.local
+
 # top level master release and local private options 
 include $(TOP)/../../../configure/MASTER_RELEASE
 -include $(TOP)/../../../configure/MASTER_RELEASE.$(EPICS_HOST_ARCH)
@@ -46,3 +51,4 @@ include $(TOP)/../../../configure/MASTER_RELEASE
 -include $(TOP)/configure/RELEASE.private
 
 include $(TOP)/../../../ISIS_CONFIG.$(EPICS_HOST_ARCH)
+
