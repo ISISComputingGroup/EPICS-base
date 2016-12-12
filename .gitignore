@@ -11,6 +11,5 @@ dllPath.bat
 runIOC.bat
 runIOC.sh
 relPaths.sh
-/configure/CONFIG_SITE_ISIS
 /html/
 .project

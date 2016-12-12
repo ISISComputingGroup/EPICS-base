@@ -202,5 +202,3 @@ GCC_PIPE = NO
 #  way for Base executables to find their shared libraries when they are
 #  run at build-time, e.g. set the LD_LIBRARY_PATH environment variable.
 LINKER_USE_RPATH = YES
-
--include $(CONFIG)/CONFIG_SITE_ISIS
