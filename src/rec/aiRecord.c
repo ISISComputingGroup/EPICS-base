@@ -6,7 +6,6 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* Revision-Id: anj@aps.anl.gov-20131120222110-3o0wgh76u652ad4e */
 
 /* aiRecord.c - Record Support Routines for Analog Input records */
 /*
@@ -367,7 +366,7 @@ static void convert(aiRecord *prec)
 	}
 
 	/* apply smoothing algorithm */
-	if (prec->smoo != 0.0){
+    if (prec->smoo != 0.0 && finite(prec->val)){
 	    if (prec->init) prec->val = val;	/* initial condition */
 	    prec->val = val * (1.00 - prec->smoo) + (prec->val * prec->smoo);
 	}else{

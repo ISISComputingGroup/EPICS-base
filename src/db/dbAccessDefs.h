@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* dbAccessDefs.h	*/
-/* Revision-Id: anj@aps.anl.gov-20101005192737-disfz3vs0f3fiixd */
 
 #ifndef INCdbAccessDefsh
 #define INCdbAccessDefsh
@@ -284,7 +283,6 @@ epicsShareExtern DB_LOAD_RECORDS_HOOK_ROUTINE dbLoadRecordsHook;
 
 epicsShareFunc int epicsShareAPI  dbLoadDatabase(
     const char *filename, const char *path, const char *substitutions);
-
 epicsShareFunc int epicsShareAPI dbLoadRecords(
     const char* filename, const char* substitutions);
 

@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* dbAccess.c */
-/* Revision-Id: anj@aps.anl.gov-20121017230839-u6ohpi6wehm44tqh */
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
@@ -63,6 +62,10 @@
 
 epicsShareDef struct dbBase *pdbbase = 0;
 epicsShareDef volatile int interruptAccept=FALSE;
+
+/* Hook Routines */
+
+epicsShareDef DB_LOAD_RECORDS_HOOK_ROUTINE dbLoadRecordsHook = NULL;
 
 static short mapDBFToDBR[DBF_NTYPES] = {
     /* DBF_STRING   => */    DBR_STRING,
@@ -818,9 +821,6 @@ int epicsShareAPI dbLoadDatabase(const char *file, const char *path, const char 
     return dbReadDatabase(&pdbbase, file, path, subs);
 }
 
-/* dbLoadRecordsHook from base-3.15 */
-epicsShareDef DB_LOAD_RECORDS_HOOK_ROUTINE dbLoadRecordsHook = NULL;
-
 int epicsShareAPI dbLoadRecords(const char* file, const char* subs)
 {
     int status = dbReadDatabase(&pdbbase, file, 0, subs);
@@ -970,6 +970,11 @@ long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
             maxlen = MAX_STRING_SIZE - 1;
             if (nRequest && *nRequest > 1) *nRequest = 1;
             break;
+
+        case DBR_DOUBLE:    /* Needed for dbCa links */
+            if (nRequest && *nRequest) *nRequest = 1;
+            *(double *)pbuffer = epicsNAN;
+            goto done;
 
         case DBR_CHAR:
         case DBR_UCHAR:
@@ -1457,13 +1462,15 @@ long epicsShareAPI dbPut(DBADDR *paddr, short dbrType,
             status = prset->put_array_info(paddr, nRequest);
         }
     }
-    if (status) return status;
 
-    /* check if special processing is required */
+    /* Always do special processing if needed */
     if (special) {
-        status = dbPutSpecial(paddr,1);
-        if (status) return status;
+        long status2 = dbPutSpecial(paddr,1);
+        if (status2) return status2;
     }
+
+    /* If the put failed, return the error */
+    if (status) return status;
 
     /* Propagate monitor events for this field, */
     /* unless the field field is VAL and PP is true. */

@@ -6,7 +6,6 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* Revision-Id: anj@aps.anl.gov-20130913165718-nz75kavfqj9pv93v */
 
 #include <stdio.h>
 #include <errno.h>
@@ -45,7 +44,7 @@
 int dbStaticDebug = 0;
 static char *pNullString = "";
 #define messagesize	100
-#define RPCL_LEN 184
+#define RPCL_LEN INFIX_TO_POSTFIX_SIZE(80)
 
 static char *ppstring[5]={"NPP","PP","CA","CP","CPP"};
 static char *msstring[4]={"NMS","MS","MSI","MSS"};
@@ -727,6 +726,7 @@ void epicsShareAPI dbFreeBase(dbBase *pdbbase)
     dbPvdFreeMem(pdbbase);
     dbFreePath(pdbbase);
     free((void *)pdbbase);
+    pdbbase = NULL;
     return;
 }
 
@@ -742,8 +742,12 @@ DBENTRY * epicsShareAPI dbAllocEntry(dbBase *pdbbase)
 
 void epicsShareAPI dbFreeEntry(DBENTRY *pdbentry)
 {
-    if(pdbentry->message) free((void *)pdbentry->message);
-    if(pdbentry->formpvt) dbFreeForm(pdbentry);
+    if (!pdbentry)
+        return;
+    if (pdbentry->message)
+        free((void *)pdbentry->message);
+    if (pdbentry->formpvt)
+        dbFreeForm(pdbentry);
     dbmfFree(pdbentry);
 }
 
@@ -1346,7 +1350,7 @@ long epicsShareAPI dbPutRecordAttribute(
 
 	pnew = dbCalloc(1,sizeof(dbRecordAttribute));
 	if(pattribute) {
-	    ellInsert(&precordType->attributeList,&pattribute->node,
+	    ellInsert(&precordType->attributeList,pattribute->node.previous,
 		&pnew->node);
 	} else {
 	    ellAdd(&precordType->attributeList,&pnew->node);
@@ -1374,17 +1378,27 @@ long epicsShareAPI dbGetAttributePart(DBENTRY *pdbentry, const char **ppname)
     const char *pname = *ppname;
     dbRecordAttribute *pattribute;
 
-    if (!precordType) return S_dbLib_recordTypeNotFound;
+    if (!precordType)
+        return S_dbLib_recordTypeNotFound;
+
     pattribute = (dbRecordAttribute *)ellFirst(&precordType->attributeList);
     while (pattribute) {
         int nameLen = strlen(pattribute->name);
         int compare = strncmp(pattribute->name, pname, nameLen);
-        int ch = pname[nameLen];
-        if (compare == 0 && !(ch == '_' || isalnum(ch))) {
-            pdbentry->pflddes = pattribute->pdbFldDes;
-            pdbentry->pfield = pattribute->value;
-            *ppname = &pname[nameLen];
-            return 0;
+
+        if (compare == 0) {
+            int ch = pname[nameLen];
+
+            if (ch != '_' && !isalnum(ch)) {
+                /* Any other character can't be in the attribute name */
+                pdbentry->pflddes = pattribute->pdbFldDes;
+                pdbentry->pfield = pattribute->value;
+                *ppname = &pname[nameLen];
+                return 0;
+            }
+            if (strlen(pname) > nameLen) {
+                compare = -1;
+            }
         }
         if (compare >= 0) break;
         pattribute = (dbRecordAttribute *)ellNext(&pattribute->node);
@@ -2183,7 +2197,10 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
     switch (pflddes->field_type) {
     case DBF_STRING:
 	if(!pfield) return(S_dbLib_fieldNotFound);
-	strncpy((char *)pfield, pstring,pflddes->size);
+	if(strlen(pstring) >= (size_t)pflddes->size) return S_dbLib_strLen;
+	strncpy((char *)pfield, pstring, pflddes->size-1);
+        ((char *)pfield)[pflddes->size-1] = 0;
+
 	if((pflddes->special == SPC_CALC) && !stringHasMacro) {
 	    char  rpcl[RPCL_LEN];
 	    short err;
@@ -2194,7 +2211,6 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 			      calcErrorStr(err), pstring);
 	    }
 	}
-	if((short)strlen(pstring) >= pflddes->size) status = S_dbLib_strLen;
 	break;
 
     case DBF_CHAR:

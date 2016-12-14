@@ -21,6 +21,7 @@
 
 #include "osiSock.h"
 #include "osiPoolStatus.h"
+#include "epicsString.h"
 #include "epicsEvent.h"
 #include "epicsStdio.h"
 #include "epicsThread.h"
@@ -274,21 +275,18 @@ static void log_header (
     pciu = MPTOPCIU(mp);
 
     if (pContext) {
-        epicsPrintf ("CAS: request from %s => \"%s\"\n",
+        epicsPrintf ("CAS: request from %s => %s\n",
             hostName, pContext);
     }
 
-    epicsPrintf (
-"CAS: Request from %s => cmmd=%d cid=0x%x type=%d count=%d postsize=%u\n",
+    epicsPrintf ( "CAS: Request from %s => cmmd=%d cid=0x%x type=%d count=%d postsize=%u\n",
         hostName, mp->m_cmmd, mp->m_cid, mp->m_dataType, mp->m_count, mp->m_postsize);
 
-    epicsPrintf (   
-"CAS: Request from %s =>  available=0x%x \tN=%u paddr=%p\n",
-        hostName, mp->m_available, mnum, (pciu?(void *)&pciu->addr:NULL));
+    epicsPrintf ( "CAS: Request from %s =>   available=0x%x \tN=%u paddr=%p\n",
+        hostName, mp->m_available, mnum, (pciu ? (void *)&pciu->addr : NULL));
 
     if (mp->m_cmmd==CA_PROTO_WRITE && mp->m_dataType==DBF_STRING && pPayLoad ) {
-        epicsPrintf (
-"CAS: Request from %s => \tThe string written: %s \n",
+        epicsPrintf ( "CAS: Request from %s =>   Wrote string \"%s\"\n",
         hostName, (char *)pPayLoad );
     }
 }
@@ -641,7 +639,7 @@ static void read_reply ( void *pArg, struct dbAddr *paddr,
 static int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *pClient )
 {
     struct channel_in_use *pciu = MPTOPCIU ( mp );
-    const int readAccess = asCheckGet ( pciu->asClientPVT );
+    int readAccess;
     ca_uint32_t payloadSize;
     void *pPayload;
     int status;
@@ -651,6 +649,7 @@ static int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *p
         logBadId ( pClient, mp, 0 );
         return RSRV_ERROR;
     }
+    readAccess = asCheckGet ( pciu->asClientPVT );
 
     SEND_LOCK ( pClient );
 
@@ -711,7 +710,7 @@ static int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *p
      */
     if ( mp->m_dataType == DBR_STRING && mp->m_count == 1 ) {
         char * pStr = (char *) pPayload;
-        size_t strcnt = strlen ( pStr );
+        size_t strcnt = epicsStrnLen( pStr, payloadSize );
         if ( strcnt < payloadSize ) {
             payloadSize = ( ca_uint32_t ) ( strcnt + 1u );
         }
@@ -814,10 +813,10 @@ static int write_action ( caHdrLargeArray *mp,
         return RSRV_ERROR;
     }
 
-    asWritePvt = asTrapWriteBefore ( pciu->asClientPVT,
+    asWritePvt = asTrapWriteWithData ( pciu->asClientPVT,
         pciu->client->pUserName ? pciu->client->pUserName : "",
         pciu->client->pHostName ? pciu->client->pHostName : "",
-        (void *) &pciu->addr );
+        (void *) &pciu->addr, mp->m_dataType, mp->m_count, pPayload );
 
     dbStatus = db_put_field(
                   &pciu->addr,
@@ -846,7 +845,7 @@ static int write_action ( caHdrLargeArray *mp,
 static int host_name_action ( caHdrLargeArray *mp, void *pPayload,
     struct client *client )
 {
-    unsigned                size;
+    ca_uint32_t             size;
     char                    *pName;
     char                    *pMalloc;
     int                     chanCount;
@@ -870,8 +869,8 @@ static int host_name_action ( caHdrLargeArray *mp, void *pPayload,
     }
 
     pName = (char *) pPayload;
-    size = strlen(pName)+1;
-    if (size > 512) {
+    size = epicsStrnLen(pName, mp->m_postsize)+1;
+    if (size > 512 || size > mp->m_postsize) {
         log_header ( "bad (very long) host name", 
             client, mp, pPayload, 0 );
         SEND_LOCK(client);
@@ -925,7 +924,7 @@ static int host_name_action ( caHdrLargeArray *mp, void *pPayload,
 static int client_name_action ( caHdrLargeArray *mp, void *pPayload,
     struct client *client )
 {
-    unsigned                size;
+    ca_uint32_t             size;
     char                    *pName;
     char                    *pMalloc;
     int                     chanCount;
@@ -949,8 +948,8 @@ static int client_name_action ( caHdrLargeArray *mp, void *pPayload,
     }
 
     pName = (char *) pPayload;
-    size = strlen(pName)+1;
-    if (size > 512) {
+    size = epicsStrnLen(pName, mp->m_postsize)+1;
+    if (size > 512 || size > mp->m_postsize) {
         log_header ("a very long user name was specified", 
             client, mp, pPayload, 0);
         SEND_LOCK(client);
@@ -1075,7 +1074,7 @@ unsigned    cid
  * casAccessRightsCB()
  *
  * If access right state changes then inform the client.
- *
+ * asLock is held
  */
 static void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
 {
@@ -1524,6 +1523,9 @@ static void sendAllUpdateAS ( struct client *client )
         else if ( pciu->state == rsrvCS_inServiceUpdatePendAR ) {
              access_rights_reply ( pciu );
         }
+        else if ( pciu->state == rsrvCS_shutdown ) {
+            /* no-op */
+        }
         else {
             errlogPrintf (
             "%s at %d: corrupt channel state detected durring AR update\n",
@@ -1819,11 +1821,12 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
         return RSRV_OK;
     }
 
-    pciu->pPutNotify->asWritePvt = asTrapWriteBefore ( 
+    pciu->pPutNotify->asWritePvt = asTrapWriteWithData ( 
         pciu->asClientPVT,
         pciu->client->pUserName ? pciu->client->pUserName : "",
         pciu->client->pHostName ? pciu->client->pHostName : "",
-        (void *) &pciu->addr );
+        (void *) &pciu->addr, mp->m_dataType, mp->m_count,
+        pciu->pPutNotify->dbPutNotify.pbuffer );
 
     dbPutNotify(&pciu->pPutNotify->dbPutNotify);
 
@@ -2005,10 +2008,15 @@ static int clear_channel_reply ( caHdrLargeArray *mp,
      if ( pciu->state == rsrvCS_inService || 
             pciu->state == rsrvCS_pendConnectResp  ) {
         ellDelete ( &client->chanList, &pciu->node );
+        pciu->state = rsrvCS_shutdown;
      }
      else if ( pciu->state == rsrvCS_inServiceUpdatePendAR ||
             pciu->state == rsrvCS_pendConnectRespUpdatePendAR ) {
         ellDelete ( &client->chanPendingUpdateARList, &pciu->node );
+        pciu->state = rsrvCS_shutdown;
+     }
+     else if ( pciu->state == rsrvCS_shutdown ) {
+         /* no-op */
      }
      else {
         epicsMutexUnlock( client->chanListLock );

@@ -57,6 +57,7 @@ TEMPLATES += top/exampleBoot/nfsCommands@RTEMS
 TEMPLATES += top/exampleBoot/ioc/Makefile@Common
 TEMPLATES += top/exampleBoot/ioc/Makefile@vxWorks
 TEMPLATES += top/exampleBoot/ioc/Makefile@win32
+TEMPLATES += top/exampleBoot/ioc/Makefile@windows
 TEMPLATES += top/exampleBoot/ioc/Makefile@cygwin
 TEMPLATES += top/exampleBoot/ioc/st.cmd@Common
 TEMPLATES += top/exampleBoot/ioc/st.cmd@vxWorks

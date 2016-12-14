@@ -6,8 +6,7 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
-#
-#  Revision-Id: anj@aps.anl.gov-20131120005049-xcx9o8ohtimzbib1
+
 #
 #  CONFIG_SITE  - Global site configuration file
 #
@@ -25,6 +24,7 @@
 #	darwin-x86             (Intel based Apple running OSX)
 #	freebsd-x86            (GNU compiler used for host builds)
 #	freebsd-x86_64         (GNU compiler used for host builds)
+#	linux-arm              (GNU compiler used for host builds)
 #	linux-ppc              (GNU compiler used for host builds)
 #	linux-ppc64            (GNU compiler used for host builds)
 #	linux-x86              (GNU compiler used for host builds)
@@ -41,10 +41,13 @@
 #	win32-x86              (MS Visual C++ compiler used for host builds)
 #	win32-x86-cygwin       (WIN32 API with cygwin GNU compiler used for host builds)
 #	win32-x86-mingw        (MinGW compiler used for host builds)
+#	win32-x86-static       (MS Visual C++ compiler used for host builds)
 #	windows-x64            (MS Visual C++ compiler used for host builds)
 #	windows-x64-mingw      (MinGW compiler used for host builds)
+#	windows-x64-static     (MS Visual C++ compiler used for host builds)
 
-#  Debugging builds 
+#  Debugging builds:
+#	linux-arm-debug        (GNU compiler used for host builds)
 #	linux-x86-debug        (GNU compiler with -g option for host builds)
 #	linux-x86_64-debug     (GNU compiler with -g option for host builds)
 #	solaris-sparc-debug    (sun compiler no optimization,-g for debugging info)
@@ -61,13 +64,13 @@
 #
 #  Currently Supporting:
 
-#       ios-arm
-#       ios-386
+#       ios-arm                 (darwin-x86 host)
+#       ios-386                 (darwin-x86 host)
 #       linux-386               (linux-x86 host)
 #       linux-486               (linux-x86 host)
 #       linux-586               (linux-x86 host)
 #       linux-686               (linux-x86 host)
-#       linux-arm               (linux-x86 host)
+#       linux-arm               (linux-x86 or -x86_64 host)
 #       linux-arm_eb            (linux-x86 host)
 #       linux-arm_el            (linux-x86 host)
 #       linux-athlon            (linux-x86 host)
@@ -102,6 +105,7 @@
 #       RTEMS-pc386
 #       RTEMS-psim
 #       RTEMS-uC5282
+#       win32-x86-mingw         (linux-x86 or -x86_64 host)
 #
 
 # Definitions of CROSS_COMPILER_TARGET_ARCHS in
@@ -116,6 +120,13 @@ CROSS_COMPILER_TARGET_ARCHS=
 #  uncomment the following line and specify them.
 #
 CROSS_COMPILER_HOST_ARCHS=
+
+#  The 'make runtests' and 'make tapfiles' build targets normally only run
+#  self-tests for the EPICS_HOST_ARCH architecture. If the host can execute
+#  the self-test programs for any other cross-built architectures such as
+#  a -debug architecture, those architectures can be named here.
+#
+CROSS_COMPILER_RUNTEST_ARCHS=
 
 #  Build shared libraries?
 #        must be either YES or NO
@@ -176,7 +187,7 @@ COMPAT_313=NO
 #INSTALL_LOCATION=<fullpathname>
 
 # Use POSIX thread priority scheduling (YES or NO)
-USE_POSIX_THREAD_PRIORITY_SCHEDULING = NO
+USE_POSIX_THREAD_PRIORITY_SCHEDULING = YES
 
 #  Site version number, if set will append '-' and this string to the
 #  EPICS version number string that is reported by many tools
@@ -191,5 +202,3 @@ GCC_PIPE = NO
 #  way for Base executables to find their shared libraries when they are
 #  run at build-time, e.g. set the LD_LIBRARY_PATH environment variable.
 LINKER_USE_RPATH = YES
-
-include $(CONFIG)/CONFIG_SITE_ISIS

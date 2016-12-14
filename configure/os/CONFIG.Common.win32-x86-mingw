@@ -1,8 +1,5 @@
 # CONFIG.Common.win32-x86-mingw
 #
-# Revision-Id: anj@aps.anl.gov-20120330194058-if1zwps4ful5rxsr
-# This file is maintained by the build community.
-#
 # Definitions for win32-x86-mingw target builds
 # Sites may override these definitions in CONFIG_SITE.Common.win32-x86-mingw
 #-------------------------------------------------------
@@ -12,6 +9,7 @@ include $(CONFIG)/os/CONFIG.Common.UnixCommon
 
 OS_CLASS = WIN32
 ARCH_CLASS = x86
+POSIX = NO
 
 #  Definitions used when COMMANDLINE_LIBRARY is READLINE
 LDLIBS_READLINE = -lreadline -lcurses
@@ -34,7 +32,8 @@ ARCH_DEP_LDFLAGS += -m32
 # Override for -DUNIX from CONFIG.Common.UnixCommon
 OP_SYS_CPPFLAGS = -D_MINGW
 
-EXE=.exe
+EXE = .exe
+RES = .coff
 
 VISC_DLL_NO = -DEPICS_DLL_NO
 VISC_DLL_YES =

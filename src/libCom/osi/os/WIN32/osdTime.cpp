@@ -8,10 +8,7 @@
 \*************************************************************************/
 
 //
-// Revision-Id: anj@aps.anl.gov-20111129200729-1bx6zsmjnog13sf0
-//
 // Author: Jeff Hill
-//
 //
 
 //
@@ -121,42 +118,31 @@ static int osdTimeGetCurrent ( epicsTimeStamp *pDest )
     return epicsTimeOK;
 }
 
-inline void UnixTimeToFileTime ( const time_t * pAnsiTime, LPFILETIME pft )
-{
-     LONGLONG ll = Int32x32To64 ( *pAnsiTime, 10000000 ) + LL_CONSTANT(116444736000000000);
-     pft->dwLowDateTime = static_cast < DWORD > ( ll );
-     pft->dwHighDateTime = static_cast < DWORD > ( ll >>32 );
-}
-
 // synthesize a reentrant gmtime on WIN32
 int epicsShareAPI epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
 {
-    struct tm *stm = gmtime(pAnsiTime);
-	if (stm != NULL)
-	{
-	    memcpy(pTM, stm, sizeof(struct tm));
+    struct tm * pRet = gmtime ( pAnsiTime );
+    if ( pRet ) {
+        *pTM = *pRet;
         return epicsTimeOK;
-	}
-	else
-	{
-        return epicsTimeERROR;
-	}
+    }
+    else {
+        return errno;
+    }
 }
 
 // synthesize a reentrant localtime on WIN32
 int epicsShareAPI epicsTime_localtime (
     const time_t * pAnsiTime, struct tm * pTM )
 {
-    struct tm *stm = localtime(pAnsiTime);
-	if (stm != NULL)
-	{
-	    memcpy(pTM, stm, sizeof(struct tm));
+    struct tm * pRet = localtime ( pAnsiTime );
+    if ( pRet ) {
+        *pTM = *pRet;
         return epicsTimeOK;
-	}
-	else
-	{
-        return epicsTimeERROR;
-	}
+    }
+    else {
+        return errno;
+    }
 }
 
 currentTime::currentTime () :
