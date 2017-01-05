@@ -167,6 +167,7 @@ static void logClientDestroy (logClientId id)
 static const char* xml_format = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 "<message>"
 "<clientName>%s</clientName>"
+"<clientHost>%s</clientHost>"
 "<severity>%s</severity>"
 "<contents><![CDATA[%s]]></contents>"
 "<type>ioclog</type>"
@@ -198,10 +199,15 @@ void epicsShareAPI logClientSend ( logClientId id, const char * orig_message )
 	char *message, *message_ptr;
 	char sev_str[16];
 	char event_time[32];
+    static char host_name[256];
     epicsTimeStamp the_time;
 	
     if ( ! pClient || ! orig_message ) {
         return;
+    }
+    if (host_name[0] == '\0')
+    {
+        gethostname(host_name, sizeof(host_name));
     }
     epicsTimeGetCurrent(&the_time);
 	i = epicsTimeToStrftime(event_time, sizeof(event_time), "%Y-%m-%dT%H:%M:%S.%03f", &the_time);
@@ -231,9 +237,9 @@ void epicsShareAPI logClientSend ( logClientId id, const char * orig_message )
 	{
 	    strcpy(sev_str, "MAJOR");
 	}
-	max_len_msg = strlen(xml_format) + (iocname != NULL ? strlen(iocname) : 8) + strlen(sev_str) + strlen(orig_message) + strlen(event_time) + 1;
+	max_len_msg = strlen(xml_format) + (iocname != NULL ? strlen(iocname) : 8) + strlen(sev_str) + strlen(orig_message) + strlen(event_time) + strlen(host_name) + 1;
 	message = message_ptr = (char*)malloc(max_len_msg + 1);
-	epicsSnprintf(message, max_len_msg, xml_format, (iocname != NULL ? iocname : "UNKNOWN"), sev_str, orig_message, event_time);
+	epicsSnprintf(message, max_len_msg, xml_format, (iocname != NULL ? iocname : "UNKNOWN"), host_name, sev_str, orig_message, event_time);
 	message[max_len_msg] = '\0';
     strSize = strlen ( message );
 	// remove any invalid characters
