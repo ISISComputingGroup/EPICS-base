@@ -10,7 +10,7 @@ kit :
 
 doxygen : 
 ifneq (,$(wildcard Doxyfile))
-	$(RMDIR) doc/html
+	-$(RMDIR) doc/html
 	doxygen Doxyfile
 endif
 
