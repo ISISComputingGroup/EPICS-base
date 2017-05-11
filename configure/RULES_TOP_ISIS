@@ -1,6 +1,6 @@
-ACTIONS += kit zip doxygen
+ACTIONS += kit zip doxygen dependsxml
 
-.PHONY : kit zip doxygen
+.PHONY : kit zip doxygen dependsxml
 
 kit :
 	$(ECHO) $(INSTALL_LOCATION_BIN)/$(EPICS_HOST_ARCH)
@@ -30,3 +30,8 @@ endif
 
 zip :
 	cd $(KIT_BASE) && $(INSTALL_KIT_CMD) $(INSTALL_KIT) $(INSTALL_SRC)
+
+dependsxml :
+	$(CONVERTRELEASE) depends.xml
+
+install : dependsxml

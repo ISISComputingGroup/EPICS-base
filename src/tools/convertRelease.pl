@@ -84,6 +84,7 @@ for ($outfile) {
     m/relPaths\.sh/      and do { &relPaths;            last; };
     m/cdCommands/        and do { &cdCommands;          last; };
     m/envPaths/          and do { &envPaths;            last; };
+    m/depends\.xml/      and do { &dependsXML;          last; };
     m/checkRelease/      and do { &checkRelease;        last; };
     die "Output file type \'$outfile\' not supported";
 }
@@ -101,6 +102,7 @@ Usage: convertRelease.pl [-a arch] [-T top] [-t ioctop] outfile
         relPaths.sh - path changes for bash to add RELEASE bin dir's
         cdCommands - generate cd path strings for vxWorks IOCs
         envPaths - generate epicsEnvSet commands for other IOCs
+        depends.xml - generate module dependency list
         checkRelease - checks consistency with support modules
 EOF
     exit 2;
@@ -217,6 +219,23 @@ sub envPaths {
         $iocpath =~ s/([\\"])/\\\1/g; # escape back-slashes and double-quotes
         print OUT "epicsEnvSet(\"$app\",\"$iocpath\")\n" if (-d $path);
     }
+    close OUT;
+}
+
+sub dependsXML {
+    my @includes = grep !m/^ (RULES | TEMPLATE_TOP) $/x, @apps;
+    
+    unlink($outfile);
+    open(OUT,">$outfile") or die "$! creating $outfile";
+	print OUT "<?xml version=\"1.0\" ?>\n";
+	print OUT "<modules>\n";
+    foreach my $app (@includes) {
+        my $iocpath = my $path = $macros{$app};
+        $iocpath =~ s/^$root/$iocroot/o if ($opt_t);
+        $iocpath =~ s/([\\"])/\\\1/g; # escape back-slashes and double-quotes
+        print OUT "<module name=\"$app\" path=\"$iocpath\" />\n" if (-d $path);
+    }
+	print OUT "</modules>\n";
     close OUT;
 }
 
