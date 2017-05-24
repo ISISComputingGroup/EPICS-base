@@ -200,7 +200,11 @@ void epicsShareAPI logClientSend ( logClientId id, const char * orig_message )
 	char event_time[32];
     epicsTimeStamp the_time;
 	
-    if ( ! pClient || ! orig_message ) {
+	/* we have got called during an IOC shutdown, checking   pClient->shutdown 
+	   should help as it will either be 1 (set during logClientDestroy) or some
+	   random value (after free() is called in logClientDestroy) but it is
+	   unlikely to be 0 in either case */
+    if ( ! pClient || ! orig_message || pClient->shutdown ) {
         return;
     }
     epicsTimeGetCurrent(&the_time);
