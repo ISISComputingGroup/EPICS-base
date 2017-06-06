@@ -26,6 +26,7 @@ actionArchTargets = $(foreach action, $(ACTIONS), \
         $(action)$(DIVIDER)$(arch)))
 
 all: install
+host: install$(DIVIDER)$(EPICS_HOST_ARCH)
 
 # Include <top>/cfg/DIR_RULES* files from tops defined in RELEASE* files
 # Do this here so they can add ACTIONS
@@ -85,7 +86,7 @@ $(DIRS) $(dirActionTargets) $(dirArchTargets) $(dirActionArchTargets) :
 $(ARCHS) $(ACTIONS) $(actionArchTargets) :%: \
     $(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
 
-.PHONY : $(DIRS) all rebuild
+.PHONY : $(DIRS) all host rebuild
 .PHONY : $(ARCHS) $(ACTIONS)
 .PHONY : $(dirActionTargets) $(dirArchTargets)
 .PHONY : $(dirActionArchTargets)

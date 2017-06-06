@@ -17,7 +17,7 @@
 
 #define epicsExportSharedSymbols
 #include "epicsMessageQueue.h"
-#include "epicsStdioRedirect.h"
+#include "epicsStdio.h"
 
 epicsMessageQueue::epicsMessageQueue(unsigned int aCapacity,
                                      unsigned int aMaxMessageSize) 

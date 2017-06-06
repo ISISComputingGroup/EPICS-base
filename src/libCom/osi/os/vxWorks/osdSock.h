@@ -15,7 +15,7 @@
 
 /* This is needed for vxWorks 6.8 to prevent an obnoxious compiler warning */
 #ifndef _VSB_CONFIG_FILE
-#define _VSB_CONFIG_FILE <../lib/h/config/vsbConfig.h>
+#   define _VSB_CONFIG_FILE <../lib/h/config/vsbConfig.h>
 #endif
 
 #include <errno.h>
@@ -73,6 +73,7 @@ typedef int osiSocklen_t;
 #define SOCK_ECONNRESET ECONNRESET
 #define SOCK_ETIMEDOUT ETIMEDOUT
 #define SOCK_EADDRINUSE EADDRINUSE
+#define SOCK_EADDRNOTAVAIL EADDRNOTAVAIL
 #define SOCK_ECONNREFUSED ECONNREFUSED
 #define SOCK_ECONNABORTED ECONNABORTED
 #define SOCK_EINPROGRESS EINPROGRESS

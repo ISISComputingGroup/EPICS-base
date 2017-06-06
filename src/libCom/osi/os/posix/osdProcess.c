@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <string.h>
 #include <unistd.h>
+#include <sched.h>
 #include <sys/types.h>
 #include <pwd.h>
 
@@ -61,7 +62,7 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
     (const char *pProcessName, const char *pBaseExecutableName)
 {
     int status;
-    
+
     /*
      * create a duplicate process
      */
@@ -72,15 +73,16 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
 
     /*
      * return to the caller
-     * if its in the initiating process
+     * in the initiating (parent) process
      */
     if (status) {
         return osiSpawnDetachedProcessSuccess;
     }
 
     /*
-     * close all open files except for STDIO so they will not
-     * be inherited by the spawned process.
+     * This is executed only by the new child process.
+     * Close all open files except for STDIO, so they will not
+     * be inherited by the new program.
      */
     {
         int fd, maxfd = sysconf ( _SC_OPEN_MAX );
@@ -92,8 +94,20 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
         }
     }
 
+#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
     /*
-     * overlay the specified executable
+     * Drop real-time SCHED_FIFO priority
+     */
+    {
+        struct sched_param p;
+
+        p.sched_priority = 0;
+        status = sched_setscheduler(0, SCHED_OTHER, &p);
+    }
+#endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
+
+    /*
+     * Run the specified executable
      */
     status = execlp (pBaseExecutableName, pBaseExecutableName, (char *)NULL);
     if ( status < 0 ) { 

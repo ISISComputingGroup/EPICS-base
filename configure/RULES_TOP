@@ -20,8 +20,7 @@ realuninstall: uninstallDirs
 	$(RMDIR) $(INSTALL_LOCATION_LIB)
 
 UNINSTALL_DIRS += $(INSTALL_DBD) $(INSTALL_INCLUDE) $(INSTALL_DOC) \
-    $(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES) $(INSTALL_DB)
-UNINSTALL_DIRS += $(DIRECTORY_TARGETS)
+    $(INSTALL_HTML) $(INSTALL_TEMPLATES) $(INSTALL_DB) $(DIRECTORY_TARGETS)
 uninstallDirs:
 	$(RMDIR) $(UNINSTALL_DIRS)
 
@@ -59,6 +58,7 @@ help:
 	@echo "     rebuild        - Same as clean install"
 	@echo "     archclean      - Removes O.<arch> dirs but not O.Common dir"
 	@echo "\"Partial\" build targets supported by Makefiles:"
+	@echo "     host           - Builds and installs $(EPICS_HOST_ARCH) only."
 	@echo "     inc$(DIVIDER)<arch>     - Installs <arch> only header files."
 	@echo "     build$(DIVIDER)<arch>   - Builds and installs <arch> only."
 	@echo "     install$(DIVIDER)<arch> - Builds and installs <arch> only."

@@ -17,6 +17,7 @@
 #define INC_epicsAssert_H
 
 #include "shareLib.h"
+#include "compilerDependencies.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +48,7 @@ epicsShareFunc void epicsAssert (const char *pFile, const unsigned line,
 #define STATIC_JOIN2(x, y) x ## y
 #define STATIC_ASSERT(expr) \
     typedef int STATIC_JOIN(static_assert_failed_at_line_, __LINE__) \
-    [ (expr) ? 1 : -1 ]
+    [ (expr) ? 1 : -1 ] EPICS_UNUSED
 
 
 #ifdef __cplusplus

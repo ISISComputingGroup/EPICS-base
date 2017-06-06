@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -15,8 +15,6 @@
 #       <operating system>-<architecture>[-<toolset>]
 #
 #  Currently Supporting:
-#	aix-ppc                (IBM compiler used for host builds)
-#	aix-ppc-gnu            (GNU compiler used for host builds)
 #	cygwin-x86             (cygwin compiler used for host builds)
 #	cygwin-x86_64          (cygwin compiler used for host builds)
 #	darwin-ppc             (PowerPC based Apple running OSX)
@@ -29,7 +27,6 @@
 #	linux-ppc64            (GNU compiler used for host builds)
 #	linux-x86              (GNU compiler used for host builds)
 #	linux-x86_64           (GNU compiler used for host builds)
-#	linux-x86-borland      (Borland C++ compiler used for host builds)
 #	solaris-sparc          (Sun compiler used for host builds)
 #	solaris-sparc-gnu      (GNU compiler used for host builds)
 #	solaris-sparc64        (Sun compiler used for host builds)
@@ -39,7 +36,6 @@
 #	solaris-x86_64         (Sun compiler used for host builds)
 #	solaris-x86_64-gnu     (GNU compiler used for host builds)
 #	win32-x86              (MS Visual C++ compiler used for host builds)
-#	win32-x86-cygwin       (WIN32 API with cygwin GNU compiler used for host builds)
 #	win32-x86-mingw        (MinGW compiler used for host builds)
 #	win32-x86-static       (MS Visual C++ compiler used for host builds)
 #	windows-x64            (MS Visual C++ compiler used for host builds)
@@ -108,17 +104,17 @@
 #       win32-x86-mingw         (linux-x86 or -x86_64 host)
 #
 
-# Definitions of CROSS_COMPILER_TARGET_ARCHS in
-# configure/os/CONFIG_SITE.<host>.Common files will
-# override 
-#
+# Which target architectures to cross-compile for.
+#  Definitions in configure/os/CONFIG_SITE.<host>.Common
+#  may override this setting.
 CROSS_COMPILER_TARGET_ARCHS=
 #CROSS_COMPILER_TARGET_ARCHS=vxWorks-ppc32
 
-#  If only a subset of the host architectures perform
-#  the build for the CROSS_COMPILER_TARGET_ARCHS
-#  uncomment the following line and specify them.
-#
+# If only some of your host architectures can compile the
+#  above CROSS_COMPILER_TARGET_ARCHS specify those host
+#  architectures here.  If the combination is complicated,
+#  set CROSS_COMPILER_TARGET_ARCHS in the appropriate
+#  configure/os/CONFIG_SITE.<host>.Common files instead.
 CROSS_COMPILER_HOST_ARCHS=
 
 #  The 'make runtests' and 'make tapfiles' build targets normally only run
@@ -128,73 +124,49 @@ CROSS_COMPILER_HOST_ARCHS=
 #
 CROSS_COMPILER_RUNTEST_ARCHS=
 
-#  Build shared libraries?
-#        must be either YES or NO
-#     NOTE: os/CONFIG.$(EPICS_HOST_ARCH).$(EPICS_HOST_ARCH) files and
-#     os/CONFIG_SITE.$(EPICS_HOST_ARCH).$(EPICS_HOST_ARCH) files may override
-#
-#     NOTE Windows: YES results in a DLL.  Valid settings are
-#        SHARED_LIBRARIES=YES  and  STATIC_BUILD=NO
-#        SHARED_LIBRARIES=NO   and  STATIC_BUILD=YES
-#
+# Build shared libraries (DLLs on Windows).
+#  Must be either YES or NO.  Definitions in the target-specific
+#  os/CONFIG.Common.<target> and os/CONFIG_SITE.Common.<target> files may
+#  override this setting.  On Windows only these combinations are valid:
+#    SHARED_LIBRARIES = YES and STATIC_BUILD = NO
+#    SHARED_LIBRARIES = NO  and STATIC_BUILD = YES
 SHARED_LIBRARIES=YES
 
-#  Build client objects statically ?
-#        must be either YES or NO
-#
+# Build client objects statically.
+#  Must be either YES or NO.
 STATIC_BUILD=NO
 
-#  Should header dependancy files be automatically generated
-#  for each C/C++ created object file?
-#        must be either YES or NO
-HDEPENDS=YES
-
-#  Host build optimization
-#	must be either YES or NO
+# Host build optimization.
+#  Must be either YES or NO.
 HOST_OPT=YES
 
-#  Cross build optimization
-#	must be either YES or NO
+# Cross build optimization.
+#  Must be either YES or NO.
 CROSS_OPT=YES
 
-#  Generate Verbose Compiler Warnings for Host builds
-#	must be either YES or NO
+# Generate verbose compiler warnings for host builds.
+#  Must be either YES or NO.
 HOST_WARN=YES
 
-#  Generate Verbose Compiler Warnings for cross compile builds
-#	must be either YES or NO
+# Generate verbose compiler warnings for cross-compiled builds.
+#  Must be either YES or NO.
 CROSS_WARN=YES
 
-#  Create and/or install perl build tools for R3.13 extension builds?
-#  must be either YES or NO
-#
-#  NOTE: Set to YES only if you have existing R3.13 extensions to be
-#  built with this base
-#
-#COMPAT_TOOLS_313=YES
-
-#  Create and/or install files for R3.13 ioc application and extension builds?
-#  must be either YES or NO
-#
-#  NOTE: Set to YES only if you have existing R3.13 ioc applications
-#  and extensions to be built with this base
-#
-COMPAT_313=NO
-
-#  Installation directory
-# If you don't want to install into $(TOP) dir then
-# define INSTALL_LOCATION here
+# Installation directory, if you want Base to be installed into a
+#  different location then uncomment and set this.
 #INSTALL_LOCATION=<fullpathname>
 
-# Use POSIX thread priority scheduling (YES or NO)
+# Use POSIX thread priority scheduling (if available).
+#  Must be either YES or NO
 USE_POSIX_THREAD_PRIORITY_SCHEDULING = YES
 
-#  Site version number, if set will append '-' and this string to the
-#  EPICS version number string that is reported by many tools
+# Site version number, if set will append '-' and this string to the
+#  EPICS version number string that is reported by many tools.
 EPICS_SITE_VERSION =
 
-# For GNU compiler, use pipes rather than temporary files for communication 
-# between the various stages of compilation.
+# For GNU compiler, use pipes rather than temporary files for
+#  communication between the various stages of compilation.
+#  Must be either YES or NO
 GCC_PIPE = NO
 
 # Set RPATH when linking executables and libraries.

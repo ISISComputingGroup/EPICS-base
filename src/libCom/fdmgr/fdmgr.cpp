@@ -227,7 +227,7 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_timeout (fdctx *pfdctx, 
     return 0;
 }
 
-extern "C" epicsShareFunc int epicsShareAPI fdmgr_add_callback ( // X aCC 361
+extern "C" epicsShareFunc int epicsShareAPI fdmgr_add_callback (
     fdctx *pfdctx, SOCKET fd, enum fdi_type fdi, pCallBackFDMgr pFunc, void *pParam)
 {
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
@@ -269,7 +269,7 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_add_callback ( // X aCC 361
     }
 }
  
-extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_callback ( // X aCC 361
+extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_callback (
     fdctx *pfdctx, SOCKET fd, enum fdi_type	fdi)
 {
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);

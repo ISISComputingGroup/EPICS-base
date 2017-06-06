@@ -29,7 +29,7 @@
 #	local timezone info for vxWorks and RTEMS IOCs.  The format is
 #	    <name>::<minutesWest>:<start daylight>:<end daylight>
 #	where the start and end are mmddhh - that is month,day,hour
-#	e.g. for ANL in 2016: EPICS_TIMEZONE=CUS::360:031302:110602
+#	e.g. for ANL in 2016: EPICS_TIMEZONE=CST/CDT::360:031302:110602
 #
 #	DST for 2016  US: Mar 13 - Nov 06
 #	              EU: Mar 27 - Oct 30
@@ -46,8 +46,8 @@
 #	(see: http://www.timeanddate.com/time/dst/2016.html etc. )
 #
 # These values are for 2016:
-EPICS_TIMEZONE=CUS::360:031302:110602
-#EPICS_TIMEZONE=MET::-60:032702:103002
+EPICS_TIMEZONE=CST/CDT::360:031302:110602
+#EPICS_TIMEZONE=CET/CEST::-60:032702:103002
 
 # EPICS_TS_NTP_INET
 #	NTP time server ip address.  Uses boot host if not set.

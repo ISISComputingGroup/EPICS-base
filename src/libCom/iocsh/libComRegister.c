@@ -13,6 +13,7 @@
 #define epicsExportSharedSymbols
 #include "iocsh.h"
 #include "epicsStdioRedirect.h"
+#include "epicsString.h"
 #include "epicsTime.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
@@ -50,6 +51,20 @@ static void dateCallFunc (const iocshArgBuf *args)
     date(args[0].sval);
 }
 
+/* echo */
+static const iocshArg echoArg0 = { "string",iocshArgString};
+static const iocshArg * const echoArgs[1] = {&echoArg0};
+static const iocshFuncDef echoFuncDef = {"echo",1,echoArgs};
+static void echoCallFunc(const iocshArgBuf *args)
+{
+    char *str = args[0].sval;
+
+    if (str)
+        dbTranslateEscape(str, str); /* in-place is safe */
+    else
+        str = "";
+    printf("%s\n", str);
+}
 
 /* chdir */
 static const iocshArg chdirArg0 = { "directory name",iocshArgString};
@@ -57,9 +72,8 @@ static const iocshArg * const chdirArgs[1] = {&chdirArg0};
 static const iocshFuncDef chdirFuncDef = {"cd",1,chdirArgs};
 static void chdirCallFunc(const iocshArgBuf *args)
 {
-    int status;
-    status = chdir(args[0].sval);
-    if (status) {
+    if (args[0].sval == NULL ||
+        chdir(args[0].sval)) {
         fprintf(stderr, "Invalid directory path, ignored\n");
     }
 }
@@ -189,6 +203,15 @@ static const iocshFuncDef errlogFuncDef = {"errlog",1,errlogArgs};
 static void errlogCallFunc(const iocshArgBuf *args)
 {
     errlogPrintfNoConsole("%s\n", args[0].sval);
+}
+
+/* iocLogPrefix */
+static const iocshArg iocLogPrefixArg0 = { "prefix",iocshArgString};
+static const iocshArg * const iocLogPrefixArgs[1] = {&iocLogPrefixArg0};
+static const iocshFuncDef iocLogPrefixFuncDef = {"iocLogPrefix",1,iocLogPrefixArgs};
+static void iocLogPrefixCallFunc(const iocshArgBuf *args)
+{
+    iocLogPrefix(args[0].sval);
 }
 
 /* epicsThreadShowAll */
@@ -339,6 +362,7 @@ static void installLastResortEventProviderCallFunc(const iocshArgBuf *args)
 void epicsShareAPI libComRegister(void)
 {
     iocshRegister(&dateFuncDef, dateCallFunc);
+    iocshRegister(&echoFuncDef, echoCallFunc);
     iocshRegister(&chdirFuncDef, chdirCallFunc);
     iocshRegister(&pwdFuncDef, pwdCallFunc);
 
@@ -355,6 +379,7 @@ void epicsShareAPI libComRegister(void)
     iocshRegister(&errlogInitFuncDef,errlogInitCallFunc);
     iocshRegister(&errlogInit2FuncDef,errlogInit2CallFunc);
     iocshRegister(&errlogFuncDef, errlogCallFunc);
+    iocshRegister(&iocLogPrefixFuncDef, iocLogPrefixCallFunc);
 
     iocshRegister(&epicsThreadShowAllFuncDef,epicsThreadShowAllCallFunc);
     iocshRegister(&threadFuncDef, threadCallFunc);

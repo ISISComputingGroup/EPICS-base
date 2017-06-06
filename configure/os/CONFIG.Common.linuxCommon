@@ -15,8 +15,10 @@ POSIX_LDLIBS = -lpthread
 
 OP_SYS_CPPFLAGS += -Dlinux
 OP_SYS_LDLIBS += -lrt -ldl
+# Use -rdynamic to maximize symbols available for stacktrace
+OP_SYS_LDFLAGS += -rdynamic
 
-# Added here for cross-target builds which include this file
+# Linker flags for static & shared-library builds
 STATIC_LDFLAGS_YES= -Wl,-Bstatic
 STATIC_LDFLAGS_NO=
 STATIC_LDLIBS_YES= -Wl,-Bdynamic
