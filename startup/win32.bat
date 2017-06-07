@@ -87,7 +87,16 @@ if exist "C:\Program files (x86)\Microsoft Visual Studio 11.0\VC\vcvarsall.bat" 
 if exist "C:\Program files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" set VCVERSION=12.0
 if exist "C:\Program files (x86)\Microsoft Visual Studio 13.0\VC\vcvarsall.bat" set VCVERSION=13.0
 if exist "C:\Program files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" set VCVERSION=14.0
+if exist "C:\Program files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build" (
+    set VCVERSION=15.0
+    set "VCVARALLDIR=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build"
+)
+if exist "C:\Program files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\Build" (
+    set VCVERSION=15.0
+    set "VCVARALLDIR=C:\Program files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\Build"
+)
 if exist "C:\Program files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat" set VCVERSION=10.0
+
 
 if exist "C:\Program files (x86)\Microsoft Visual Studio %VCVERSION%\VC\vcvarsall.bat" (
   if "%EPICS_HOST_ARCH:~0,11%" == "windows-x64" (
@@ -104,6 +113,15 @@ REM -- express 2012 provides a 32->64 cross compiler, the full visual studio has
 	 @echo Using Visual Studio %VCVERSION% x86 native compiler
      call "C:\Program files (x86)\Microsoft Visual Studio %VCVERSION%\VC\vcvarsall.bat" x86
   )
+) else (
+    if exist "%VCVARALLDIR%\vcvarsall.bat" (
+	    if "%EPICS_HOST_ARCH:~0,11%" == "windows-x64" (
+            call "%VCVARALLDIR%\vcvarsall.bat" x64
+		)
+		if "%EPICS_HOST_ARCH:~0,9%" == "win32-x86" (
+		    call "%VCVARALLDIR%\vcvarsall.bat" x86
+		)
+    )
 )
 
 REM ======================================================
