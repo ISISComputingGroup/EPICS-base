@@ -17,6 +17,19 @@ epicsUnitTestTest_SRCS += epicsUnitTestTest.c
 # Not much point running this on vxWorks or RTEMS...
 TESTS += epicsUnitTestTest
 
+TESTPROD_HOST += epicsTypesTest
+epicsTypesTest_SRCS += epicsTypesTest.cpp
+testHarness_SRCS += epicsTypesTest.cpp
+TESTS += epicsTypesTest
+
+TESTPROD_HOST += epicsInlineTest
+epicsInlineTest_SRCS += epicsInlineTest1.c
+epicsInlineTest_SRCS += epicsInlineTest2.c
+epicsInlineTest_SRCS += epicsInlineTest3.cpp
+epicsInlineTest_SRCS += epicsInlineTest4.cpp
+testHarness_SRCS += $(epicsInlineTest_SRCS)
+TESTS += epicsInlineTest
+
 TESTPROD_HOST += epicsCalcTest
 epicsCalcTest_SRCS += epicsCalcTest.cpp
 testHarness_SRCS += epicsCalcTest.cpp
@@ -32,6 +45,13 @@ epicsMathTest_SRCS += epicsMathTest.c
 testHarness_SRCS += epicsMathTest.c
 TESTS += epicsMathTest
 
+TESTPROD_HOST += epicsMMIOTest
+epicsMMIOTest_SRCS += epicsMMIOTest.c
+epicsMMIOTest_SYS_LIBS_solaris = socket
+epicsMMIOTest_SYS_LIBS_WIN32 = ws2_32 user32
+testHarness_SRCS += epicsMMIOTest.c
+TESTS += epicsMMIOTest
+
 TESTPROD_HOST += epicsEllTest
 epicsEllTest_SRCS += epicsEllTest.c
 testHarness_SRCS += epicsEllTest.c
@@ -44,6 +64,8 @@ TESTS += epicsEnvTest
 
 TESTPROD_HOST += epicsErrlogTest
 epicsErrlogTest_SRCS += epicsErrlogTest.c
+epicsErrlogTest_SYS_LIBS_solaris = socket
+epicsErrlogTest_SYS_LIBS_WIN32 = ws2_32 user32
 testHarness_SRCS += epicsErrlogTest.c
 TESTS += epicsErrlogTest
 
@@ -52,10 +74,16 @@ epicsStdioTest_SRCS += epicsStdioTest.c
 testHarness_SRCS += epicsStdioTest.c
 TESTS += epicsStdioTest
 
+TESTPROD_HOST += epicsStdlibTest
+epicsStdlibTest_SRCS += epicsStdlibTest.c
+testHarness_SRCS += epicsStdlibTest.c
+TESTS += epicsStdlibTest
+
 TESTPROD_HOST += epicsSockResolveTest
 epicsSockResolveTest_SRCS += epicsSockResolveTest.c
+epicsSockResolveTest_SYS_LIBS_solaris = socket
+epicsSockResolveTest_SYS_LIBS_WIN32 = ws2_32 user32
 testHarness_SRCS += epicsSockResolveTest.c
-epicsSockResolveTest_SYS_LIBS_WIN32 = ws2_32
 TESTS += epicsSockResolveTest
 
 TESTPROD_HOST += epicsStringTest
@@ -70,7 +98,7 @@ TESTS += epicsTimeTest
 
 TESTPROD_HOST += epicsTimeZoneTest
 epicsTimeZoneTest_SRCS += epicsTimeZoneTest.c
-rtemsTestHarness_SRCS += epicsTimeZoneTest.c
+libComTestHarness_SRCS_RTEMS += epicsTimeZoneTest.c
 TESTS += epicsTimeZoneTest
 
 TESTPROD_HOST += epicsThreadTest
@@ -92,6 +120,16 @@ TESTPROD_HOST += epicsThreadPrivateTest
 epicsThreadPrivateTest_SRCS += epicsThreadPrivateTest.cpp
 testHarness_SRCS += epicsThreadPrivateTest.cpp
 TESTS += epicsThreadPrivateTest
+
+TESTPROD_HOST += epicsThreadHooksTest
+epicsThreadHooksTest_SRCS += epicsThreadHooksTest.c
+testHarness_SRCS += epicsThreadHooksTest.c
+TESTS += epicsThreadHooksTest
+
+TESTPROD_HOST += epicsThreadPoolTest
+epicsThreadPoolTest_SRCS += epicsThreadPoolTest.c
+testHarness_SRCS += epicsThreadPoolTest.c
+TESTS += epicsThreadPoolTest
 
 TESTPROD_HOST += epicsExitTest
 epicsExitTest_SRCS += epicsExitTest.c
@@ -123,10 +161,20 @@ epicsMutexTest_SRCS += epicsMutexTest.cpp
 testHarness_SRCS += epicsMutexTest.cpp
 TESTS += epicsMutexTest
 
-TESTPROD_HOST += macEnvExpandTest
-macEnvExpandTest_SRCS += macEnvExpandTest.c
-testHarness_SRCS += macEnvExpandTest.c
-TESTS += macEnvExpandTest
+TESTPROD_HOST += epicsSpinTest
+epicsSpinTest_SRCS += epicsSpinTest.c
+testHarness_SRCS += epicsSpinTest.c
+TESTS += epicsSpinTest
+
+TESTPROD_HOST += epicsAtomicTest
+epicsAtomicTest_SRCS += epicsAtomicTest.cpp
+testHarness_SRCS += epicsAtomicTest.cpp
+TESTS += epicsAtomicTest
+
+TESTPROD_HOST += macDefExpandTest
+macDefExpandTest_SRCS += macDefExpandTest.c
+testHarness_SRCS += macDefExpandTest.c
+TESTS += macDefExpandTest
 
 TESTPROD_HOST += macLibTest
 macLibTest_SRCS += macLibTest.c
@@ -151,19 +199,23 @@ epicsMessageQueueTest_SRCS += epicsMessageQueueTest.cpp
 testHarness_SRCS += epicsMessageQueueTest.cpp
 TESTS += epicsMessageQueueTest
 
+TESTPROD_HOST += epicsStackTraceTest
+epicsStackTraceTest_SRCS += epicsStackTraceTest.c
+testHarness_SRCS += epicsStackTraceTest.c
+TESTS += epicsStackTraceTest
+
 
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunLibComTests.c
 
-PROD_vxWorks = vxTestHarness
-vxTestHarness_SRCS += $(testHarness_SRCS)
-vxTestHarness_OBJS += $(INSTALL_BIN)/vxComLibrary
-TESTSPEC_vxWorks = vxTestHarness.munch; epicsRunLibComTests
+libComTestHarness_SRCS += $(testHarness_SRCS)
+libComTestHarness_SRCS_RTEMS += rtemsTestHarness.c
 
-PROD_RTEMS += rtemsTestHarness
-rtemsTestHarness_SRCS += rtemsTestHarness.c
-rtemsTestHarness_SRCS += $(testHarness_SRCS)
-TESTSPEC_RTEMS = rtemsTestHarness.boot; epicsRunLibComTests
+PROD_vxWorks = libComTestHarness
+PROD_RTEMS += libComTestHarness
+
+TESTSPEC_vxWorks = libComTestHarness.munch; epicsRunLibComTests
+TESTSPEC_RTEMS = libComTestHarness.boot; epicsRunLibComTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
@@ -187,6 +239,10 @@ testHarness_SRCS += buckTest.c
 fdmgrTest_SRCS += fdmgrTest.c
 fdmgrTest_LIBS += ca
 # FIXME: program never exits.
+
+TESTPROD_HOST += epicsAtomicPerform
+epicsAtomicPerform_SRCS += epicsAtomicPerform.cpp
+testHarness_SRCS += epicsAtomicPerform.cpp
 
 TESTPROD_HOST += cvtFastPerform
 cvtFastPerform_SRCS += cvtFastPerform.cpp

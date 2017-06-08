@@ -22,10 +22,10 @@
 #define epicsExportSharedSymbols
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <rtems.h>
 #include <rtems/error.h>
-#include <cantProceed.h>
 #include "epicsMessageQueue.h"
 #include "errlog.h"
 
@@ -33,11 +33,14 @@ epicsShareFunc epicsMessageQueueId epicsShareAPI
 epicsMessageQueueCreate(unsigned int capacity, unsigned int maximumMessageSize)
 {
     rtems_status_code sc;
-    epicsMessageQueueId id = (epicsMessageQueueId)callocMustSucceed(1, sizeof(*id), "epicsMessageQueueCreate");
+    epicsMessageQueueId id = calloc(1, sizeof(*id));
     rtems_interrupt_level level;
     static char c1 = 'a';
     static char c2 = 'a';
     static char c3 = 'a';
+
+    if(!id)
+        return NULL;
     
     sc = rtems_message_queue_create (rtems_build_name ('Q', c3, c2, c1),
         capacity,
@@ -45,6 +48,7 @@ epicsMessageQueueCreate(unsigned int capacity, unsigned int maximumMessageSize)
         RTEMS_FIFO|RTEMS_LOCAL,
         &id->id);
     if (sc != RTEMS_SUCCESSFUL) {
+        free(id);
         errlogPrintf ("Can't create message queue: %s\n", rtems_status_text (sc));
         return NULL;
     }

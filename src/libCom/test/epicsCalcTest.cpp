@@ -198,6 +198,14 @@ static inline double MAX(double a, double b, double c, double d, double e,
     double f, double g, double h, double i, double j) {
     return MAX(MAX(a,b,c,d,e,f,g,h,i),j);
 }
+static inline double MAX(double a, double b, double c, double d, double e,
+    double f, double g, double h, double i, double j, double k) {
+    return MAX(MAX(a,b,c,d,e,f,g,h,i,j),k);
+}
+static inline double MAX(double a, double b, double c, double d, double e,
+    double f, double g, double h, double i, double j, double k, double l) {
+    return MAX(MAX(a,b,c,d,e,f,g,h,i,j,k),l);
+}
 
 static inline double MIN(double a) {
     return a;
@@ -233,6 +241,14 @@ static inline double MIN(double a, double b, double c, double d, double e,
 static inline double MIN(double a, double b, double c, double d, double e,
     double f, double g, double h, double i, double j) {
     return MIN(MIN(a,b,c,d,e,f,g,h,i),j);
+}
+static inline double MIN(double a, double b, double c, double d, double e,
+    double f, double g, double h, double i, double j, double k) {
+    return MIN(MIN(a,b,c,d,e,f,g,h,i,j),k);
+}
+static inline double MIN(double a, double b, double c, double d, double e,
+    double f, double g, double h, double i, double j, double k, double l) {
+    return MIN(MIN(a,b,c,d,e,f,g,h,i,j,k),l);
 }
 
 /* The test code below generates lots of spurious warnings because
@@ -418,8 +434,8 @@ MAIN(epicsCalcTest)
     testExpr(MAX( 1., 2.,Inf, 4., 5., 3.));
     testExpr(MAX( 1.,Inf, 3., 4., 5., 2.));
     testExpr(MAX(Inf, 2., 3., 4., 5., 1.));
-    testExpr(MAX(1,2,3,4,5,6,7,8,9,10));
-    testExpr(MAX(5,4,3,2,1,0,-1,-2,-3,-4));
+    testExpr(MAX(1,2,3,4,5,6,7,8,9,10,11,12));
+    testExpr(MAX(5,4,3,2,1,0,-1,-2,-3,-4,-5,-6));
     testExpr(MAX(-1,1,0));
 
     testExpr(MIN(99));
@@ -479,8 +495,8 @@ MAIN(epicsCalcTest)
     testExpr(MIN( 1., 2.,-Inf, 4., 5., 3.));
     testExpr(MIN( 1.,-Inf, 3., 4., 5., 2.));
     testExpr(MIN(-Inf, 2., 3., 4., 5., 1.));
-    testExpr(MIN(1,2,3,4,5,6,7,8,9,10));
-    testExpr(MIN(5,4,3,2,1,0,-1,-2,-3,-4));
+    testExpr(MIN(1,2,3,4,5,6,7,8,9,10,11,12));
+    testExpr(MIN(5,4,3,2,1,0,-1,-2,-3,-4,-5,-6));
     testExpr(MIN(1,-1,0));
     testExpr(MAX(MIN(0,2),MAX(0),MIN(3,2,1)));
 

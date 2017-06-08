@@ -38,7 +38,7 @@ template <class T>
 class tsSLNode {
 public:
     tsSLNode ();
-    tsSLNode < T > & operator = ( const tsSLNode < T > & ) const;
+    tsSLNode < T > & operator = ( const tsSLNode < T > & );
 private:
     void removeNextItem (); // removes the item after this node
     T *pNext;
@@ -146,7 +146,7 @@ inline tsSLNode < T > :: tsSLNode ( const tsSLNode < T > & )
 //
 template < class T >
 inline tsSLNode < T > &  tsSLNode < T >::operator = 
-    ( const tsSLNode < T > & ) const 
+    ( const tsSLNode < T > & )
 {
     return *this;
 }

@@ -14,10 +14,10 @@
 //
 // ANSI C
 //
-#include <math.h>
-#include <time.h>
-#include <limits.h>
-#include <stdio.h>
+#include <cmath>
+#include <ctime>
+#include <climits>
+#include <cstdio>
 
 //
 // WIN32
@@ -25,6 +25,7 @@
 #define VC_EXTRALEAN
 #define STRICT
 #include <windows.h>
+#include <process.h>
 
 //
 // EPICS
@@ -43,28 +44,26 @@
 #   define debugPrintf(argsInParen)
 #endif
 
-static int osdTimeGetCurrent ( epicsTimeStamp *pDest );
+extern "C" void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName );
 
-// GNU seems to require that 64 bit constants have LL on
-// them. The borland compiler fails to compile constants
-// with the LL suffix. MS compiler doesnt care.
-#ifdef __GNUC__
-#define LL_CONSTANT(VAL) VAL ## LL
-#else
-#define LL_CONSTANT(VAL) VAL
-#endif
+static int osdTimeGetCurrent ( epicsTimeStamp *pDest );
 
 // for mingw
 #if !defined ( MAXLONGLONG )
-#define MAXLONGLONG LL_CONSTANT(0x7fffffffffffffff)
+#   define MAXLONGLONG 0x7fffffffffffffffLL
 #endif
 #if !defined ( MINLONGLONG )
-#define MINLONGLONG LL_CONSTANT(~0x7fffffffffffffff)
+#   define MINLONGLONG ~0x7fffffffffffffffLL
+#endif
+#ifndef STACK_SIZE_PARAM_IS_A_RESERVATION
+#   define STACK_SIZE_PARAM_IS_A_RESERVATION 0x00010000
 #endif
 
-static const LONGLONG epicsEpochInFileTime = LL_CONSTANT(0x01b41e2a18d64000);
+static const LONGLONG epicsEpochInFileTime = 0x01b41e2a18d64000LL;
 
-class currentTime : public epicsTimerNotify {
+static unsigned __stdcall _pllThreadEntry ( void * pCurrentTimeIn );
+
+class currentTime {
 public:
     currentTime ();
     ~currentTime ();
@@ -78,20 +77,24 @@ private:
     LONGLONG perfCounterFreqPLL;
     LONGLONG lastPerfCounterPLL;
     LONGLONG lastFileTimePLL;
-    epicsTimerQueueActive * pTimerQueue;
-    epicsTimer * pTimer;
+    HANDLE threadHandle;
+    unsigned threadId;
     bool perfCtrPresent;
+    bool threadShutdownCmd;
+    bool threadHasExited;
+    void updatePLL ();
     static const int pllDelay; /* integer seconds */
-    epicsTimerNotify::expireStatus expire ( const epicsTime & );
+    // cant be static because of diff btw __stdcall and __cdecl 
+    friend unsigned __stdcall _pllThreadEntry ( void * pCurrentTimeIn );
 };
+
+const int currentTime :: pllDelay = 5;
 
 static currentTime * pCurrentTime = 0;
 static const LONGLONG FILE_TIME_TICKS_PER_SEC = 10000000;
 static const LONGLONG EPICS_TIME_TICKS_PER_SEC = 1000000000;
 static const LONGLONG ET_TICKS_PER_FT_TICK =
             EPICS_TIME_TICKS_PER_SEC / FILE_TIME_TICKS_PER_SEC;
-
-const int currentTime :: pllDelay = 5;
     
 //
 // Start and register time provider
@@ -152,9 +155,11 @@ currentTime::currentTime () :
     perfCounterFreqPLL ( 0 ),
     lastPerfCounterPLL ( 0 ),
     lastFileTimePLL ( 0 ),
-    pTimerQueue ( 0 ),
-    pTimer ( 0 ),
-    perfCtrPresent ( false )
+    threadHandle ( 0 ),
+    threadId ( 0 ),
+    perfCtrPresent ( false ),
+    threadShutdownCmd ( false ),
+    threadHasExited ( false )
 {
     InitializeCriticalSection ( & this->mutex );
 
@@ -197,15 +202,34 @@ currentTime::currentTime () :
     this->lastFileTimePLL = liFileTime.QuadPart;
 }
 
+void currentTime :: startPLL ()
+{
+    // create frequency estimation thread when needed
+    if ( this->perfCtrPresent && ! this->threadHandle ) {
+        this->threadHandle = (HANDLE) 
+            _beginthreadex ( 0, 4096, _pllThreadEntry, this,
+                CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION, 
+                & this->threadId );
+        assert ( this->threadHandle );
+        BOOL bstat = SetThreadPriority ( 
+        	this->threadHandle, THREAD_PRIORITY_HIGHEST );
+        assert ( bstat );
+        DWORD wstat =  ResumeThread ( this->threadHandle );
+        assert ( wstat != 0xFFFFFFFF );
+    }
+}
+
 currentTime::~currentTime ()
 {
+    EnterCriticalSection ( & this->mutex );
+    this->threadShutdownCmd = true;
+    while ( ! this->threadHasExited ) {
+        LeaveCriticalSection ( & this->mutex );
+        Sleep ( 250 /* mS */ );
+        EnterCriticalSection ( & this->mutex );
+    }
+    LeaveCriticalSection ( & this->mutex );
     DeleteCriticalSection ( & this->mutex );
-    if ( this->pTimer ) {
-        this->pTimer->destroy ();
-    }
-    if ( this->pTimerQueue ) {
-        this->pTimerQueue->release ();
-    }
 }
 
 void currentTime::getCurrentTime ( epicsTimeStamp & dest )
@@ -275,7 +299,7 @@ void currentTime::getCurrentTime ( epicsTimeStamp & dest )
 // Maintain corrected version of the performance counter's frequency using
 // a phase locked loop. This approach is similar to NTP's.
 //
-epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
+void currentTime :: updatePLL ()
 {
     EnterCriticalSection ( & this->mutex );
 
@@ -320,7 +344,7 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
     if ( fileTimeDiff <= 0 ) {
         LeaveCriticalSection( & this->mutex );
         debugPrintf ( ( "currentTime: file time difference in PLL was less than zero\n" ) );
-        return expireStatus ( restart, pllDelay /* sec */ );
+        return;
     }
 
     LONGLONG freq = ( FILE_TIME_TICKS_PER_SEC * perfCounterDiff ) / fileTimeDiff;
@@ -334,7 +358,7 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
             static_cast < int > ( -bound ),
             static_cast < int > ( delta ),
             static_cast < int > ( bound ) ) );
-        return expireStatus ( restart, pllDelay /* sec */ );
+        return;
     }
 
     // update feedback loop estimating the performance counter's frequency
@@ -371,7 +395,7 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
             debugPrintf ( ( "perf ctr measured delay out of bounds m=%d max=%d\n",               
                 static_cast < int > ( perfCounterDiffSinceLastFetch ),
                 static_cast < int > ( expectedDly + bnd ) ) );
-            return expireStatus ( restart, pllDelay /* sec */ );
+            return;
         }
     }
 
@@ -410,9 +434,9 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
 
     delta = epicsTimeFromCurrentFileTime - this->epicsTimeLast;
     if ( delta > EPICS_TIME_TICKS_PER_SEC || delta < -EPICS_TIME_TICKS_PER_SEC ) {
-        // When there is an abrupt shift in the current computed time vs
-        // the time derived from the current file time then someone has
-        // probabably adjusted the real time clock and the best reaction
+        // When there is an abrupt shift in the current computed time vs 
+        // the time derived from the current file time then someone has 
+        // probably adjusted the real time clock and the best reaction 
         // is to just assume the new time base
         this->epicsTimeLast = epicsTimeFromCurrentFileTime;
         this->perfCounterFreq = this->perfCounterFreqPLL;
@@ -452,24 +476,31 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
                 ( this->perfCounterFreqPLL - sysFreq.QuadPart );
             freqEstDiff /= sysFreq.QuadPart;
             freqEstDiff *= 100.0;
-            debugPrintf ( ( "currentTime: freq delta %f %% freq est delta %f %% time delta %f sec\n",
-                freqDiff, freqEstDiff, static_cast < double > ( delta ) / EPICS_TIME_TICKS_PER_SEC ) );
+            debugPrintf ( ( "currentTime: freq delta %f %% freq est "
+                "delta %f %% time delta %f sec\n", 
+                freqDiff, 
+                freqEstDiff, 
+                static_cast < double > ( delta ) / 
+                        EPICS_TIME_TICKS_PER_SEC ) );
 #       endif
     }
 
     LeaveCriticalSection ( & this->mutex );
-
-    return expireStatus ( restart, pllDelay /* sec */ );
 }
 
-void currentTime::startPLL ()
+static unsigned __stdcall _pllThreadEntry ( void * pCurrentTimeIn )
 {
-    // create frequency estimation timer when needed
-    if ( this->perfCtrPresent && ! this->pTimerQueue ) {
-        this->pTimerQueue = & epicsTimerQueueActive::allocate ( true );
-        this->pTimer      = & this->pTimerQueue->createTimer ();
-        this->pTimer->start ( *this, pllDelay );
+    currentTime * pCT = 
+        reinterpret_cast < currentTime * > ( pCurrentTimeIn );
+    setThreadName ( pCT->threadId, "EPICS Time PLL" );
+    while ( ! pCT->threadShutdownCmd ) {
+        Sleep ( currentTime :: pllDelay * 1000 /* mS */ );
+        pCT->updatePLL ();
     }
+    EnterCriticalSection ( & pCT->mutex );
+    pCT->threadHasExited = true;
+    LeaveCriticalSection ( & pCT->mutex );
+    return 1;
 }
 
 epicsTime::operator FILETIME () const

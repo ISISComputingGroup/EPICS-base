@@ -57,6 +57,7 @@ COMMANDLINE_LIBRARY=READLINE
 GNU_DIR = /usr
 
 # Apple soft-links these compilers to clang/clang++
+CMPLR_CLASS = clang
 CC = cc
 CCC = c++
 GNU = NO
@@ -64,13 +65,12 @@ GNU = NO
 #
 # Darwin shared libraries
 #
-SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
 SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined suppress \
-       -install_name $(shell $(FULLPATHNAME) $(INSTALL_LIB))/$@ \
-       -compatibility_version $(EPICS_VERSION).$(EPICS_REVISION) \
-       -current_version $(SHRLIB_VERSION)
+    -install_name $(shell $(FULLPATHNAME) $(INSTALL_LIB))/$@ \
+    $(addprefix -compatibility_version , $(SHRLIB_VERSION)) \
+    $(addprefix -current_version , $(SHRLIB_VERSION))
 SHRLIB_SUFFIX_BASE = .dylib
-SHRLIB_SUFFIX = .$(SHRLIB_VERSION)$(SHRLIB_SUFFIX_BASE)
+SHRLIB_SUFFIX = $(addprefix ., $(SHRLIB_VERSION))$(SHRLIB_SUFFIX_BASE)
 
 LOADABLE_SHRLIB_LDFLAGS = -bundle -flat_namespace -undefined suppress
 
@@ -90,11 +90,7 @@ vpath %.m $(USR_VPATH) $(ALL_SRC_DIRS)
 #
 # Header dependency file generation
 #
-# Use GNU compiler flags when ARCH_CLASS is a single arch value
-# otherwise use perl script command
-SINGLE_ARCH=$(filter 1,$(words $(ARCH_CLASS)))
-HDEPENDS_CFLAGS = $(if $(SINGLE_ARCH),$(HDEPENDS_CFLAGS_$(HDEPENDS)))
-HDEPENDS_METHOD = $(if $(SINGLE_ARCH),CFLAGS,CMD)
+HDEPENDS_METHOD = MKMF
 
 #--------------------------------------------------
 # Allow site overrides

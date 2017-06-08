@@ -23,6 +23,7 @@
 #include "epicsExit.h"
 #include "epicsTime.h"
 #include "ellLib.h"
+#include "errlog.h"
 #include "cantProceed.h"
 
 typedef struct {
@@ -73,7 +74,7 @@ int testOkV(int pass, const char *fmt, va_list pvar) {
     epicsMutexMustLock(testLock);
     tested++;
     if (pass) {
-	result += 4;	/* skip "not " */
+	result += 4;    /* skip "not " */
 	passed++;
 	if (todo)
 	    bonus++;
