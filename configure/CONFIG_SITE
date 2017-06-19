@@ -174,3 +174,8 @@ GCC_PIPE = NO
 #  way for Base executables to find their shared libraries when they are
 #  run at build-time, e.g. set the LD_LIBRARY_PATH environment variable.
 LINKER_USE_RPATH = YES
+
+#MSI = $(MSI3_15)
+MSI = $(EPICS_KIT_ROOT)/extensions/master/bin/$(EPICS_HOST_ARCH)/msi
+
+#CHECK_RELEASE_YES = noCheckRelease
