@@ -73,7 +73,7 @@ foreach $source ( @files )
 		else
 		{
 			#	remove old target, make sure it is deletable:
-			chmod 0777, $target;
+			MyChmod (0777, $target);
 			unlink $target;
 		}
 	}
@@ -82,14 +82,7 @@ foreach $source ( @files )
 	copy ($source, $temp) or die "Copy failed: $!\n";
 	rename ($temp, $target) or die "Rename failed: $!\n";
 
-	#	chmod 0555 <read-only> DOES work on WIN32, but:
-	#	Another chmod 0777 to make it write- and deletable
-	#	will then fail.
-	#	-> you have to use Win32::SetFileAttributes
-	#	   to get rid of those files from within Perl.
-	#	Because the chmod is not really needed on WIN32,
-	#	just skip it!
-	chmod $mode, $target unless ($^O eq "MSWin32");
+	MyChmod ($mode, $target);
 }
 
 sub Usage
@@ -108,6 +101,34 @@ sub Usage
 	print "$txt\n" if $txt;
 
 	exit 2;
+}
+
+# chmod doesn't always behave as expected on WIN32, so use
+# Win32::File::SetAttributes to be sure.
+# The READONLY attribute is the only one we are concerned with.
+# (note: had issues with "require" hence "use if")
+sub MyChmod($target, $mode)
+{
+    use if $^O eq "MSWin32", Win32::File;
+	if ($^O eq "MSWin32")
+	{
+	    my($attr);
+	    Win32::File::GetAttributes($target, $attr);
+		# if write access is requested anywhere in the mode then remove read-only, otherwise set it
+	    if ($mode & 0222)
+		{
+		    $attr &= ~READONLY;
+		}
+		else
+		{
+		    $attr |= READONLY;
+		}
+		Win32::File::SetAttributes($target, $attr);
+	}
+	else
+	{
+	    chmod $mode, $target;
+	}
 }
 
 #	EOF installEpics.pl
