@@ -59,7 +59,7 @@ foreach my $source (@ARGV) {
     if (-f $target) {
         next if -M $target < -M $source and -C $target < -C $source;
         # Remove old target, making sure it is deletable first
-        chmod 0777, $target;
+        MyChmod(0777, $target);
         unlink $target;
     }
 
@@ -69,7 +69,7 @@ foreach my $source (@ARGV) {
 
     # chmod 0555 <read-only> DOES work on Win32, but the above
     # chmod 0777 fails to install a newer version on top.
-    chmod $mode, $target unless $^O eq 'MSWin32';
+    MyChmod($mode, $target);
 }
 
 sub Usage {
@@ -90,3 +90,33 @@ END
 
     exit $opt_h ? 0 : 2;
 }
+#
+# chmod doesn't always behave as expected on WIN32, so use
+# Win32::File::SetAttributes to be sure.
+# The READONLY attribute is the only one we are concerned with.
+# (note: had issues with "require" hence "use if")
+sub MyChmod($target, $mode)
+{
+    use if $^O eq "MSWin32", Win32::File;
+	if ($^O eq "MSWin32")
+	{
+	    my($attr);
+	    Win32::File::GetAttributes($target, $attr);
+		# if write access is requested anywhere in the mode then remove read-only, otherwise set it
+	    if ($mode & 0222)
+		{
+		    $attr &= ~READONLY;
+		}
+		else
+		{
+		    $attr |= READONLY;
+		}
+		Win32::File::SetAttributes($target, $attr);
+	}
+	else
+	{
+	    chmod $mode, $target;
+	}
+}
+
+#	EOF installEpics.pl

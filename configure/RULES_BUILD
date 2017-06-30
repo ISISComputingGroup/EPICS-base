@@ -164,7 +164,7 @@ build_clean:
 	$(DLLSTUB_LIBNAME) $(TESTDLLSTUB_LIBNAME) \
 	$(LOADABLE_SHRLIBNAME) \
 	$(INC) $(TARGETS) $(TDS) $(CLEANS) \
-	*.out MakefileInclude *.manifest *.exp *.pdb \
+	*.out MakefileInclude *.manifest *.exp *.pdb *.map \
 	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) \
 	$(TESTSCRIPTS) $(TAPFILES)
 ifdef RES
@@ -389,6 +389,9 @@ $(INSTALL_BIN)/%.exe: %.exe
 ifeq ($(INSTALL_PDB),YES)
 	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $(basename $<).pdb $(INSTALL_BIN)
 endif
+ifeq ($(INSTALL_MAP),YES)
+	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $(basename $<).map $(INSTALL_BIN)
+endif
 
 $(INSTALL_BIN)/%: %
 	$(ECHO) "Installing created executable $@"
@@ -414,6 +417,9 @@ $(INSTALL_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 ifeq ($(SHRLIB_SUFFIX),.dll)
 ifeq ($(INSTALL_PDB),YES)
 	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $(basename $<).pdb $(INSTALL_SHRLIB)
+endif
+ifeq ($(INSTALL_MAP),YES)
+	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $(basename $<).map $(INSTALL_SHRLIB)
 endif
 endif
 ifneq ($(SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE))
