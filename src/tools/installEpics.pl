@@ -25,6 +25,8 @@ use File::Copy;
 my $tool = basename($0);
 my $mode = 0755;
 
+my $WINATTR_READONLY = 0x1;
+
 our ($opt_d, $opt_h, $opt_m, $opt_q);
 
 getopt "m";
@@ -95,8 +97,8 @@ END
 # Win32::File::SetAttributes to be sure.
 # The READONLY attribute is the only one we are concerned with.
 # (note: had issues with "require" hence "use if")
-sub MyChmod($target, $mode)
-{
+sub MyChmod {
+    my($mode, $target) = @_;
     use if $^O eq "MSWin32", Win32::File;
 	if ($^O eq "MSWin32")
 	{
@@ -105,11 +107,11 @@ sub MyChmod($target, $mode)
 		# if write access is requested anywhere in the mode then remove read-only, otherwise set it
 	    if ($mode & 0222)
 		{
-		    $attr &= ~READONLY;
+		    $attr &= $WINATTR_READONLY;
 		}
 		else
 		{
-		    $attr |= READONLY;
+		    $attr |= $WINATTR_READONLY;
 		}
 		Win32::File::SetAttributes($target, $attr);
 	}
