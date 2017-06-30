@@ -96,12 +96,11 @@ END
 # chmod doesn't always behave as expected on WIN32, so use
 # Win32::File::SetAttributes to be sure.
 # The READONLY attribute is the only one we are concerned with.
-# (note: had issues with "require" hence "use if")
 sub MyChmod {
     my($mode, $target) = @_;
-    use if $^O eq "MSWin32", Win32::File;
 	if ($^O eq "MSWin32")
 	{
+	    require Win32::File;
 	    my($attr);
 	    Win32::File::GetAttributes($target, $attr);
 		# if write access is requested anywhere in the mode then remove read-only, otherwise set it
