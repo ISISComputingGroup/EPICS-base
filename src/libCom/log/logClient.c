@@ -262,8 +262,6 @@ static void sendMessageChunk(logClient * pClient, const char * orig_message)
 	    free(iocname);
 	}
 
-    epicsMutexMustLock ( pClient->mutex );
-
     while ( strSize ) {
         unsigned msgBufBytesLeft = 
             sizeof ( pClient->msgBuf ) - pClient->nextMsgIndex;
