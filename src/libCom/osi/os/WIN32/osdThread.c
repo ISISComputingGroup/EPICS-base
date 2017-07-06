@@ -33,6 +33,8 @@
 #include "ellLib.h"
 #include "epicsExit.h"
 
+epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
+
 void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName );
 static void threadCleanupWIN32 ( void );
 
@@ -90,7 +92,7 @@ static const int osdRealtimePriorityList [osdRealtimePriorityStateCount] =
     6  /* allowed on >= W2k, but no #define supplied */
 };
 
-#if !defined(EPICS_DLL_NO)
+#if defined(EPICS_BUILD_DLL)
 BOOL WINAPI DllMain (
     HINSTANCE hModule, DWORD dwReason, LPVOID lpReserved )
 {
@@ -297,6 +299,10 @@ static unsigned osdPriorityMagFromPriorityOSI ( unsigned osiPriority, unsigned p
     return magnitude;
 }
 
+epicsShareFunc
+void epicsThreadRealtimeLock(void)
+{}
+
 /*
  * epicsThreadGetOsdPriorityValue ()
  */
@@ -488,6 +494,7 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
 
         success = TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, pParm );
         if ( success ) {
+            osdThreadHooksRun ( ( epicsThreadId ) pParm );
             /* printf ( "starting thread %d\n", pParm->id ); */
             ( *pParm->funptr ) ( pParm->parm );
             /* printf ( "terminating thread %d\n", pParm->id ); */
@@ -502,7 +509,6 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     }
 
     epicsExitCallAtThreadExits ();
-
     /*
      * CAUTION: !!!! the thread id might continue to be used after this thread exits !!!!
      */
@@ -931,9 +937,9 @@ static const char * epics_GetThreadPriorityAsString ( HANDLE thr )
 }
 
 /*
- * epicsThreadShowPrivate ()
+ * epicsThreadShowInfo ()
  */
-static void epicsThreadShowPrivate ( epicsThreadId id, unsigned level )
+static void epicsThreadShowInfo ( epicsThreadId id, unsigned level )
 {
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
 
@@ -959,6 +965,28 @@ static void epicsThreadShowPrivate ( epicsThreadId id, unsigned level )
 }
 
 /*
+ * epicsThreadMap ()
+ */
+epicsShareFunc void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
+{
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParm;
+
+    if ( ! pGbl ) {
+        return;
+    }
+
+    EnterCriticalSection ( & pGbl->mutex );
+
+    for ( pParm = ( win32ThreadParam * ) ellFirst ( & pGbl->threadList );
+            pParm; pParm = ( win32ThreadParam * ) ellNext ( & pParm->node ) ) {
+        func ( ( epicsThreadId ) pParm );
+    }
+
+    LeaveCriticalSection ( & pGbl->mutex );
+}
+
+/*
  * epicsThreadShowAll ()
  */
 epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
@@ -971,11 +999,11 @@ epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
     }
 
     EnterCriticalSection ( & pGbl->mutex );
-    
-    epicsThreadShowPrivate ( 0, level );
-    for ( pParm = ( win32ThreadParam * ) ellFirst ( & pGbl->threadList ); 
+
+    epicsThreadShowInfo ( 0, level );
+    for ( pParm = ( win32ThreadParam * ) ellFirst ( & pGbl->threadList );
             pParm; pParm = ( win32ThreadParam * ) ellNext ( & pParm->node ) ) {
-        epicsThreadShowPrivate ( ( epicsThreadId ) pParm, level );
+        epicsThreadShowInfo ( ( epicsThreadId ) pParm, level );
     }
 
     LeaveCriticalSection ( & pGbl->mutex );
@@ -986,8 +1014,8 @@ epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
  */
 epicsShareFunc void epicsShareAPI epicsThreadShow ( epicsThreadId id, unsigned level )
 {
-    epicsThreadShowPrivate ( 0, level );
-    epicsThreadShowPrivate ( id, level );
+    epicsThreadShowInfo ( 0, level );
+    epicsThreadShowInfo ( id, level );
 }
 
 /*
@@ -1066,6 +1094,18 @@ epicsShareFunc void epicsShareAPI epicsThreadPrivateSet ( epicsThreadPrivateId p
 epicsShareFunc void * epicsShareAPI epicsThreadPrivateGet ( epicsThreadPrivateId pPvt )
 {
     return ( void * ) TlsGetValue ( pPvt->key );
+}
+
+/*
+ * epicsThreadGetCPUs ()
+ */
+epicsShareFunc int epicsThreadGetCPUs ( void )
+{
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    if (sysinfo.dwNumberOfProcessors > 0)
+        return sysinfo.dwNumberOfProcessors;
+    return 1;
 }
 
 #ifdef TEST_CODES

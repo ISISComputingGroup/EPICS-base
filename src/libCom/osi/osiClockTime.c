@@ -30,6 +30,7 @@ static struct {
     int             synchronize;
     int             synchronized;
     epicsEventId    loopEvent;
+    epicsTimeStamp  startTime;
     epicsTimeStamp  syncTime;
     double          ClockTimeSyncInterval;
     int             syncFromPriority;
@@ -70,35 +71,55 @@ static void ShutdownCallFunc(const iocshArgBuf *args)
 
 /* Initialization */
 
-static void ClockTime_InitOnce(void *psync)
+static void ClockTime_InitOnce(void *pfirst)
 {
-    ClockTimePvt.synchronize = *(int *)psync;
+    *(int *) pfirst = 1;
+
     ClockTimePvt.loopEvent   = epicsEventMustCreate(epicsEventEmpty);
     ClockTimePvt.lock        = epicsMutexCreate();
     ClockTimePvt.ClockTimeSyncInterval = 1.0;   /* First sync */
-
-    if (ClockTimePvt.synchronize) {
-        /* Start the sync thread */
-        epicsThreadCreate("ClockTimeSync", epicsThreadPriorityHigh,
-            epicsThreadGetStackSize(epicsThreadStackSmall),
-            ClockTimeSync, NULL);
-    }
 
     epicsAtExit(ClockTime_Shutdown, NULL);
 
     /* Register the iocsh commands */
     iocshRegister(&ReportFuncDef, ReportCallFunc);
-    if (ClockTimePvt.synchronize)
-        iocshRegister(&ShutdownFuncDef, ShutdownCallFunc);
+    iocshRegister(&ShutdownFuncDef, ShutdownCallFunc);
 
-    /* Finally register as a time provider */
+    /* Register as a time provider */
     generalTimeRegisterCurrentProvider("OS Clock", LAST_RESORT_PRIORITY,
         ClockTimeGetCurrent);
 }
 
 void ClockTime_Init(int synchronize)
 {
-    epicsThreadOnce(&onceId, ClockTime_InitOnce, &synchronize);
+    int firstTime = 0;
+
+    epicsThreadOnce(&onceId, ClockTime_InitOnce, &firstTime);
+
+    if (synchronize == CLOCKTIME_SYNC) {
+        if (ClockTimePvt.synchronize == CLOCKTIME_NOSYNC) {
+            /* Start synchronizing */
+            ClockTimePvt.synchronize = synchronize;
+
+            epicsThreadCreate("ClockTimeSync", epicsThreadPriorityHigh,
+                epicsThreadGetStackSize(epicsThreadStackSmall),
+                ClockTimeSync, NULL);
+        }
+        else {
+            /* No change, sync thread should already be running */
+        }
+    }
+    else {
+        if (ClockTimePvt.synchronize == CLOCKTIME_SYNC) {
+            /* Turn off synchronization thread */
+            ClockTime_Shutdown(NULL);
+        }
+        else {
+            /* No synchronization thread */
+            if (firstTime)
+                ClockTimeGetCurrent(&ClockTimePvt.startTime);
+        }
+    }
 }
 
 
@@ -106,8 +127,13 @@ void ClockTime_Init(int synchronize)
 
 void ClockTime_Shutdown(void *dummy)
 {
-    ClockTimePvt.synchronize = 0;
+    ClockTimePvt.synchronize = CLOCKTIME_NOSYNC;
     epicsEventSignal(ClockTimePvt.loopEvent);
+}
+
+void ClockTime_GetProgramStart(epicsTimeStamp *pDest)
+{
+    *pDest = ClockTimePvt.startTime;
 }
 
 
@@ -119,7 +145,7 @@ static void ClockTimeSync(void *dummy)
 
     for (epicsEventWaitWithTimeout(ClockTimePvt.loopEvent,
              ClockTimePvt.ClockTimeSyncInterval);
-         ClockTimePvt.synchronize;
+         ClockTimePvt.synchronize == CLOCKTIME_SYNC;
          epicsEventWaitWithTimeout(ClockTimePvt.loopEvent,
              ClockTimePvt.ClockTimeSyncInterval)) {
         epicsTimeStamp timeNow;
@@ -136,7 +162,10 @@ static void ClockTimeSync(void *dummy)
             }
 
             epicsMutexMustLock(ClockTimePvt.lock);
-            ClockTimePvt.synchronized     = 1;
+            if (!ClockTimePvt.synchronized) {
+                ClockTimePvt.startTime    = timeNow;
+                ClockTimePvt.synchronized = 1;
+            }
             ClockTimePvt.syncFromPriority = priority;
             ClockTimePvt.syncTime         = timeNow;
             epicsMutexUnlock(ClockTimePvt.lock);
@@ -175,8 +204,8 @@ static int ClockTimeGetCurrent(epicsTimeStamp *pDest)
     return 0;
 }
 
-
 #endif /* CLOCK_REALTIME */
+
 /* Allow the following report routine to be compiled anyway
  * to avoid getting a build warning from ranlib.
  */
@@ -185,26 +214,49 @@ static int ClockTimeGetCurrent(epicsTimeStamp *pDest)
 
 int ClockTime_Report(int level)
 {
+    char timebuf[32];
+
     if (onceId == EPICS_THREAD_ONCE_INIT) {
-        printf("OS Clock driver not initialized.\n");
-    } else if (ClockTimePvt.synchronize) {
+        printf("OS Clock driver not %s.\n",
+#ifdef CLOCK_REALTIME
+            "initialized"
+#else
+            "available"
+#endif /* CLOCK_REALTIME */
+            );
+    }
+    else if (ClockTimePvt.synchronize == CLOCKTIME_SYNC) {
+        int synchronized, syncFromPriority;
+        epicsTimeStamp startTime, syncTime;
+
         epicsMutexMustLock(ClockTimePvt.lock);
-        if (ClockTimePvt.synchronized) {
-            printf("OS Clock driver has synchronized to a priority=%d provider\n",
-                ClockTimePvt.syncFromPriority);
+        synchronized = ClockTimePvt.synchronized;
+        syncFromPriority = ClockTimePvt.syncFromPriority;
+        startTime = ClockTimePvt.startTime;
+        syncTime = ClockTimePvt.syncTime;
+        epicsMutexUnlock(ClockTimePvt.lock);
+
+        if (synchronized) {
+            printf("OS Clock driver is synchronized to a priority=%d provider\n",
+                syncFromPriority);
             if (level) {
-                char lastSync[32];
-                epicsTimeToStrftime(lastSync, sizeof(lastSync),
-                    "%Y-%m-%d %H:%M:%S.%06f", &ClockTimePvt.syncTime);
-                printf("Last successful sync was at %s\n", lastSync);
+                epicsTimeToStrftime(timebuf, sizeof(timebuf),
+                    "%Y-%m-%d %H:%M:%S.%06f", &startTime);
+                printf("Initial sync was at %s\n", timebuf);
+                epicsTimeToStrftime(timebuf, sizeof(timebuf),
+                    "%Y-%m-%d %H:%M:%S.%06f", &syncTime);
+                printf("Last successful sync was at %s\n", timebuf);
             }
             printf("Syncronization interval = %.0f seconds\n",
                 ClockTimePvt.ClockTimeSyncInterval);
-        } else
-            printf("OS Clock driver has *not* yet synchronized\n");
-
-        epicsMutexUnlock(ClockTimePvt.lock);
-    } else {
+        }
+        else
+            printf("OS Clock driver is *not* synchronized\n");
+    }
+    else {
+        epicsTimeToStrftime(timebuf, sizeof(timebuf),
+            "%Y-%m-%d %H:%M:%S.%06f", &ClockTimePvt.startTime);
+        printf("Program started at %s\n", timebuf);
         printf("OS Clock synchronization thread not running.\n");
     }
     return 0;

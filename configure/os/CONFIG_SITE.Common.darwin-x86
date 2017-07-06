@@ -13,6 +13,7 @@ ARCH_CLASS = x86_64
 #
 # Uncomment the following 3 lines to build with Apple's GCC instead of CLANG.
 #
+#CMPLR_CLASS = gcc
 #CC  = gcc
 #CCC = g++
 #GNU = YES
@@ -21,6 +22,7 @@ ARCH_CLASS = x86_64
 # To use MacPorts GCC uncomment (and modify if necessary) the following:
 
 #GNU_DIR = /opt/local
+#CMPLR_CLASS = gcc
 #CC = $(GNU_BIN)/gcc -m64
 #CCC = $(GNU_BIN)/g++ -m64
 #GNU = YES

@@ -19,6 +19,7 @@
 
 #define epicsExportSharedSymbols
 #include "dbDefs.h"
+#include "epicsAssert.h"
 #include "epicsStdlib.h"
 #include "epicsString.h"
 #include "epicsTypes.h"
@@ -215,8 +216,6 @@ epicsShareFunc long
     int cond_count = 0;
     char * const pdest = pout;
     char *pnext;
-    double lit_d;
-    epicsInt32 lit_i;
 
     if (psrc == NULL || *psrc == '\0' ||
 	pout == NULL || perror == NULL) {
@@ -243,8 +242,10 @@ epicsShareFunc long
 
             psrc -= strlen(pel->name);
             if (pel->code == LITERAL_DOUBLE) {
-                lit_d = epicsStrtod(psrc, &pnext);
-                if (pnext == psrc) {
+                double lit_d;
+                epicsInt32 lit_i;
+
+                if (epicsParseDouble(psrc, &lit_d, &pnext)) {
                     *perror = CALC_ERR_BAD_LITERAL;
                     goto bad;
                 }
@@ -263,8 +264,8 @@ epicsShareFunc long
             else {
                 epicsUInt32 lit_ui;
 
-                lit_ui = (epicsUInt32) strtoul(psrc, &pnext, 0);
-                if (pnext == psrc) {
+                assert(pel->code == LITERAL_INT);
+                if (epicsParseUInt32(psrc, &lit_ui, 0, &pnext)) {
                     *perror = CALC_ERR_BAD_LITERAL;
                     goto bad;
                 }
@@ -608,7 +609,7 @@ epicsShareFunc void
 	case LITERAL_INT:
 	    memcpy(&lit_i, ++pinst, sizeof(epicsInt32));
 	    printf("\tInteger %d (0x%x)\n", lit_i, lit_i);
-	    pinst += sizeof(int);
+	    pinst += sizeof(epicsInt32);
 	    break;
 	case MIN:
 	case MAX:

@@ -1,125 +1,141 @@
 #!/usr/bin/perl
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 #
-# 	Author: Kay-Uwe Kasemir
-# 	based on bldEnvData shell scripts, Andrew Johnson (RGO)
-# 	Date:	1-30-97
-# 
-# 	Experimental Physics and Industrial Control System (EPICS)
-# 
-#	tool to build envData.c from envDefs.h and config/CONFIG*ENV
+# Author: Kay-Uwe Kasemir
+# Date: 1-30-97
 
-use Cwd 'abs_path';
+use strict;
 
-#	We need exactly one argument:
-$usage="Usage:\tbldEnvData <config-Directory>";
-die $usage unless $#ARGV==0;
+# This program is never installed, so it can't use FindBin to get
+# the path to the lib/perl directory.  However it can load the
+# EPICS:: modules directly from the src/tools directory instead:
+use lib '../../tools';
 
-$config_dir      = abs_path($ARGV[0]);
-$config_env      = "${config_dir}/CONFIG_ENV";
-$config_site_env = "${config_dir}/CONFIG_SITE_ENV";
+use Getopt::Std;
+use File::Basename;
+use EPICS::Path;
+use EPICS::Release;
+use Text::Wrap;
 
-$env_dir    = abs_path("../env");
-$env_defs   = "${env_dir}/envDefs.h";
+my $tool = basename($0);
 
-$out_name   = "envData.c";
+our ($opt_h, $opt_q, $opt_t, $opt_s, $opt_c);
+our $opt_o = 'envData.c';
 
-#	$tool = basename of this script
-$tool=$0;
-$tool=~ s'.*/'';
+$Getopt::Std::OUTPUT_HELP_VERSION = 1;
+$Text::Wrap::columns = 75;
 
+&HELP_MESSAGE unless getopts('ho:qt:s:c:') && @ARGV == 1;
+&HELP_MESSAGE if $opt_h;
 
-#	Start by extracting the ENV_PARAM declarations from $env_defs
-#	i.e. gather the names of params we are interested in:
+my $config   = AbsPath(shift);
+my $env_defs = AbsPath('../env/envDefs.h');
+
+# Parse the ENV_PARAM declarations in envDefs.h
+# to get the param names we are interested in
 #
-open SRC, "<$env_defs" or die "Cannot open $env_defs";
+open SRC, '<', $env_defs
+    or die "$tool: Cannot open $env_defs: $!\n";
+
+my @vars;
 while (<SRC>) {
-	if (m/epicsShareExtern\s+const\s+ENV_PARAM\s+([A-Za-z_]\w*)\s*;/) {
-		$need_var{$1} = 1;
-	}
+    if (m/epicsShareExtern\s+const\s+ENV_PARAM\s+([A-Za-z_]\w*)\s*;/) {
+        push @vars, $1;
+    }
 }
 close SRC;
 
+# A list of configure/CONFIG_* files to read
+#
+my @configs = ("$config/CONFIG_ENV", "$config/CONFIG_SITE_ENV");
 
-# Read the default values from the config file into shell variables
-sub GetVars {
-	my ($filename) = @_;
-	open IN, "<$filename" or die "Cannot read $filename";
-	while (<IN>) {
-		# Discard comments, carriage returns and trailing whitespace
-		next if m/^ \s* \#/x;
-		chomp;
-		if (m/^ \s* ([A-Za-z_]\w*) \s* = \s* ( \S* | ".*" ) \s* $/x) {
-			my ($var, $val) = ($1, $2);
-			next unless $need_var{$var};
-			$val =~ s/^"(.*)"$/$1/;
-			$value{$var} = $val;
-		}
-	}
-	close IN;
+if ($opt_t) {
+    my $config_arch_env = "$config/os/CONFIG_SITE_ENV.$opt_t";
+    push @configs, $config_arch_env
+        if -f $config_arch_env;
 }
 
-GetVars ($config_env);
-GetVars ($config_site_env);
+my @sources = ($env_defs, @configs);
 
-#	Generate header file
+# Get values from the config files
 #
+my (%values, @dummy);
+readRelease($_, \%values, \@dummy) foreach @configs;
+expandRelease(\%values);
 
-print "Generating $out_name\n";
-
-open OUT, ">$out_name" or die "cannot create $out_name";
-
-#	Write header
-print OUT "/* $out_name\n",
-	  " *\n",
-	  " * Created " . localtime() . "\n",
-	  " * by $tool from files:\n",
-	  " *\t$env_defs\n",
-	  " *\t$config_env\n",
-	  " *\t$config_site_env\n",
-	  " */\n",
-	  "\n",
-	  "#define epicsExportSharedSymbols\n",
-	  "#include \"envDefs.h\"\n",
-	  "\n";
-
-
-#	Print variables
+# Get values from the command-line
 #
-@vars = sort keys %need_var;
-foreach $var (@vars) {
-	$default = exists $value{$var} ? $value{$var} : "";
-	print "Warning: No default value found for $var\n"
-	    unless exists $value{$var};
+$values{EPICS_BUILD_COMPILER_CLASS} = $opt_c if $opt_c;
+$values{EPICS_BUILD_OS_CLASS} = $opt_s if $opt_s;
+$values{EPICS_BUILD_TARGET_ARCH} = $opt_t if $opt_t;
 
-	print OUT "epicsShareDef const ENV_PARAM $var =\n",
-		  "\t{\"$var\", \"$default\"};\n";
+# Warn about vars with no configured value
+#
+my @undefs = grep {!exists $values{$_}} @vars;
+warn "$tool: No value given for $_\n" foreach @undefs;
+
+print "Generating $opt_o\n" unless $opt_q;
+
+# Start creating the output
+#
+open OUT, '>', $opt_o
+    or die "$tool: Cannot create $opt_o: $!\n";
+
+my $sources = join "\n", map {" *   $_"} @sources;
+
+print OUT << "END";
+/* Generated file $opt_o
+ *
+ * Created from
+$sources
+ */
+
+#include <stddef.h>
+#define epicsExportSharedSymbols
+#include "envDefs.h"
+
+END
+
+# Define a default value for each named parameter
+#
+foreach my $var (@vars) {
+    my $default = $values{$var};
+    if (defined $default) {
+        $default =~ s/^"//;
+        $default =~ s/"$//;
+    }
+    else {
+        $default = '';
+    }
+
+    print OUT "epicsShareDef const ENV_PARAM $var =\n",
+              "    {\"$var\", \"$default\"};\n";
 }
 
-# Now create an array pointing to all parameters
-
+# Also provide a list of all defined parameters
+#
 print OUT "\n",
-	  "epicsShareDef const ENV_PARAM* env_param_list[] = {\n";
-
-# Contents are the addresses of each parameter
-foreach $var (@vars) {
-	print OUT "\t&$var,\n";
-}
-
-# Finally finish list with 0
-print OUT "\t0\n",
-	  "};\n",
-	  "\n",
-	  "/*\tEOF $out_name */\n";
-
+    "epicsShareDef const ENV_PARAM* env_param_list[] = {\n",
+    wrap('    ', '    ', join(', ', map("&$_", @vars), 'NULL')),
+    "\n};\n";
 close OUT;
 
-#	EOF bldEnvData.pl
+sub HELP_MESSAGE {
+    print STDERR "Usage: $tool [options] configure\n",
+        "  -h       Help: Print this message\n",
+        "  -q       Quiet: Only print errors\n",
+        "  -o file  Output filename, default is $opt_o\n",
+        "  -t arch  Target architecture \$(T_A) name\n",
+        "  -s os    Operating system \$(OS_CLASS)\n",
+        "  -c comp  Compiler class \$(CMPLR_CLASS)\n",
+        "\n";
+
+    exit 1;
+}

@@ -1,8 +1,10 @@
 /*************************************************************************\
-* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
-*     National Laboratory.
+* Copyright (c) 2011 LANS LLC, as Operator of
+*     Los Alamos National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
+*     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -27,7 +29,6 @@
 #include <string> // vxWorks 6.0 requires this include 
 
 #define epicsExportSharedSymbols
-#include "epicsStdioRedirect.h"
 #include "locationException.h"
 #include "epicsAssert.h"
 #include "epicsVersion.h"
@@ -120,7 +121,7 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
 // struct timeval's tv_usec may be -1, but I think that means error,
 // so this private method never needs to handle -ve offsets.
 //
-inline void epicsTime::addNanoSec (long nSecAdj)
+void epicsTime :: addNanoSec ( long nSecAdj )
 {
     if (nSecAdj <= 0)
         return;
@@ -410,8 +411,8 @@ epicsTime::operator struct timeval () const
     time_t_wrapper ansiTimeTicks;
 
     ansiTimeTicks = *this;
-    // On Posix systems timeval :: tv_sec is a time_t so this can be 
-    // a direct assignement. On other systems I dont know that we can
+    // On Posix systems timeval :: tv_sec is a time_t so this can be
+    // a direct assignment. On other systems I dont know that we can
     // guarantee that time_t and timeval :: tv_sec will have the
     // same epoch or have the same scaling factor to discrete seconds.
     // For example, on windows time_t changed recently to a 64 bit 
@@ -429,8 +430,8 @@ epicsTime::operator struct timeval () const
 epicsTime::epicsTime (const struct timeval &ts)
 {
     time_t_wrapper ansiTimeTicks;
-    // On Posix systems timeval :: tv_sec is a time_t so this can be 
-    // a direct assignement. On other systems I dont know that we can
+    // On Posix systems timeval :: tv_sec is a time_t so this can be
+    // a direct assignment. On other systems I dont know that we can
     // guarantee that time_t and timeval :: tv_sec will have the
     // same epoch or have the same scaling factor to discrete seconds.
     // For example, on windows time_t changed recently to a 64 bit 
@@ -480,11 +481,11 @@ epicsTime::operator epicsTimeStamp () const
     }
     epicsTimeStamp ts;
     //
-    // trucation by design
+    // truncation by design
     // -------------------
-    // epicsTime::secPastEpoch is based on ulong and has much greater range 
-    // on 64 bit hosts than the orginal epicsTimeStamp::secPastEpoch. The 
-    // epicsTimeStamp::secPastEpoch is based on epicsUInt32 so that it will 
+    // epicsTime::secPastEpoch is based on ulong and has much greater range
+    // on 64 bit hosts than the original epicsTimeStamp::secPastEpoch. The
+    // epicsTimeStamp::secPastEpoch is based on epicsUInt32 so that it will
     // match the original network protocol. Of course one can anticipate
     // that eventually, a epicsUInt64 based network time stamp will be 
     // introduced when 64 bit architectures are more ubiquitous.
@@ -697,7 +698,7 @@ void epicsTime::show ( unsigned level ) const
     }
 
     if ( level > 1 ) {
-        // this also supresses the "defined, but not used" 
+        // this also suppresses the "defined, but not used"
         // warning message
         printf ( "epicsTime: revision \"%s\"\n", 
             pEpicsTimeVersion );
