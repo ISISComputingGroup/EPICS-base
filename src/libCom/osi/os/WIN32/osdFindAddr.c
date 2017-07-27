@@ -4,11 +4,14 @@
 #include "epicsStackTracePvt.h"
 #include "epicsStackTrace.h"
 
+#define MAX_SYM_SIZE 255
+
 int epicsFindAddr(void *addr, epicsSymbol *sym_p)
 {
 	static int first_call = 1;
 	static HANDLE process = NULL;
-	DWORD64 displacement = 0;
+	DWORD64 displacement64 = 0;
+	DWORD displacement = 0;
 	SYMBOL_INFO *symbol;
 	IMAGEHLP_LINE64 line;
 	if (first_call)
@@ -19,10 +22,10 @@ int epicsFindAddr(void *addr, epicsSymbol *sym_p)
 		first_call = 0;
 	}
 	line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
-	symbol = (SYMBOL_INFO *)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
-	symbol->MaxNameLen = 255;
+	symbol = (SYMBOL_INFO *)calloc(sizeof(SYMBOL_INFO) + (MAX_SYM_SIZE + 1) * sizeof(char), 1);
+	symbol->MaxNameLen = MAX_SYM_SIZE;
 	symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-	if (!SymFromAddr(process, addr, &displacement, symbol))
+	if (!SymFromAddr(process, (DWORD64)addr, &displacement64, symbol))
 	{
 		sym_p->s_nam = 0;
 		sym_p->s_val = 0;
@@ -31,8 +34,8 @@ int epicsFindAddr(void *addr, epicsSymbol *sym_p)
 		return -1;
 	}
 	sym_p->s_nam = strdup(symbol->Name);
-	sym_p->s_val = symbol->Address;
-	if (SymGetLineFromAddr64(process, addr, &displacement, &line))
+	sym_p->s_val = (void*)symbol->Address;
+	if (SymGetLineFromAddr64(process, (DWORD64)addr, &displacement, &line))
 	{
 		sym_p->f_nam = strdup(line.FileName);
 	}
