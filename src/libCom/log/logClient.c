@@ -208,6 +208,9 @@ static void sendMessageChunk(logClient * pClient, const char * orig_message)
 	char sev_str[16];
 	char event_time[32];
     epicsTimeStamp the_time;
+    /* severity to use when it has not otherwise been specified via e.g. errlogSevPrintf()
+       Changed from MAJOR to MINOR to reduce number of messages displayed by default in IBEX GUI */
+    static const char* default_severity = "MINOR";
 	
     if ( ! pClient || ! orig_message ) {
         return;
@@ -238,7 +241,7 @@ static void sendMessageChunk(logClient * pClient, const char * orig_message)
 	}
 	else
 	{
-	    strcpy(sev_str, "MAJOR");
+	    strcpy(sev_str, default_severity);
 	}
 	max_len_msg = strlen(xml_format) + (iocname != NULL ? strlen(iocname) : 8) + strlen(sev_str) + strlen(orig_message) + strlen(event_time) + 1;
 	message = message_ptr = (char*)malloc(max_len_msg + 1);
