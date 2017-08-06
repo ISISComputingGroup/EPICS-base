@@ -23,7 +23,7 @@
 #include <epicsString.h>
 #include <osiFileName.h>
 
-#define MAX_BUFFER_SIZE 4096
+#define MAX_BUFFER_SIZE 40960
 #define MAX_DEPS 1024
 
 /* Module to read the template files */
