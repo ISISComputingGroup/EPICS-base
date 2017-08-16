@@ -175,7 +175,7 @@ GCC_PIPE = NO
 #  run at build-time, e.g. set the LD_LIBRARY_PATH environment variable.
 LINKER_USE_RPATH = YES
 
-#MSI = $(MSI3_15)
-MSI = $(EPICS_KIT_ROOT)/extensions/master/bin/$(EPICS_HOST_ARCH)/msi
+MSI = $(MSI3_15)
+#MSI = $(EPICS_KIT_ROOT)/extensions/master/bin/$(EPICS_HOST_ARCH)/msi
 
 #CHECK_RELEASE_YES = noCheckRelease
