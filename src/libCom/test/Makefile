@@ -201,6 +201,8 @@ TESTS += epicsMessageQueueTest
 
 TESTPROD_HOST += epicsStackTraceTest
 epicsStackTraceTest_SRCS += epicsStackTraceTest.c
+epicsStackTraceTest_CFLAGS_WIN32 += /Zi
+epicsStackTraceTest_LDFLAGS_WIN32 += /DEBUG
 testHarness_SRCS += epicsStackTraceTest.c
 TESTS += epicsStackTraceTest
 
