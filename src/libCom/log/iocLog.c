@@ -20,6 +20,7 @@
 #include "envDefs.h"
 #include "logClient.h"
 #include "iocLog.h"
+#include "errlog.h"
 
 int iocLogDisable = 0;
 
@@ -89,6 +90,8 @@ static logClientId iocLogClientInit (void)
         return NULL;
     }
     id = logClientCreate (addr, port);
+    errlogAddListener ( logClientSendMessage, (void *)id );
+
     return id;
 }
 
