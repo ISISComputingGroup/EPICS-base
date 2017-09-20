@@ -26,11 +26,11 @@ ifeq ($(findstring cygwin,$(EPICS_HOST_ARCH)),)
 	@echo call %%MYDIR%%dllPath.bat>> $@
 	@echo call $(subst /,\,$(EPICS_ROOT))\utils_win32\master\bin\shorten_path.bat PATH>> $@
 	@echo set "PATH=%%PATH%%;%%PREPATH%%">> $@
-	@echo if "%%1" == "" ( >> $@
+	@echo if "%%1" == "" (>> $@
 	@echo    set "CMDST=st.cmd">> $@
-	@echo ) else ( >> $@
+	@echo ) else (>> $@
 	@echo    set "CMDST=%%1">> $@
-	@echo ) >> $@
+	@echo )>> $@
 	@echo %%MYDIR%%..\..\bin\$(ARCH)\%%IOCEXE%% %%CMDST%%>> $@
 	@echo set "PATH=%%OLDPATH%%">> $@
 	@echo set EPICS_CAS_INTF_ADDR_LIST=%%OLDEPICS_CAS_INTF_ADDR_LIST%%>> $@
