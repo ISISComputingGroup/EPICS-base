@@ -202,6 +202,7 @@ static int timezoneOffset(char* buffer, int len_buffer, epicsTimeStamp* the_time
 static void sendMessageChunk(logClient * pClient, const char * orig_message)
 {
     int i;
+    unsigned char c;
     unsigned int strSize, max_len_msg;
     char *ioc, *iocname; 
 	char *message, *message_ptr;
@@ -251,9 +252,10 @@ static void sendMessageChunk(logClient * pClient, const char * orig_message)
 	// remove any invalid characters
 	for(i=0; i<strSize; ++i)
 	{
-	    if (!(isascii(message[i]) && (isprint(message[i]) || isspace(message[i]))))
+        c = message[i];
+	    if ( !(isascii(c) && (isprint(c) || isspace(c))) )
 		{
-		    message[i] = ' ';
+		    message[i] = '?'; /* avoid replacing with space in case it changes column meaning */
 		}
 	}
 	if (iocname != NULL)
@@ -643,8 +645,6 @@ logClientId epicsShareAPI logClientCreate (
             pClient->name, LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT );
     }
         
-    errlogAddListener ( logClientSendMessage, (void *) pClient );
-
     return (void *) pClient;
 }
 
