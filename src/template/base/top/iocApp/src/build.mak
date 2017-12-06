@@ -25,6 +25,12 @@ $(APPNAME)_DBD += asSupport.dbd
 $(APPNAME)_DBD += devIocStats.dbd
 $(APPNAME)_DBD += caPutLog.dbd
 $(APPNAME)_DBD += utilities.dbd
+## Stream device support ##
+$(APPNAME)_DBD += stream.dbd
+$(APPNAME)_DBD += asyn.dbd
+$(APPNAME)_DBD += drvAsynSerialPort.dbd
+$(APPNAME)_DBD += drvAsynIPPort.dbd
+$(APPNAME)_DBD += calcSupport.dbd
 ## add other dbd here ##
 #$(APPNAME)_DBD += xxx.dbd
 
@@ -37,6 +43,10 @@ $(APPNAME)_LIBS += caPutLog
 $(APPNAME)_LIBS += icpconfig pugixml
 $(APPNAME)_LIBS += autosave
 $(APPNAME)_LIBS += utilities pcre libjson zlib
+## Stream device libraries ##
+$(APPNAME)_LIBS += stream
+$(APPNAME)_LIBS += pcre
+$(APPNAME)_LIBS += asyn
 ## Add other libraries here ##
 #$(APPNAME)_LIBS += xxx
 
