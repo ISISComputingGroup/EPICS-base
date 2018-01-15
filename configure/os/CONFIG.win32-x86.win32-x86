@@ -164,6 +164,13 @@ SHRLIB_CFLAGS=
 OS_CLASS=WIN32
 POSIX=NO
 
+ifneq ($(VisualStudioVersion),)
+OPT_CXXFLAGS_NO += -FS
+OPT_CXXFLAGS_YES += -FS
+OPT_CFLAGS_NO += -FS
+OPT_CFLAGS_YES += -FS
+endif
+
 #	ifdef WIN32   looks better that  ifeq ($(OS_CLASS),WIN32)  ??
 WIN32=1
 
