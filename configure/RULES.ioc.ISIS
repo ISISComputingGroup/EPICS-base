@@ -62,7 +62,3 @@ ifneq ($(findstring linux,$(EPICS_HOST_ARCH)),)
 	@echo 'export EPICS_CAS_INTF_ADDR_LIST="$$OLDEPICS_CAS_INTF_ADDR_LIST"'>> $@
 	@echo 'export EPICS_CAS_BEACON_ADDR_LIST="$$OLDEPICS_CAS_BEACON_ADDR_LIST"'>> $@
 endif
-
-envPaths cdCommands dllPath.bat relPaths.sh dllCopy.bat: \
-    $(wildcard $(EPICS_KIT_ROOT)/configure/MASTER_RELEASE*)
-
