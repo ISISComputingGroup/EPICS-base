@@ -150,7 +150,11 @@ REM set PATH=%PATH%;C:\Program files\Bazaar
 REM ======================================================
 REM ----------------- GNU make flags ---------------------
 REM ======================================================
-set MAKEFLAGS=-w
+if "%MAKEFLAGS%" == "" (
+    set "MAKEFLAGS=-w"
+) else (
+    set "MAKEFLAGS=-w %MAKEFLAGS%"
+)
 
 REM ======================================================
 REM -------------- vim (use cygwin vim ) -----------------
