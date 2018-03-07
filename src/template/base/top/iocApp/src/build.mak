@@ -44,7 +44,7 @@ $(APPNAME)_LIBS += icpconfig pugixml
 $(APPNAME)_LIBS += autosave
 $(APPNAME)_LIBS += utilities pcre libjson zlib
 ## Stream device libraries ##
-$(APPNAME)_LIBS += stream
+$(APPNAME)_LIBS += stream calc
 $(APPNAME)_LIBS += pcre
 $(APPNAME)_LIBS += asyn
 ## Add other libraries here ##
