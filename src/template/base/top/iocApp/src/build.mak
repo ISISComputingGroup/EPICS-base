@@ -42,13 +42,15 @@ $(APPNAME)_LIBS += pvdump $(MYSQLLIB) easySQLite sqlite
 $(APPNAME)_LIBS += caPutLog
 $(APPNAME)_LIBS += icpconfig pugixml
 $(APPNAME)_LIBS += autosave
-$(APPNAME)_LIBS += utilities pcre libjson zlib
+$(APPNAME)_LIBS += utilities libjson zlib
 ## Stream device libraries ##
-$(APPNAME)_LIBS += stream calc
+$(APPNAME)_LIBS += stream calc sscan
 $(APPNAME)_LIBS += pcre
 $(APPNAME)_LIBS += asyn
 ## Add other libraries here ##
 #$(APPNAME)_LIBS += xxx
+
+$(APPNAME)_LIBS_WIN32 += oncrpc
 
 # _APPNAME__registerRecordDeviceDriver.cpp derives from _APPNAME_.dbd
 $(APPNAME)_SRCS += $(APPNAME)_registerRecordDeviceDriver.cpp
