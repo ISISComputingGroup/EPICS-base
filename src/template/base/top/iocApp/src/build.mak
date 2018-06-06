@@ -48,6 +48,7 @@ $(APPNAME)_LIBS += stream
 $(APPNAME)_LIBS += pcre
 $(APPNAME)_LIBS += asyn
 ## Add other libraries here ##
+$(APPNAME)_LIBS += calc
 #$(APPNAME)_LIBS += xxx
 
 # _APPNAME__registerRecordDeviceDriver.cpp derives from _APPNAME_.dbd
