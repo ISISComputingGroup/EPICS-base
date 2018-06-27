@@ -93,6 +93,7 @@ TEMPLATES += top/iocBoot/ioc/st.cmd@Common
 TEMPLATES += top/iocBoot/ioc/st.cmd@Cross
 TEMPLATES += top/iocBoot/ioc/st.cmd@vxWorks
 TEMPLATES += top/iocBoot/ioc/st.cmd@RTEMS
+TEMPLATES += top/iocBoot/ioc/st-common.cmd@Common
 
 SCRIPTS_HOST += makeBaseApp.pl
 
