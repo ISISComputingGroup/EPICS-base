@@ -961,6 +961,19 @@ iocshLoad(const char *pathname, const char *macros)
     return iocshBody(pathname, NULL, macros);
 }
 
+int epicsShareAPI 
+iocshLoadIfDef(const char* expr, const char *pathname, const char* macros)
+{
+	if (expr && *expr)
+	{
+        return iocshLoad(pathname, macros);
+	}
+	else
+	{
+		return 0;
+	}
+}
+
 int epicsShareAPI
 iocshRun(const char *cmd, const char *macros)
 {
@@ -1088,6 +1101,17 @@ static void iocshLoadCallFunc(const iocshArgBuf *args)
     iocshLoad(args[0].sval, args[1].sval);
 }
 
+/* iocshLoadIfDef */
+static const iocshArg iocshLoadIfDefArg0 = { "expr",iocshArgString};
+static const iocshArg iocshLoadIfDefArg1 = { "pathname",iocshArgString};
+static const iocshArg iocshLoadIfDefArg2 = { "macros", iocshArgString};
+static const iocshArg *iocshLoadIfDefArgs[3] = {&iocshLoadIfDefArg0, &iocshLoadIfDefArg1, &iocshLoadIfDefArg2};
+static const iocshFuncDef iocshLoadIfDefFuncDef = {"iocshLoadIfDef",3,iocshLoadIfDefArgs};
+static void iocshLoadIfDefCallFunc(const iocshArgBuf *args)
+{
+    iocshLoadIfDef(args[0].sval, args[1].sval, args[2].sval);
+}
+
 /* iocshRun */
 static const iocshArg iocshRunArg0 = { "command",iocshArgString};
 static const iocshArg iocshRunArg1 = { "macros", iocshArgString};
@@ -1126,6 +1150,7 @@ static void localRegister (void)
     iocshRegister(&helpFuncDef,helpCallFunc);
     iocshRegister(&iocshCmdFuncDef,iocshCmdCallFunc);
     iocshRegister(&iocshLoadFuncDef,iocshLoadCallFunc);
+    iocshRegister(&iocshLoadIfDefFuncDef,iocshLoadIfDefCallFunc);
     iocshRegister(&iocshRunFuncDef,iocshRunCallFunc);
 }
 

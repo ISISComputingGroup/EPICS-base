@@ -72,6 +72,7 @@ epicsShareFunc int epicsShareAPI iocsh(const char *pathname);
 epicsShareFunc int epicsShareAPI iocshCmd(const char *cmd);
 epicsShareFunc int epicsShareAPI iocshLoad(const char *pathname, const char* macros);
 epicsShareFunc int epicsShareAPI iocshRun(const char *cmd, const char* macros);
+epicsShareFunc int epicsShareAPI iocshLoadIfDef(const char* expr, const char *pathname, const char* macros);
 
 /* Makes macros that shadow environment variables work correctly with epicsEnvSet */
 epicsShareFunc void epicsShareAPI iocshEnvClear(const char *name);
