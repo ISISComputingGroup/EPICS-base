@@ -115,7 +115,7 @@ int main(int argc,char **argv)
         }
         printf("%s:", outFile);
     }
-    else if (outFile && freopen(outFile, "w", stdout) == NULL) {
+    else if (outFile && freopen(outFile, "wt", stdout) == NULL) {
         fprintf(stderr, "msi: Can't open %s for writing: %s\n",
             outFile, strerror(errno));
         exit(1);
@@ -276,6 +276,9 @@ static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *tem
 endif:
         if (expand && !opt_D) {
             n = macExpandString(macPvt,input,buffer,MAX_BUFFER_SIZE-1);
+            if (abs(n) >= MAX_BUFFER_SIZE-1) {
+                fprintf(stderr,"msi: buffer overflow %d > %d\n", abs(n), MAX_BUFFER_SIZE-1);                
+            }
             fputs(buffer,stdout);
             if (opt_V == 1 && n < 0) {
                 fprintf(stderr,"msi: Error - undefined macros present\n");
@@ -429,7 +432,7 @@ static void inputOpenFile(inputData *pinputData,char *filename)
     if(!filename) {
         fp = stdin;
     } else if((ellCount(ppathList)==0) || strchr(filename,'/')){
-        fp = fopen(filename,"r");
+        fp = fopen(filename,"rt");
     } else {
         ppathNode = (pathNode *)ellFirst(ppathList);
         while(ppathNode) {
@@ -438,7 +441,7 @@ static void inputOpenFile(inputData *pinputData,char *filename)
             strcpy(fullname,ppathNode->directory);
             strcat(fullname,"/");
             strcat(fullname,filename);
-            fp = fopen(fullname,"r");
+            fp = fopen(fullname,"rt");
             if(fp) break;
             free(fullname);
             ppathNode = (pathNode *)ellNext(&ppathNode->node);
@@ -589,7 +592,7 @@ static void substituteOpen(subInfo **ppvt,char *substitutionName)
     psubFile = calloc(1,sizeof(subFile));
     psubInfo->psubFile = psubFile;
     ellInit(&psubInfo->patternList);
-    fp = fopen(substitutionName,"r");
+    fp = fopen(substitutionName,"rt");
     if(!fp) {
         fprintf(stderr,"msi: Can't open file '%s'\n",substitutionName);
         exit(1);
