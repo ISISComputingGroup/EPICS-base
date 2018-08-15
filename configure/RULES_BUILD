@@ -185,6 +185,7 @@ endif
 # RELEASE file consistency checking
 checkRelease:
 	$(CONVERTRELEASE) checkRelease
+	$(CONVERTRELEASE) depends.mak
 warnRelease:
 	-$(CONVERTRELEASE) checkRelease
 noCheckRelease:
