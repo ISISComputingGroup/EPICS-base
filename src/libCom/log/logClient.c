@@ -274,12 +274,16 @@ static void sendMessageChunk(logClient * pClient, const char * orig_message)
                 break;
             }
 
-            if ( msgBufBytesLeft > 0u ) {
-                memcpy ( & pClient->msgBuf[pClient->nextMsgIndex],
-                    message, msgBufBytesLeft );
-                pClient->nextMsgIndex += msgBufBytesLeft;
-                strSize -= msgBufBytesLeft;
-                message += msgBufBytesLeft;
+// as we use XML messages try to avoid sending half a message that may be invalid XML
+// so we only split a message if it will not fit into an empty buffer
+            if ( strSize > sizeof(pClient->msgBuf) ) {
+                if ( msgBufBytesLeft > 0u ) {
+                    memcpy ( & pClient->msgBuf[pClient->nextMsgIndex],
+                        message, msgBufBytesLeft );
+                    pClient->nextMsgIndex += msgBufBytesLeft;
+                    strSize -= msgBufBytesLeft;
+                    message += msgBufBytesLeft;
+                }
             }
 
             status = send ( pClient->sock, pClient->msgBuf, 
