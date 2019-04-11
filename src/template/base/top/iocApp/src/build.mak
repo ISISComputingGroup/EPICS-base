@@ -34,21 +34,24 @@ $(APPNAME)_DBD += calcSupport.dbd
 #$(APPNAME)_DBD += xxx.dbd
 
 # Add all the support libraries needed by this IOC
+
+## Add additional libraries here ##
+#$(APPNAME)_LIBS += xxx
+
 ## ISIS standard libraries ##
-$(APPNAME)_LIBS += seq pv
+## Stream device libraries ##
+$(APPNAME)_LIBS += stream
+$(APPNAME)_LIBS += asyn
+## other standard libraries here ##
 $(APPNAME)_LIBS += devIocStats 
 $(APPNAME)_LIBS += pvdump $(MYSQLLIB) easySQLite sqlite 
 $(APPNAME)_LIBS += caPutLog
-$(APPNAME)_LIBS += icpconfig pugixml
+$(APPNAME)_LIBS += icpconfig
 $(APPNAME)_LIBS += autosave
-$(APPNAME)_LIBS += utilities pcre libjson zlib
-## Stream device libraries ##
-$(APPNAME)_LIBS += stream
-$(APPNAME)_LIBS += pcre
-$(APPNAME)_LIBS += asyn
-## Add other libraries here ##
+$(APPNAME)_LIBS += utilities pugixml pcre libjson zlib
 $(APPNAME)_LIBS += calc
-#$(APPNAME)_LIBS += xxx
+$(APPNAME)_LIBS += pcre
+$(APPNAME)_LIBS += seq pv
 
 # _APPNAME__registerRecordDeviceDriver.cpp derives from _APPNAME_.dbd
 $(APPNAME)_SRCS += $(APPNAME)_registerRecordDeviceDriver.cpp
