@@ -48,9 +48,9 @@ $(APPNAME)_LIBS += pvdump $(MYSQLLIB) easySQLite sqlite
 $(APPNAME)_LIBS += caPutLog
 $(APPNAME)_LIBS += icpconfig
 $(APPNAME)_LIBS += autosave
-$(APPNAME)_LIBS += utilities pugixml pcre libjson zlib
+$(APPNAME)_LIBS += utilities pugixml libjson zlib
 $(APPNAME)_LIBS += calc
-$(APPNAME)_LIBS += pcre
+$(APPNAME)_LIBS += pcrecpp pcre
 $(APPNAME)_LIBS += seq pv
 
 # _APPNAME__registerRecordDeviceDriver.cpp derives from _APPNAME_.dbd
