@@ -56,7 +56,7 @@
 
 /*Process Variable Name Size */
 /* PVNAME_STRINGSZ includes the nil terminator */
-#define PVNAME_STRINGSZ 61
+#define PVNAME_STRINGSZ 512
 #define PVNAME_SZ (PVNAME_STRINGSZ - 1)
 
 #define DB_MAX_CHOICES 30
