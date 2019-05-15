@@ -18,9 +18,6 @@
 
 #define VC_EXTRALEAN
 #define STRICT
-#ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x400 /* No support for W95 */
-#endif
 #include <windows.h>
 #include <process.h> /* for _endthread() etc */
 
