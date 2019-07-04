@@ -159,6 +159,10 @@ int main(int argc,char **argv)
     if (opt_D) {
         printf("\n");
     }
+    if (outFile)
+    {
+        fclose(stdout);
+    }
     free(templateName);
     free(substitutionName);
     return opt_V & 2;
