@@ -1,24 +1,24 @@
                            Installation Instructions
 
-                           EPICS Base Release 3.15.5
+                            EPICS Base Release 7.0.2
 
    --------------------------------------------------------------------------
 
   Table of Contents
 
-     * What is EPICS base?
-     * What is new in this release?
-     * Copyright
-     * Supported platforms
-     * Supported compilers
-     * Software requirements
-     * Host system storage requirements
-     * Documentation
-     * Directory Structure
-     * Build related components
-     * Building EPICS base (Unix and Win32)
-     * Example application and extension
-     * Multiple host platforms
+     * What is EPICS base?
+     * What is new in this release?
+     * Copyright
+     * Supported platforms
+     * Supported compilers
+     * Software requirements
+     * Host system storage requirements
+     * Documentation
+     * Directory Structure
+     * Build related components
+     * Building EPICS base (Unix and Win32)
+     * Example application and extension
+     * Multiple host platforms
 
    --------------------------------------------------------------------------
 
@@ -67,8 +67,9 @@
   Software requirements
 
      GNU make
-     You must use GNU make, gnumake, for any EPICS builds. Set your path so
-     that a gnumake version 3.81 or later is available.
+     You must use the GNU version of make for EPICS builds, and we now
+     recommend version 4.1 or later (version 3.82 may work on Linux, but
+     doesn't on Windows).
 
      Perl
      You must have Perl version 5.8.1 or later installed. The EPICS
@@ -85,34 +86,31 @@
      as processes on the host platform.
 
      vxWorks
-     You must have vxWorks 5.5.x or 6.x installed if any of your target
-     systems are vxWorks systems; the C++ compiler for vxWorks 5.4 is now too
-     old to support. The vxWorks installation provides the cross-compiler and
-     header files needed to build for these targets. The absolute path to and
-     the version number of the vxWorks installation must be set in the
+     You must have vxWorks 6 installed if any of your target systems are
+     vxWorks systems; the C++ compilers for vxWorks 5.x are now too old to
+     support. The vxWorks installation provides the cross-compiler and header
+     files needed to build for these targets. The absolute path to and the
+     version number of the vxWorks installation must be set in the
      base/configure/os/CONFIG_SITE.Common.vxWorksCommon file or in one of its
      target-specific overrides.
 
-     Consult the vxWorks 5.x or vxWorks 6.x EPICS web pages about and the
-     vxWorks documentation for information about configuring your vxWorks
-     operating system for use with EPICS.
+     Consult the vxWorks 6.x EPICS web pages and the vxWorks documentation
+     for information about configuring your vxWorks operating system for use
+     with EPICS.
 
      RTEMS
      For RTEMS targets, you need RTEMS core and toolset version 4.9.2 or
-     later.
+     4.10. The newer 4.11 or 5.x releases are not supported yet.
 
-     GNU readline or Tecla library
-     GNU readline and Tecla libraries can be used by the IOC shell to provide
-     command line editing and command line history recall and edit. GNU
-     readline (or Tecla library) must be installed on your target system when
-     COMMANDLINE_LIBRARY is set to READLINE (or TECLA) for that target. EPICS
-     (EPICS shell) is the default specified in CONFIG_COMMON. A READLINE
-     override is defined for linux-x86 in the EPICS distribution. Comment out
-     COMMANDLINE_LIBRARY=READLINE in
-     configure/os/CONFIG_SITE.Common.linux-x86 if readline is not installed
-     on linux-x86. Command-line editing and history will then be those
-     supplied by the os. On vxWorks the ledLib command-line input library is
-     used instead.
+     Command-line editing libraries
+     GNU readline or other OS-specific libraries can be used by the IOC shell
+     to provide command line editing and history recall. The default setting
+     is different for each OS. On Linux the default is to use READLINE since
+     most distributions include it. On MacOS the default is also READLINE
+     since Apple provides a compatible library, although it isn't GNU. On
+     RTEMS we support GNU readline and Tecla, although the default is to use
+     neither since these have to be added to the RTEMS installation
+     separately. On vxWorks we support the built-in ledLib library.
 
   Host system storage requirements
 
@@ -166,12 +164,11 @@
 
     base/startup directory - contains scripts to set environment and path
 
-         EpicsHostArch       C shell script to set EPICS_HOST_ARCH env variable
-         EpicsHostArch.pl    Perl script to set EPICS_HOST_ARCH env variable
-         Site.profile        bourne shell script to set path and env variables
-         Site.cshrc          c shell script to set path and env variables
-         cygwin.bat          WIN32 bat file to set cygwin path and env variables
-         win32.bat           WIN32 bat file to set path and env variables
+         EpicsHostArch       Shell script to set EPICS_HOST_ARCH env variable
+         unix.csh            C shell script to set path and env variables
+         unix.sh             Bourne shell script to set path and env variables
+         win32.bat           Bat file example to configure win32-x86 target
+         windows.bat         Bat file example to configure windows-x64 target
 
     base/configure directory - contains build definitions and rules
 
@@ -225,13 +222,13 @@
        required path and other environment variables.
 
        EPICS_HOST_ARCH
-       Before you can build or use EPICS R3.15, the environment variable
-       EPICS_HOST_ARCH must be defined. A perl script EpicsHostArch.pl in the
-       base/startup directory has been provided to help set EPICS_HOST_ARCH.
-       You should have EPICS_HOST_ARCH set to your host operating system
-       followed by a dash and then your host architecture, e.g.
-       solaris-sparc. If you are not using the OS vendor's c/c++ compiler for
-       host builds, you will need another dash followed by the alternate
+       Before you can build or use EPICS Base, the environment variable
+       EPICS_HOST_ARCH should be defined. A perl script EpicsHostArch.pl in
+       the base/startup directory has been provided to help set
+       EPICS_HOST_ARCH. You should have EPICS_HOST_ARCH set to your host
+       operating system followed by a dash and then your CPU architecture,
+       e.g. linux-x86_64. If you are not using the OS vendor's c/c++ compiler
+       for host builds, you will need another dash followed by the alternate
        compiler name (e.g. "-gnu" for GNU c/c++ compilers on a solaris host
        or "-mingw" for MinGW c/c++ compilers on a WIN32 host). See
        configure/CONFIG_SITE for a list of supported EPICS_HOST_ARCH values.
@@ -250,7 +247,7 @@
        solaris systems you need uname in your path.
 
        LD_LIBRARY_PATH
-       R3.15 shared libraries and executables normally contain the full path
+       EPICS shared libraries and executables normally contain the full path
        to any libraries they require. However, if you move the EPICS files or
        directories from their build-time location then in order for the
        shared libraries to be found at runtime LD_LIBRARY_PATH must include
@@ -313,7 +310,7 @@
      script will create a sample application that can be built and then
      executed to try out this release of base.
 
-     Instructions for building and executing the 3.15 example application can
+     Instructions for building and executing the example IOC application can
      be found in the section "Example Application" of Chapter 2, "Getting
      Started", in the "IOC Application Developer's Guide" for this release.
      The "Example IOC Application" section briefly explains how to create and
