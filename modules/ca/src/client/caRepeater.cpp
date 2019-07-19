@@ -36,6 +36,13 @@
 
 int main()
 {
+#ifdef _WIN32
+	HWND conwin = GetConsoleWindow();
+	if ( conwin != NULL )
+	{
+		ShowWindowAsync(conwin, SW_HIDE);
+	}
+#endif /* _WIN32 */
     ca_repeater ();
     return ( 0 );
 }

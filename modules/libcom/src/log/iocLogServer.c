@@ -15,7 +15,6 @@
  * 	    Author: 	Jeffrey O. Hill 
  *      Date:       080791 
  */
-
 #include	<stdlib.h>
 #include	<string.h>
 #include	<errno.h>
@@ -38,6 +37,7 @@
 static unsigned short ioc_log_port;
 static long ioc_log_file_limit;
 static char ioc_log_file_name[256];
+static char ioc_log_file_name_ex[256];
 static char ioc_log_file_command[256];
 
 
@@ -57,6 +57,7 @@ struct ioc_log_server {
 	void *pfdctx;
 	SOCKET sock;
 	long max_file_size;
+    int tm_yday; /* year day log file created, used for log rotation */
 };
 
 #define IOCLS_ERROR (-1)
@@ -80,6 +81,17 @@ static int getDirectory(void);
 static int sighupPipe[2];
 #endif
 
+static void hideConsoleWindow()
+{ 
+#ifdef _WIN32
+    /* hide console window - could also link program /subsys:windows rather than console */ 
+    HWND hwnd = GetConsoleWindow();
+    if (hwnd != NULL)
+    {
+        ShowWindow(hwnd, SW_HIDE /*SW_MINIMIZE*/);
+	}
+#endif /* _WIN32 */
+}
 
 
 /*
@@ -95,6 +107,8 @@ int main(void)
     struct ioc_log_server *pserver;
 
     osiSockIoctl_t  optval;
+	
+    hideConsoleWindow();
 
     status = getConfig();
     if (status<0) {
@@ -186,7 +200,7 @@ int main(void)
     if (status < 0) {
         fprintf(stderr,
             "File access problems to `%s' because `%s'\n", 
-            ioc_log_file_name,
+		    ioc_log_file_name_ex,
             strerror(errno));
         return IOCLS_ERROR;
     }
@@ -330,7 +344,7 @@ static int seekLatestLine (struct ioc_log_server *pserver)
         if (pserver->filePos!=0) {
             fprintf (stderr, "iocLogServer: **** Warning ****\n");
             fprintf (stderr, "iocLogServer: no recognizable dates in \"%s\"\n", 
-                ioc_log_file_name);
+                ioc_log_file_name_ex);
             fprintf (stderr, "iocLogServer: logging at end of file\n");
         }
     }
@@ -485,7 +499,8 @@ static void acceptNewClient ( void *pParam )
 			fprintf(stderr, "Keepalive option set failed\n");
 		}
 	}
-
+/* remove as per http://aps.anl.gov/epics/tech-talk/2013/msg01118.php / https://bugs.launchpad.net/epics-base/+bug/1188026 */
+/*
 	status = shutdown(pclient->insock, SHUT_WR);
 	if(status<0){
         char sockErrBuf[64];
@@ -497,7 +512,7 @@ static void acceptNewClient ( void *pParam )
 
 		return;
 	}
-
+*/
 	status = fdmgr_add_callback(
 			pserver->pfdctx, 
 			pclient->insock, 
@@ -572,7 +587,22 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 {
 	int status;
     size_t lineIndex = 0;
-	
+    time_t now;
+    struct tm now_tm;
+    /* reopen log file once a day for rotation */
+	time(&now);
+    memcpy(&now_tm, localtime(&now), sizeof(struct tm));
+    if (now_tm.tm_yday != pclient->pserver->tm_yday)
+    {
+	    status = openLogFile(pclient->pserver);
+	    if(status<0){
+		    fprintf(stderr,
+			    "File access problems to `%s' because `%s'\n", 
+			    ioc_log_file_name_ex,
+			    strerror(errno));
+        }
+    }
+
 	while (TRUE) {
 		size_t nchar;
 		size_t nTotChar;
@@ -903,7 +933,7 @@ static void serviceSighupRequest(void *pParam)
 	if(status<0){
 		fprintf(stderr,
 			"File access problems to `%s' because `%s'\n", 
-			ioc_log_file_name,
+			ioc_log_file_name_ex,
 			strerror(errno));
 		/* Revert to old filename */
 		strcpy(ioc_log_file_name, pserver->outfile);
@@ -911,20 +941,20 @@ static void serviceSighupRequest(void *pParam)
 		if(status<0){
 			fprintf(stderr,
 				"File access problems to `%s' because `%s'\n",
-				ioc_log_file_name,
+				ioc_log_file_name_ex,
 				strerror(errno));
 			return;
 		}
 		else {
 			fprintf(stderr,
 				"iocLogServer: re-opened old log file %s\n",
-				ioc_log_file_name);
+				ioc_log_file_name_ex);
 		}
 	}
 	else {
 		fprintf(stderr,
 			"iocLogServer: opened new log file %s\n",
-			ioc_log_file_name);
+			ioc_log_file_name_ex);
 	}
 }
 

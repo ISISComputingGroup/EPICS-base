@@ -213,6 +213,7 @@ int main(int argc,char **argv)
     if (opt_D) {
         printf("\n");
     }
+	fflush(stdout);
     free(templateName);
     free(substitutionName);
     return opt_V & 2;

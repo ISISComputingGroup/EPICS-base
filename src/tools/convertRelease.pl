@@ -98,6 +98,7 @@ Usage: convertRelease.pl [-a arch] [-T top] [-t ioctop] outfile
     where outfile is one of:
         releaseTops - lists the module names defined in RELEASE*s
         dllPath.bat - path changes for cmd.exe to find Windows DLLs
+        dllCopy.bat - copy all Windows DLLs to local DIR
         relPaths.sh - path changes for bash to add RELEASE bin dir's
         *ModuleDirs.pm - generate a perl module adding lib/perl paths
         cdCommands - generate cd path strings for vxWorks IOCs
@@ -141,7 +142,9 @@ sub binDirs {
     my @path;
     foreach my $app (@includes) {
         my $path = $macros{$app} . "/bin/$arch";
-        next unless -d $path;
+#        next unless -d $path;
+        my @dlls = glob("$path/*.dll");
+		next unless scalar(@dlls);
         $path =~ s/^$root/$iocroot/o if ($opt_t);
         push @path, LocalPath($path);
     }

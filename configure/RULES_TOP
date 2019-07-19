@@ -118,3 +118,6 @@ ifndef DISABLE_TOP_RULES
     include $(RELEASE_CFG_TOP_RULES)
   endif
 endif
+
+include $(CONFIG)/RULES_TOP_ISIS
+

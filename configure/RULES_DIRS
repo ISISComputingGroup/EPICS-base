@@ -6,6 +6,9 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in the file LICENSE that is included with this distribution. 
 #*************************************************************************
+#
+
+include $(CONFIG)/RULES_DIRS_ISIS
 
 ARCHS += $(BUILD_ARCHS)
 ACTIONS += inc build install buildInstall clean realclean archclean

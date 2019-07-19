@@ -120,7 +120,7 @@ static int iocBuild_1(void)
         epicsThreadSetOkToBlock(1);
     }
 
-    errlogPrintf("Starting iocInit\n");
+    errlogSevPrintf(errlogInfo, "Starting iocInit\n");
     if (checkDatabase(pdbbase)) {
         errlogPrintf("iocBuild: Aborting, bad database definition (DBD)!\n");
         return -1;
@@ -253,7 +253,7 @@ int iocRun(void)
     if (iocState == iocBuilt)
         initHookAnnounce(initHookAtEnd);
 
-    errlogPrintf("iocRun: %s\n", iocState == iocBuilt ?
+    errlogSevPrintf(errlogInfo, "iocRun: %s\n", iocState == iocBuilt ?
         "All initialization complete" :
         "IOC restarted");
     iocState = iocRunning;
@@ -279,7 +279,7 @@ int iocPause(void)
     initHookAnnounce(initHookAfterDatabasePaused);
 
     iocState = iocPaused;
-    errlogPrintf("iocPause: IOC suspended\n");
+    errlogSevPrintf(errlogInfo, "iocPause: IOC suspended\n");
     initHookAnnounce(initHookAfterIocPaused);
     return 0;
 }

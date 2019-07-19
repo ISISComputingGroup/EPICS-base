@@ -49,7 +49,11 @@ include $(LIBCOM)/yajl/Makefile
 # Library to build:
 LIBRARY=Com
 
-Com_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
+Com_SYS_LIBS_WIN32 = dbghelp ws2_32 advapi32 user32
+
+ifeq ($(COMMANDLINE_LIBRARY),WINEDITLINE)
+Com_LIBS_WIN32 = WinEditLine
+endif
 
 Com_RCS = Com.rc
 
@@ -67,6 +71,13 @@ EXPANDFLAGS += $(foreach var,$(EXPANDVARS),-D$(var)="$(strip $($(var)))")
 
 # shared library ABI version.
 SHRLIB_VERSION = $(EPICS_LIBCOM_MAJOR_VERSION).$(EPICS_LIBCOM_MINOR_VERSION).$(EPICS_LIBCOM_MAINTENANCE_VERSION)
+
+#   libs needed for PROD and TESTPRODUCT
+#PROD_LIBS = Com
+#ifeq ($(COMMANDLINE_LIBRARY),WINEDITLINE)
+#PROD_LIBS_WIN32 = WinEditLine
+#endif
+#PROD_SYS_LIBS_WIN32 = ws2_32 advapi32
 
 include $(TOP)/configure/RULES
 
