@@ -27,7 +27,4 @@ typedef struct dbAddr {
 
 typedef dbAddr DBADDR;
 
-//epicsShareFunc unsigned epicsShareAPI dbNameOfPV (const dbAddr * paddr, char * pBuf, unsigned bufLen);
-//unsigned dbNameSizeOfPV (const dbAddr * paddr);
-
 #endif /* dbAddrh */

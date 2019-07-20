@@ -98,7 +98,7 @@ epicsShareFunc enum TF_RETURN  truncateFile (const char *pFileName, unsigned lon
 		charNo++;
 	}
 	fclose (pFile);
-	pFile = fopen(pFileName, "w");
+	pFile = fopen(pFileName, "wb");
 	if (!pFile) {
 		fprintf (stderr,
 			"File access problems to `%s' because `%s'\n", 

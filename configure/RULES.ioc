@@ -35,4 +35,6 @@ envPaths: $(wildcard $(TOP)/configure/RELEASE*) \
 	$(CONVERTRELEASE) -t $(IOCS_APPL_TOP) $@
 
 realclean:
-	$(RM) cdCommands envPaths dllPath.bat relPaths.sh
+	$(RM) cdCommands envPaths dllPath.bat relPaths.sh dllCopy.bat runIOC.bat runIOC.sh
+
+include $(CONFIG)/RULES.ioc.ISIS

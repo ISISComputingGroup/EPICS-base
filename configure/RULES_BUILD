@@ -168,7 +168,7 @@ build_clean:
 	$(DLLSTUB_LIBNAME) $(TESTDLLSTUB_LIBNAME) \
 	$(LOADABLE_SHRLIBNAME) \
 	$(INC) $(TARGETS) $(TDS) $(CLEANS) \
-	*.out MakefileInclude *.manifest *.exp \
+	*.out MakefileInclude *.manifest *.exp *.pdb *.map \
 	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) $(TESTPRODTARGETS) \
 	$(TESTSCRIPTS) $(TAPFILES) $(JUNITFILES)
 ifdef RES

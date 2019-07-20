@@ -81,6 +81,7 @@ expandRelease(\%macros);
 for ($outfile) {
     m/releaseTops/       and do { releaseTops();         last; };
     m/dllPath\.bat/      and do { dllPath();             last; };
+    m/dllCopy\.bat/      and do { dllCopy();             last; };
     m/relPaths\.sh/      and do { relPaths();            last; };
     m/ModuleDirs\.pm/    and do { moduleDirs();          last; };
     m/cdCommands/        and do { cdCommands();          last; };
@@ -126,6 +127,17 @@ sub dllPath {
     # This SET syntax is essential for supporting embedded spaces and '&'
     # characters in both the PATH variable and the new directory components
     print OUT "SET \"PATH=", join(';', binDirs(), '%PATH%'), "\"\n";
+    close OUT;
+}
+
+sub dllCopy {
+    unlink $outfile;
+    open(OUT, ">$outfile") or die "$! creating $outfile";
+    print OUT "\@ECHO OFF\n";
+    foreach my $dir (binDirs()) {
+        $dir =~ s%/%\\%g;
+        print OUT "XCOPY /Q /Y ",$dir,"\\*.dll .\n";
+    }
     close OUT;
 }
 

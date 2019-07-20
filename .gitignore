@@ -13,10 +13,10 @@ runIOC.sh
 relPaths.sh
 /html/
 /cfg/
-#/configure/*.local
-#/modules/RELEASE.*.local
-#/modules/Makefile.local
-#/QtC-*
+/configure/*.local
+/modules/RELEASE.*.local
+/modules/Makefile.local
+/QtC-*
 *.orig
 *.log
 .*.swp

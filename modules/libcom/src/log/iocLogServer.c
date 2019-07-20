@@ -360,31 +360,41 @@ static int seekLatestLine (struct ioc_log_server *pserver)
 static int openLogFile (struct ioc_log_server *pserver)
 {
 	enum TF_RETURN ret;
+    time_t now;
+    struct tm now_tm;
 
 	if (pserver->poutfile && pserver->poutfile != stderr){
 		fclose (pserver->poutfile);
 		pserver->poutfile = NULL;
 	}
 
-	pserver->poutfile = fopen(ioc_log_file_name, "r+");
+    time(&now);
+    memcpy(&now_tm, localtime(&now), sizeof(now_tm));
+    pserver->tm_yday = now_tm.tm_yday;
+    if (0 == strftime(ioc_log_file_name_ex, sizeof(ioc_log_file_name_ex)-1, ioc_log_file_name, &now_tm))
+    {
+        strncpy(ioc_log_file_name_ex, ioc_log_file_name, sizeof(ioc_log_file_name_ex)-1);
+    }
+    ioc_log_file_name_ex[sizeof(ioc_log_file_name_ex)-1] = '\0';
+	pserver->poutfile = fopen(ioc_log_file_name_ex, "r+");
 	if (pserver->poutfile) {
 		fclose (pserver->poutfile);
 		pserver->poutfile = NULL;
-		ret = truncateFile (ioc_log_file_name, ioc_log_file_limit);
+		ret = truncateFile (ioc_log_file_name_ex, ioc_log_file_limit);
 		if (ret==TF_ERROR) {
 			return IOCLS_ERROR;
 		}
-		pserver->poutfile = fopen(ioc_log_file_name, "r+");
+		pserver->poutfile = fopen(ioc_log_file_name_ex, "r+");
 	}
 	else {
-		pserver->poutfile = fopen(ioc_log_file_name, "w");
+		pserver->poutfile = fopen(ioc_log_file_name_ex, "w");
 	}
 
 	if (!pserver->poutfile) {
 		pserver->poutfile = stderr;
 		return IOCLS_ERROR;
 	}
-	strcpy (pserver->outfile, ioc_log_file_name);
+	strcpy (pserver->outfile, ioc_log_file_name_ex);
 	pserver->max_file_size = ioc_log_file_limit;
 
     return seekLatestLine (pserver);
