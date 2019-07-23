@@ -83,6 +83,7 @@ REM set LIBPATH=C:\Program Files\Microsoft SDKs\Windows\v7.0\lib;%LIBPATH%
 REM set     LIB=C:\Program Files\Microsoft SDKs\Windows\v7.0\lib;%LIB%
 
 REM    ----- Prefer Visual Studio 2010, otherwise most recent version -----
+if exist "C:\Program files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat" set VCVERSION=10.0
 if exist "C:\Program files (x86)\Microsoft Visual Studio 11.0\VC\vcvarsall.bat" set VCVERSION=11.0
 if exist "C:\Program files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" set VCVERSION=12.0
 if exist "C:\Program files (x86)\Microsoft Visual Studio 13.0\VC\vcvarsall.bat" set VCVERSION=13.0
@@ -95,7 +96,10 @@ if exist "C:\Program files (x86)\Microsoft Visual Studio\2017\Professional\VC\Au
     set VCVERSION=15.0
     set "VCVARALLDIR=C:\Program files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\Build"
 )
-if exist "C:\Program files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat" set VCVERSION=10.0
+if exist "C:\Program files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build" (
+    set VCVERSION=15.0
+    set "VCVARALLDIR=C:\Program files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build"
+)
 
 
 if exist "C:\Program files (x86)\Microsoft Visual Studio %VCVERSION%\VC\vcvarsall.bat" (
