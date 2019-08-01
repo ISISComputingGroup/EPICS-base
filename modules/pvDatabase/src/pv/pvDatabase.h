@@ -6,26 +6,15 @@
 #ifndef PVDATABASE_H
 #define PVDATABASE_H
 
-#ifdef epicsExportSharedSymbols
-#   define pvdatabaseEpicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
-
 #include <list>
 #include <map>
 
 #include <pv/pvData.h>
 #include <pv/pvTimeStamp.h>
 #include <pv/rpcService.h>
-
-
-#ifdef pvdatabaseEpicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#	undef pvdatabaseEpicsExportSharedSymbols
-#endif
+#include <pv/pvStructureCopy.h>
 
 #include <shareLib.h>
-#include <pv/pvStructureCopy.h>
 
 namespace epics { namespace pvDatabase { 
 
@@ -101,6 +90,15 @@ public:
      *  @brief DEPRECATED
      */
     virtual void destroy() {}
+    /**
+     *  @brief remove record from database.
+     *
+     * Remove the PVRecord. Release any resources used and 
+     *  get rid of listeners and requesters.
+     *  If derived class overrides this then it must call PVRecord::remove()
+     *  after it has destroyed any resorces it uses.
+     */
+    virtual void remove();
     /**
      *  @brief Optional method for derived class.
      *

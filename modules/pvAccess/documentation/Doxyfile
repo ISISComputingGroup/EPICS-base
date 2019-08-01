@@ -38,7 +38,7 @@ PROJECT_NAME           = pvAccessCPP
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 6.1.2
+PROJECT_NUMBER         = 7.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -773,6 +773,7 @@ INPUT                  = ../src/client/pv \
                          ../src/rpcService/pv \
                          ../src/utils/pv \
                          ../src/pva/pv \
+                         ../src/remote/pv \
                          .
 
 # This tag can be used to specify the character encoding of the source files

@@ -240,12 +240,19 @@ public:
         return _sendQueue.empty();
     }
 
+    epics::pvData::int8 getRevision() const {
+        epicsGuard<epicsMutex> G(_mutex);
+        int8_t myver = _clientServerFlag ? PVA_SERVER_PROTOCOL_REVISION : PVA_CLIENT_PROTOCOL_REVISION;
+        return myver < _version ? myver : _version;
+    }
+
 protected:
 
     virtual void sendBufferFull(int tries) = 0;
     void send(epics::pvData::ByteBuffer *buffer);
     void flushSendBuffer();
 
+    virtual void setRxTimeout(bool ena) {}
 
     ReadMode _readMode;
     int8_t _version;
@@ -259,7 +266,6 @@ protected:
     epicsThreadId _senderThread;
     WriteMode _writeMode;
     bool _writeOpReady;
-    bool _lowLatency;
 
     epics::pvData::ByteBuffer _socketBuffer;
     epics::pvData::ByteBuffer _sendBuffer;
@@ -289,14 +295,18 @@ private:
     std::size_t _nextMessagePayloadOffset;
 
     epics::pvData::int8 _byteOrderFlag;
-    epics::pvData::int8 _clientServerFlag;
-    const size_t _socketSendBufferSize;
+protected:
+    const epics::pvData::int8 _clientServerFlag;
+private:
+
+public:
+    mutable epics::pvData::Mutex _mutex;
 };
 
 
 class BlockingTCPTransportCodec:
     public AbstractCodec,
-    public SecurityPluginControl,
+    public AuthenticationPluginControl,
     public std::tr1::enable_shared_from_this<BlockingTCPTransportCodec>
 {
 
@@ -324,7 +334,7 @@ public:
     virtual void waitJoin() OVERRIDE FINAL;
     virtual bool terminated() OVERRIDE FINAL;
     virtual bool isOpen() OVERRIDE FINAL;
-    void start();
+    virtual void start();
 
     virtual int read(epics::pvData::ByteBuffer* dst) OVERRIDE FINAL;
     virtual int write(epics::pvData::ByteBuffer* src) OVERRIDE FINAL;
@@ -332,7 +342,6 @@ public:
         return &_socketAddress;
     }
     virtual void invalidDataStreamHandler() OVERRIDE FINAL;
-    virtual std::size_t getSocketReceiveBufferSize() const OVERRIDE FINAL;
 
     virtual std::string getType() const OVERRIDE FINAL {
         return std::string("tcp");
@@ -361,11 +370,6 @@ public:
         return _socketName;
     }
 
-    virtual epics::pvData::int8 getRevision() const OVERRIDE FINAL {
-        return PVA_PROTOCOL_REVISION < _remoteTransportRevision
-                ? PVA_PROTOCOL_REVISION : _remoteTransportRevision;
-    }
-
 
     virtual std::size_t getReceiveBufferSize() const OVERRIDE FINAL {
         return _socketBuffer.getSize();
@@ -374,11 +378,6 @@ public:
 
     virtual epics::pvData::int16 getPriority() const OVERRIDE FINAL {
         return _priority;
-    }
-
-
-    virtual void setRemoteRevision(epics::pvData::int8 revision) OVERRIDE FINAL {
-        _remoteTransportRevision = revision;
     }
 
 
@@ -428,24 +427,17 @@ public:
 
     virtual void verified(epics::pvData::Status const & status) OVERRIDE;
 
-    bool isVerified() const {
-        return _verified;    // TODO sync
-    }
+    virtual void authNZMessage(epics::pvData::PVStructure::shared_pointer const & data) OVERRIDE FINAL;
 
-    virtual std::tr1::shared_ptr<SecuritySession> getSecuritySession() const OVERRIDE FINAL {
-        // TODO sync
-        return _securitySession;
-    }
-
-    virtual void authNZMessage(epics::pvData::PVField::shared_pointer const & data) OVERRIDE FINAL;
-
-    virtual void sendSecurityPluginMessage(epics::pvData::PVField::shared_pointer const & data) OVERRIDE FINAL;
+    virtual void sendSecurityPluginMessage(epics::pvData::PVStructure::const_shared_pointer const & data) OVERRIDE FINAL;
 
 private:
     void receiveThread();
     void sendThread();
 
 protected:
+    virtual void setRxTimeout(bool ena) OVERRIDE FINAL;
+
     virtual void sendBufferFull(int tries) OVERRIDE FINAL;
 
     /**
@@ -467,17 +459,21 @@ protected:
     IntrospectionRegistry _incomingIR;
     IntrospectionRegistry _outgoingIR;
 
-    SecuritySession::shared_pointer _securitySession;
+    // active authentication exchange, if any
+    std::string _authSessionName;
+    AuthenticationSession::shared_pointer _authSession;
+public:
+    // final info, after authentication complete.
+    PeerInfo::const_shared_pointer _peerInfo;
 
 private:
 
     ResponseHandler::shared_pointer _responseHandler;
     size_t _remoteTransportReceiveBufferSize;
-    epics::pvData::int8 _remoteTransportRevision;
     epics::pvData::int16 _priority;
 
+protected:
     bool _verified;
-    epics::pvData::Mutex _verifiedMutex;
     epics::pvData::Event _verifiedEvent;
 };
 
@@ -522,8 +518,6 @@ public:
 
     virtual void release(pvAccessID /*clientId*/) OVERRIDE FINAL {}
 
-    virtual void changedTransport() OVERRIDE {}
-
     pvAccessID preallocateChannelSID();
 
     void depreallocateChannelSID(pvAccessID /*sid*/) {}
@@ -554,20 +548,18 @@ public:
     }
 
     virtual void verified(epics::pvData::Status const & status) OVERRIDE FINAL {
-        _verificationStatusMutex.lock();
-        _verificationStatus = status;
-        _verificationStatusMutex.unlock();
+        {
+            epicsGuard<epicsMutex> G(_mutex);
+            _verificationStatus = status;
+        }
         BlockingTCPTransportCodec::verified(status);
     }
 
-    virtual void aliveNotification() OVERRIDE FINAL {
-        // noop on server-side
-    }
-
     void authNZInitialize(const std::string& securityPluginName,
-                          const epics::pvData::PVField::shared_pointer& data);
+                          const epics::pvData::PVStructure::shared_pointer& data);
 
-    virtual void authenticationCompleted(epics::pvData::Status const & status) OVERRIDE FINAL;
+    virtual void authenticationCompleted(epics::pvData::Status const & status,
+                                         const std::tr1::shared_ptr<PeerInfo>& peer) OVERRIDE FINAL;
 
     virtual void send(epics::pvData::ByteBuffer* buffer,
                       TransportSendControl* control) OVERRIDE FINAL;
@@ -595,13 +587,10 @@ private:
     mutable epics::pvData::Mutex _channelsMutex;
 
     epics::pvData::Status _verificationStatus;
-    epics::pvData::Mutex _verificationStatusMutex;
 
     bool _verifyOrVerified;
 
-    bool _securityRequired;
-
-    static epics::pvData::Status invalidSecurityPluginNameStatus;
+    std::vector<std::string> advertisedAuthPlugins;
 
 };
 
@@ -650,7 +639,7 @@ public:
 
 public:
 
-    void start();
+    virtual void start() OVERRIDE FINAL;
 
     virtual ~BlockingClientTCPTransportCodec() OVERRIDE FINAL;
 
@@ -664,17 +653,15 @@ public:
 
     virtual void release(pvAccessID clientId) OVERRIDE FINAL;
 
-    virtual void changedTransport() OVERRIDE FINAL;
-
-    virtual void aliveNotification() OVERRIDE FINAL;
-
     virtual void send(epics::pvData::ByteBuffer* buffer,
                       TransportSendControl* control) OVERRIDE FINAL;
 
     void authNZInitialize(const std::vector<std::string>& offeredSecurityPlugins);
 
-    virtual void authenticationCompleted(epics::pvData::Status const & status) OVERRIDE FINAL;
+    virtual void authenticationCompleted(epics::pvData::Status const & status,
+                                         const std::tr1::shared_ptr<PeerInfo>& peer) OVERRIDE FINAL;
 
+    virtual void verified(epics::pvData::Status const & status) OVERRIDE FINAL;
 protected:
 
     virtual void internalClose() OVERRIDE FINAL;
@@ -691,36 +678,17 @@ private:
     /**
      * Connection timeout (no-traffic) flag.
      */
-    double _connectionTimeout;
-
-    /**
-     * Unresponsive transport flag.
-     */
-    bool _unresponsiveTransport;
-
-    /**
-     * Timestamp of last "live" event on this transport.
-     */
-    epicsTimeStamp _aliveTimestamp;
+    const double _connectionTimeout;
 
     bool _verifyOrEcho;
 
-    /**
-     * Unresponsive transport notify.
-     */
-    void unresponsiveTransport();
+    // are we queued to send verify or echo?
+    bool sendQueued;
 
     /**
      * Notifies clients about disconnect.
      */
     void closedNotifyClients();
-
-    /**
-     * Responsive transport notify.
-     */
-    void responsiveTransport();
-
-    epics::pvData::Mutex _mutex;
 };
 
 }

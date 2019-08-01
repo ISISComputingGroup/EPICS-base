@@ -192,34 +192,16 @@ public:
     // TODO getContext?
 
     /**
-     * Transport protocol minor revision.
-     * @return protocol minor revision.
-     */
-    virtual epics::pvData::int8 getRevision() const = 0;
-
-    /**
      * Get receive buffer size.
      * @return receive buffer size.
      */
     virtual std::size_t getReceiveBufferSize() const = 0;
 
     /**
-     * Get socket receive buffer size.
-     * @return socket receive buffer size.
-     */
-    virtual std::size_t getSocketReceiveBufferSize() const = 0;
-
-    /**
      * Transport priority.
      * @return protocol priority.
      */
     virtual epics::pvData::int16 getPriority() const = 0;
-
-    /**
-     * Set remote transport protocol revision.
-     * @param revision protocol revision.
-     */
-    virtual void setRemoteRevision(epics::pvData::int8 revision) = 0;
 
     /**
      * Set remote transport receive buffer size.
@@ -239,11 +221,6 @@ public:
      */
     // TODO enum
     virtual void setByteOrder(int byteOrder) = 0;
-
-    /**
-     * Notification that transport has changed.
-     */
-    virtual void changedTransport() = 0;
 
     /**
      * Enqueue send request.
@@ -269,11 +246,6 @@ public:
     virtual bool verify(epics::pvData::int32 timeoutMs) = 0;
 
     /**
-     * Notification transport that is still alive.
-     */
-    virtual void aliveNotification() = 0;
-
-    /**
      * Close transport.
      */
     virtual void close() = 0;
@@ -291,13 +263,12 @@ public:
      * Pass data to the active security plug-in session.
      * @param data the data (any data), can be <code>null</code>.
      */
-    virtual void authNZMessage(epics::pvData::PVField::shared_pointer const & data) = 0;
-
-    virtual std::tr1::shared_ptr<SecuritySession> getSecuritySession() const = 0;
+    virtual void authNZMessage(epics::pvData::PVStructure::shared_pointer const & data) = 0;
 };
 
 class Channel;
 class SecurityPlugin;
+class AuthenticationRegistry;
 
 /**
  * Not public IF, used by Transports, etc.
@@ -316,14 +287,6 @@ public:
 
 
     virtual Configuration::const_shared_pointer getConfiguration() = 0;
-
-    typedef std::map<std::string, std::tr1::shared_ptr<SecurityPlugin> > securityPlugins_t;
-    /**
-     * Get map of available security plug-ins.
-     * @return the map of available security plug-ins
-     */
-    virtual const securityPlugins_t& getSecurityPlugins() = 0;
-
 
     ///
     /// due to ClientContextImpl

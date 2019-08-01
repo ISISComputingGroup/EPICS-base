@@ -72,6 +72,10 @@ TESTPROD_HOST += ntutilsTest
 ntutilsTest_SRCS = ntutilsTest.cpp
 TESTS += ntutilsTest
 
+TESTPROD_HOST += validatorTest
+validatorTest_SRCS = validatorTest.cpp
+TESTS += validatorTest
+
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES

@@ -126,9 +126,10 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
     <tr>
       <td>&nbsp;</td>
       <td>Website Manager</td>
-      <td>Create a release milestone on Launchpad if necessary and set the
-        expected release date. Note that pre-release and release-candidate
-        versions do not appear on Launchpad, only the final release.</td>
+      <td>Create a release milestone on Launchpad. If a target release date is
+        known set "Date Targeted" to the expected release date. Note that
+        pre-release and release-candidate versions should not get Launchpad
+        milestones, only the final release.</td>
       </tr>
     <tr>
       <th colspan="3">Creating pre-release and release-candidate versions</th>
@@ -146,17 +147,17 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
       <td>Tag the module in Git, using these tag conventions:
         <ul>
           <li>
-            <tt>R7.0.2-pre<i>n</i></tt>
+            <tt>R7.0.3-pre<i>n</i></tt>
             &mdash; pre-release tag
             </li>
           <li>
-            <tt>R7.0.2-rc<i>n</i></tt>
+            <tt>R7.0.3-rc<i>n</i></tt>
             &mdash; release candidate tag
             </li>
           </ul>
         <blockquote><tt>
           cd base-7.0<br />
-          git tag -m 'ANJ: Tagged for 7.0.2-rc1' R7.0.2-rc1
+          git tag -m 'ANJ: Tagged for 7.0.3-rc1' R7.0.3-rc1
           </tt></blockquote>
         Note that submodules must <em>not</em> be tagged with the version used
         for the top-level, they each have their own separate version numbers
@@ -170,11 +171,11 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
         files and directories that are only used for continuous integration:
         <blockquote><tt>
           cd base-7.0<br />
-          ./.tools/make-tar.sh R7.0.2-rc1 base-7.0.2-rc1.tar.gz base-7.0.2-rc1/
+          ./.tools/make-tar.sh R7.0.3-rc1 base-7.0.3-rc1.tar.gz base-7.0.3-rc1/
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
-          gpg --armor --sign --detach-sig base-7.0.2-rc1.tar.gz
+          gpg --armor --sign --detach-sig base-7.0.3-rc1.tar.gz
           </tt></blockquote>
         </td>
       </tr>
@@ -302,7 +303,7 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
       <td>Tag the epics-base module in Git:
         <blockquote><tt>
           cd base-7.0<br />
-          git tag -m 'ANJ: Tagged for 7.0.2.2' R7.0.2.2</i>
+          git tag -m 'ANJ: Tagged for 7.0.3' R7.0.3</i>
           </tt></blockquote>
         Don't push the new tag to the Launchpad repository yet.</td>
       </tr>
@@ -314,11 +315,11 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
         files and directories that are only used for continuous integration:
         <blockquote><tt>
           cd base-7.0<br />
-          ./.tools/make-tar.sh R7.0.2.2 base-7.0.2.2.tar.gz base-7.0.2.2/
+          ./.tools/make-tar.sh R7.0.3 base-7.0.3.tar.gz base-7.0.3/
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
-          gpg --armor --sign --detach-sig base-7.0.2.2.tar.gz
+          gpg --armor --sign --detach-sig base-7.0.3.tar.gz
           </tt></blockquote>
         </td>
       </tr>
@@ -348,26 +349,15 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
         with a "-DEV" tag added (where applicable).
       </td>
     </tr>
+
+    <tr>
+      <th colspan="3">Publish to epics.anl.gov</th>
+      </tr>
     <tr>
       <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Copy the tarfile and its signature to the Base download area of the
         website.</td>
-      </tr>
-    <tr>
-      <td><input type="checkbox"></td>
-      <td>Release Manager</td>
-      <td>Find all Launchpad bug reports with the status Fix Committed which
-        have been fixed in this release and mark them Fix Released.</td>
-      </tr>
-    <tr>
-      <th colspan="3">Publish and Announce it</th>
-      </tr>
-    <tr>
-      <td><input type="checkbox"></td>
-      <td>Website Manager</td>
-      <td>Upload the tar file and its <tt>.asc</tt> signature file to the
-        Launchpad milestone for this release version.</td>
       </tr>
     <tr>
       <td><input type="checkbox"></td>
@@ -399,6 +389,47 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
       <td>Website Manager</td>
       <td>Add an entry to the website News page, linking to the new version
         webpage.</td>
+      </tr>
+
+    <tr>
+      <th colspan="3">Publish to epics-controls</th>
+      </tr>
+    <tr>
+      <td><input type="checkbox"></td>
+      <td>Website Manager</td>
+      <td>Upload the tar file and its <tt>.asc</tt> signature file to the
+        epics-controls web-server [ToDo: ssh-key, location]</td>
+      </tr>
+    <tr>
+      <td><input type="checkbox"></td>
+      <td>Website Manager</td>
+      <td>Follow instructions on
+        <a href="https://epics-controls.org/resources-and-support/documents/epics-website-documentation/adding-a-page-for-a-new-release/">
+        Add a page for a new release</a> to create a new release webpage (not
+        required for a patch release though, just edit the existing page).</td>
+      </tr>
+
+    <tr>
+      <th colspan="3">Publish to Launchpad</th>
+      </tr>
+    <tr>
+      <td><input type="checkbox"></td>
+      <td>Website Manager</td>
+      <td>Go to the Launchpad milestone for this release. Click the Create
+        release button and add the release date. Put a URL for the release page
+        in the Release notes box, and click the Create release button. Upload
+        the tar file and its <tt>.asc</tt> signature file to the new Launchpad
+        release page.</td>
+      </tr>
+    <tr>
+      <td><input type="checkbox"></td>
+      <td>Release Manager</td>
+      <td>Find all Launchpad bug reports with the status Fix Committed which
+        have been fixed in this release and mark them Fix Released.</td>
+      </tr>
+
+    <tr>
+      <th colspan="3">Make Announcement</th>
       </tr>
     <tr>
       <td><input type="checkbox"></td>

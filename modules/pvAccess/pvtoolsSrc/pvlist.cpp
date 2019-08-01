@@ -91,7 +91,7 @@ string deserializeString(ByteBuffer* buffer) {
     {
         // entire string is in buffer, simply create a string out of it (copy)
         std::size_t pos = buffer->getPosition();
-        string str(buffer->getArray()+pos, size);
+        string str(buffer->getBuffer()+pos, size);
         buffer->setPosition(pos+size);
         return str;
     }
@@ -120,6 +120,10 @@ bool processSearchResponse(osiSockAddr const & responseFrom, ByteBuffer & receiv
 
     // second byte version
     int8 version = receiveBuffer.getByte();
+    if(version == 0) {
+        // 0 -> 1 included incompatible changes
+        return false;
+    }
 
     // only data for UDP
     int8 flags = receiveBuffer.getByte();
@@ -333,7 +337,7 @@ bool discoverServers(double timeOut)
     ByteBuffer sendBuffer(buffer, sizeof(buffer)/sizeof(char));
 
     sendBuffer.putByte(PVA_MAGIC);
-    sendBuffer.putByte(PVA_VERSION);
+    sendBuffer.putByte(PVA_CLIENT_PROTOCOL_REVISION);
     sendBuffer.putByte((EPICS_BYTE_ORDER == EPICS_ENDIAN_BIG) ? 0x80 : 0x00); // data + 7-bit endianess
     sendBuffer.putByte((int8_t)CMD_SEARCH);	// search
     sendBuffer.putInt(4+1+3+16+2+1+2);		// "zero" payload
@@ -359,7 +363,7 @@ bool discoverServers(double timeOut)
             LOG(logLevelDebug, "UDP Tx (%zu) -> %s", sendBuffer.getPosition(), strBuffer);
         }
 
-        status = ::sendto(socket, sendBuffer.getArray(), sendBuffer.getPosition(), 0,
+        status = ::sendto(socket, sendBuffer.getBuffer(), sendBuffer.getPosition(), 0,
                           &broadcastAddresses[i].sa, sizeof(sockaddr));
         if (status < 0)
         {
@@ -388,7 +392,7 @@ bool discoverServers(double timeOut)
         receiveBuffer.clear();
 
         // receive packet from socket
-        int bytesRead = ::recvfrom(socket, (char*)receiveBuffer.getArray(),
+        int bytesRead = ::recvfrom(socket, (char*)receiveBuffer.getBuffer(),
                                    receiveBuffer.getRemaining(), 0,
                                    (sockaddr*)&fromAddress, &addrStructSize);
 
@@ -443,7 +447,7 @@ bool discoverServers(double timeOut)
                 for (size_t i = 0; i < broadcastAddresses.size(); i++)
                 {
                     // send the packet
-                    status = ::sendto(socket, sendBuffer.getArray(), sendBuffer.getPosition(), 0,
+                    status = ::sendto(socket, sendBuffer.getBuffer(), sendBuffer.getPosition(), 0,
                                       &broadcastAddresses[i].sa, sizeof(sockaddr));
                     if (status < 0)
                     {

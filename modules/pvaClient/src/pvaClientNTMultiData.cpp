@@ -44,10 +44,6 @@ PvaClientNTMultiData::PvaClientNTMultiData(
   gotTimeStamp(false)
 {
     if(PvaClient::getDebug()) cout<< "PvaClientNTMultiData::PvaClientNTMultiData()\n";
-    PVFieldPtr pvValue = pvRequest->getSubField("field.value");
-    if(!pvValue) {
-        throw std::runtime_error("pvRequest did not specify value");
-    }
     topPVStructure.resize(nchannel);
     unionValue.resize(nchannel);
     PVDataCreatePtr pvDataCreate = getPVDataCreate();
@@ -88,18 +84,6 @@ PvaClientNTMultiData::~PvaClientNTMultiData()
     if(PvaClient::getDebug()) cout<< "PvaClientNTMultiData::~PvaClientNTMultiData()\n";
 }
 
-
-void PvaClientNTMultiData::setStructure(StructureConstPtr const & structure,size_t index)
-{
-    FieldConstPtr field = structure->getField("value");
-    if(!field) {
-        string message = "channel "
-           + pvaClientChannelArray[index]->getChannel()->getChannelName()
-           + " does not have top level value field";
-        throw std::runtime_error(message);
-    }
-}
-
 void PvaClientNTMultiData::setPVStructure(
         PVStructurePtr const &pvStructure,size_t index)
 {
@@ -137,7 +121,7 @@ void PvaClientNTMultiData::startDeltaTime()
 }
 
 
-void PvaClientNTMultiData::endDeltaTime()
+void PvaClientNTMultiData::endDeltaTime(bool valueOnly)
 {
     for(size_t i=0; i<nchannel; ++i)
     {
@@ -145,18 +129,41 @@ void PvaClientNTMultiData::endDeltaTime()
         if(!pvst) {
             unionValue[i] = PVUnionPtr();
         } else if(unionValue[i]) {
-            unionValue[i]->set(pvst->getSubField("value"));
+            if(valueOnly) {
+                PVFieldPtr pvValue = pvst->getSubField("value");
+                if(pvValue) {
+                    unionValue[i]->set(pvst->getSubField("value"));
+                } else {
+                    unionValue[i] = PVUnionPtr();
+                }
+            } else {
+                unionValue[i]->set(pvst);
+            }
             if(gotAlarm)
             {
-                severity[i] = pvst->getSubField<PVInt>("alarm.severity")->get();
-                status[i] = pvst->getSubField<PVInt>("alarm.status")->get();
-                message[i] = pvst->getSubField<PVString>("alarm.message")->get();
+                PVIntPtr pvSeverity = pvst->getSubField<PVInt>("alarm.severity");
+                PVIntPtr pvStatus = pvst->getSubField<PVInt>("alarm.status");
+                PVStringPtr pvMessage = pvst->getSubField<PVString>("alarm.message");
+                if(pvSeverity&&pvStatus&&pvMessage) {
+                    severity[i] = pvSeverity->get();
+                    status[i] = pvStatus->get();
+                    message[i] = pvMessage->get();
+                } else {
+                    severity[i] = undefinedAlarm;
+                    status[i] = undefinedStatus;
+                    message[i] = "no alarm field";
+                }
             }
             if(gotTimeStamp)
             {
-                secondsPastEpoch[i] = pvst->getSubField<PVLong>("timeStamp.secondsPastEpoch")->get();
-                nanoseconds[i] = pvst->getSubField<PVInt>("timeStamp.nanoseconds")->get();
-                userTag[i] = pvst->getSubField<PVInt>("timeStamp.userTag")->get();
+                PVLongPtr pvEpoch = pvst->getSubField<PVLong>("timeStamp.secondsPastEpoch");
+                PVIntPtr pvNano = pvst->getSubField<PVInt>("timeStamp.nanoseconds");
+                PVIntPtr pvTag = pvst->getSubField<PVInt>("timeStamp.userTag");
+                if(pvEpoch&&pvNano&&pvTag) {
+                    secondsPastEpoch[i] = pvEpoch->get();
+                    nanoseconds[i] = pvNano->get();
+                    userTag[i] = pvTag->get();
+                }
             }
         } 
     }

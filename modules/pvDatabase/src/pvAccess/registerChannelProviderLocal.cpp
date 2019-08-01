@@ -11,30 +11,19 @@
 
 /* Author: Marty Kraimer */
 
-#include <cstddef>
-#include <cstdlib>
-#include <cstddef>
-#include <string>
-#include <cstdio>
-#include <memory>
-#include <iostream>
-
-#include <cantProceed.h>
-#include <epicsStdio.h>
-#include <epicsMutex.h>
-#include <epicsEvent.h>
-#include <epicsThread.h>
 #include <iocsh.h>
-#include <shareLib.h>
-#include <epicsExit.h>
-
 #include <pv/pvAccess.h>
 #include <pv/serverContext.h>
+#include <pv/syncChannelFind.h>
+#include <pv/pvTimeStamp.h>
+#include <pv/rpcService.h>
+#include <pv/timeStamp.h>
 
-// this declared epicsExportSharedSymbols
+// The following must be the last include for code pvDatabase uses
 #include <epicsExport.h>
-
-#include <pv/channelProviderLocal.h>
+#define epicsExportSharedSymbols
+#include "pv/pvDatabase.h"
+#include "pv/channelProviderLocal.h"
 
 using std::cout;
 using std::endl;

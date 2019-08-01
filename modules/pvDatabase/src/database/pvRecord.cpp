@@ -8,13 +8,25 @@
  * @author mrk
  * @date 2012.11.21
  */
+#include <list>
 #include <epicsGuard.h>
 #include <epicsThread.h>
+#include <pv/status.h>
+#include <pv/pvAccess.h>
+#include <pv/createRequest.h>
+#include <pv/pvaVersion.h>
+#include <pv/pvaVersionNum.h>
+#include <pv/monitor.h>
+#include <pv/convert.h>
+#include <pv/rpcService.h>
+#include <pv/timeStamp.h>
+#include <pv/pvData.h>
+#include <pv/rpcService.h>
+#include <pv/pvTimeStamp.h>
 
 #define epicsExportSharedSymbols
-#include <pv/pvDatabase.h>
-#include <pv/pvStructureCopy.h>
-
+#include "pv/pvStructureCopy.h"
+#include "pv/pvDatabase.h"
 
 using std::tr1::static_pointer_cast;
 using namespace epics::pvData;
@@ -97,6 +109,37 @@ PVRecord::~PVRecord()
         cout << "~PVRecord() " << recordName << endl;
     }
     notifyClients();
+}
+
+void PVRecord::remove()
+{
+    PVDatabasePtr pvDatabase(PVDatabase::getMaster());
+    if(pvDatabase) pvDatabase->removeRecord(shared_from_this());
+    pvTimeStamp.detach();     
+    for(std::list<PVListenerWPtr>::iterator iter = pvListenerList.begin();
+         iter!=pvListenerList.end();
+         iter++ )
+    {
+        PVListenerPtr listener = iter->lock();
+        if(!listener) continue;
+        if(traceLevel>0) {
+            cout << "PVRecord::remove() calling listener->unlisten " << recordName << endl;
+        }
+        listener->unlisten(shared_from_this());
+    }
+    pvListenerList.clear();
+    for (std::list<PVRecordClientWPtr>::iterator iter = clientList.begin();
+         iter!=clientList.end();
+         iter++ )
+    {
+        PVRecordClientPtr client = iter->lock();
+        if(!client) continue;
+        if(traceLevel>0) {
+            cout << "PVRecord::remove() calling client->detach " << recordName << endl;
+        }
+        client->detach(shared_from_this());
+    }
+    clientList.clear();
 }
 
 void PVRecord::initPVRecord()
