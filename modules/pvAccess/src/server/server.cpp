@@ -17,6 +17,7 @@
 #define epicsExportSharedSymbols
 #include "pva/server.h"
 #include "pv/pvAccess.h"
+#include "pv/security.h"
 #include "pv/reftrack.h"
 
 namespace pvd = epics::pvData;
@@ -119,7 +120,7 @@ StaticProvider::StaticProvider(const std::string &name)
     impl->internal_self = impl;
     impl->finder = pva::ChannelFind::buildDummy(impl);
     // wrap ref to call destroy when all external refs (from DyamicProvider::impl) are released.
-    impl.reset(impl.get(), pvd::Destroyable::cleaner(impl));
+    impl.reset(impl.get(), pva::Destroyable::cleaner(impl));
     impl->external_self = impl;
 }
 
@@ -216,8 +217,9 @@ struct DynamicProvider::Impl : public pva::ChannelProvider
     {
         bool found = false;
         {
+            pva::PeerInfo::const_shared_pointer info(requester->getPeerInfo());
             search_type search;
-            search.push_back(DynamicProvider::Search(name));
+            search.push_back(DynamicProvider::Search(name, info ? info.get() : 0));
 
             handler->hasChannels(search);
 
@@ -260,7 +262,7 @@ DynamicProvider::DynamicProvider(const std::string &name,
     impl->internal_self = impl;
     impl->finder = pva::ChannelFind::buildDummy(impl);
     // wrap ref to call destroy when all external refs (from DyamicProvider::impl) are released.
-    impl.reset(impl.get(), pvd::Destroyable::cleaner(impl));
+    impl.reset(impl.get(), pva::Destroyable::cleaner(impl));
     impl->external_self = impl;
 }
 

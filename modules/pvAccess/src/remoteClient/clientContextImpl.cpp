@@ -88,15 +88,15 @@ public:
 
     static PVDataCreatePtr pvDataCreate;
 
-    static Status notInitializedStatus;
-    static Status destroyedStatus;
-    static Status channelNotConnected;
-    static Status channelDestroyed;
-    static Status otherRequestPendingStatus;
-    static Status invalidPutStructureStatus;
-    static Status invalidPutArrayStatus;
-    static Status invalidBitSetLengthStatus;
-    static Status pvRequestNull;
+    static const Status notInitializedStatus;
+    static const Status destroyedStatus;
+    static const Status channelNotConnected;
+    static const Status channelDestroyed;
+    static const Status otherRequestPendingStatus;
+    static const Status invalidPutStructureStatus;
+    static const Status invalidPutArrayStatus;
+    static const Status invalidBitSetLengthStatus;
+    static const Status pvRequestNull;
 
     static BitSet::shared_pointer createBitSetFor(
         PVStructure::shared_pointer const & pvStructure,
@@ -418,15 +418,15 @@ size_t BaseRequestImpl::num_active;
 
 PVDataCreatePtr BaseRequestImpl::pvDataCreate = getPVDataCreate();
 
-Status BaseRequestImpl::notInitializedStatus(Status::STATUSTYPE_ERROR, "request not initialized");
-Status BaseRequestImpl::destroyedStatus(Status::STATUSTYPE_ERROR, "request destroyed");
-Status BaseRequestImpl::channelNotConnected(Status::STATUSTYPE_ERROR, "channel not connected");
-Status BaseRequestImpl::channelDestroyed(Status::STATUSTYPE_ERROR, "channel destroyed");
-Status BaseRequestImpl::otherRequestPendingStatus(Status::STATUSTYPE_ERROR, "other request pending");
-Status BaseRequestImpl::invalidPutStructureStatus(Status::STATUSTYPE_ERROR, "incompatible put structure");
-Status BaseRequestImpl::invalidPutArrayStatus(Status::STATUSTYPE_ERROR, "incompatible put array");
-Status BaseRequestImpl::invalidBitSetLengthStatus(Status::STATUSTYPE_ERROR, "invalid bit-set length");
-Status BaseRequestImpl::pvRequestNull(Status::STATUSTYPE_ERROR, "pvRequest == 0");
+const Status BaseRequestImpl::notInitializedStatus(Status::STATUSTYPE_ERROR, "request not initialized");
+const Status BaseRequestImpl::destroyedStatus(Status::STATUSTYPE_ERROR, "request destroyed");
+const Status BaseRequestImpl::channelNotConnected(Status::STATUSTYPE_ERROR, "channel not connected");
+const Status BaseRequestImpl::channelDestroyed(Status::STATUSTYPE_ERROR, "channel destroyed");
+const Status BaseRequestImpl::otherRequestPendingStatus(Status::STATUSTYPE_ERROR, "other request pending");
+const Status BaseRequestImpl::invalidPutStructureStatus(Status::STATUSTYPE_ERROR, "incompatible put structure");
+const Status BaseRequestImpl::invalidPutArrayStatus(Status::STATUSTYPE_ERROR, "incompatible put array");
+const Status BaseRequestImpl::invalidBitSetLengthStatus(Status::STATUSTYPE_ERROR, "invalid bit-set length");
+const Status BaseRequestImpl::pvRequestNull(Status::STATUSTYPE_ERROR, "pvRequest == 0");
 
 
 class ChannelProcessRequestImpl :
@@ -2674,7 +2674,7 @@ public:
                 payloadBuffer->setPosition(newStartPos);
 
                 // copy part of a header, and add: command, payloadSize, NIF address
-                payloadBuffer->put(payloadBuffer->getArray(), startPosition-PVA_MESSAGE_HEADER_SIZE, PVA_MESSAGE_HEADER_SIZE-5);
+                payloadBuffer->put(payloadBuffer->getBuffer(), startPosition-PVA_MESSAGE_HEADER_SIZE, PVA_MESSAGE_HEADER_SIZE-5);
                 payloadBuffer->putByte(CMD_ORIGIN_TAG);
                 payloadBuffer->putInt(16);
                 // encode this socket bind address
@@ -2690,7 +2690,7 @@ public:
                 // set to end of a message
                 payloadBuffer->setPosition(payloadBuffer->getLimit());
 
-                bt->send(payloadBuffer->getArray()+newStartPos, payloadBuffer->getPosition()-newStartPos,
+                bt->send(payloadBuffer->getBuffer()+newStartPos, payloadBuffer->getPosition()-newStartPos,
                          bt->getLocalMulticastAddress());
 
                 return;
@@ -2783,8 +2783,6 @@ public:
                                 size_t payloadSize, epics::pvData::ByteBuffer* payloadBuffer) OVERRIDE FINAL
     {
         AbstractClientResponseHandler::handleResponse(responseFrom, transport, version, command, payloadSize, payloadBuffer);
-
-        transport->setRemoteRevision(version);
 
         transport->ensureData(4+2);
 
@@ -3000,10 +2998,10 @@ public:
     {
         if (command < 0 || command >= (int8)m_handlerTable.size())
         {
-            // TODO remove debug output
-            char buf[100];
-            sprintf(buf, "Invalid (or unsupported) command %d, its payload", command);
-            hexDump(buf, (const int8*)(payloadBuffer->getArray()), payloadBuffer->getPosition(), payloadSize);
+            if(IS_LOGGABLE(logLevelError)) {
+                std::cerr<<"Invalid (or unsupported) command: "<<std::hex<<(int)(0xFF&command)<<"\n"
+                         <<HexDump(*payloadBuffer, payloadSize).limit(256u);
+            }
             return;
         }
         // delegate
@@ -3599,7 +3597,7 @@ public:
             // NOTE: calls channelConnectFailed() on failure
             static ServerGUID guid = { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } };
             // m_addresses[ix] is modified by the following
-            searchResponse(guid, PVA_PROTOCOL_REVISION, &m_addresses[ix]);
+            searchResponse(guid, PVA_CLIENT_PROTOCOL_REVISION, &m_addresses[ix]);
         }
 
         virtual void timerStopped() OVERRIDE FINAL {
@@ -3677,13 +3675,6 @@ public:
             reportChannelStateChange();
         }
 
-        virtual void transportChanged() OVERRIDE FINAL {
-//                    initiateSearch();
-            // TODO
-            // this will be called immediately after reconnect... bad...
-
-        }
-
         virtual Transport::shared_pointer checkAndGetTransport() OVERRIDE FINAL
         {
             Lock guard(m_channelMutex);
@@ -3711,35 +3702,6 @@ public:
         {
             Lock guard(m_channelMutex);
             return m_transport;
-        }
-
-        virtual void transportResponsive(Transport::shared_pointer const & /*transport*/) OVERRIDE FINAL {
-            Lock guard(m_channelMutex);
-            if (m_connectionState == DISCONNECTED)
-            {
-                updateSubscriptions();
-
-                // reconnect using existing IDs, data
-                connectionCompleted(m_serverChannelID/*, accessRights*/);
-            }
-        }
-
-        virtual void transportUnresponsive() OVERRIDE FINAL {
-            /*
-            {
-                Lock guard(m_channelMutex);
-                if (m_connectionState == CONNECTED)
-                {
-            		// TODO 2 types of disconnected state - distinguish them otherwise disconnect will handle connection loss right
-                    setConnectionState(DISCONNECTED);
-
-                    // ... PVA notifies also w/ no access rights callback, although access right are not changed
-                }
-            }
-
-            // should be called without any lock hold
-            reportChannelStateChange();
-            */
         }
 
         /**
@@ -4037,7 +3999,7 @@ public:
         Lock lock(m_contextMutex);
 
         if (m_contextState == CONTEXT_DESTROYED)
-            throw std::runtime_error("Context destroyed.");
+            throw std::runtime_error("Context destroyed!");
         else if (m_contextState == CONTEXT_INITIALIZED)
             throw std::runtime_error("Context already initialized.");
 
@@ -4163,9 +4125,6 @@ private:
         m_responseHandler.reset(new ClientResponseHandler(thisPointer));
 
         m_channelSearchManager.reset(new ChannelSearchManager(thisPointer));
-
-        // preinitialize security plugins
-        SecurityPluginRegistry::instance();
 
         // TODO put memory barrier here... (if not already called within a lock?)
 
@@ -4446,11 +4405,6 @@ private:
             LOG(logLevelError, "createChannelInternal() exception: %s\n", e.what());
             return ClientChannelImpl::shared_pointer();
         }
-    }
-
-    const securityPlugins_t& getSecurityPlugins() OVERRIDE FINAL
-    {
-        return SecurityPluginRegistry::instance().getClientSecurityPlugins();
     }
 
     /**

@@ -18,7 +18,6 @@ namespace pvAccess {
 BeaconHandler::BeaconHandler(Context::shared_pointer const & context,
                              const osiSockAddr* responseFrom) :
     _context(Context::weak_pointer(context)),
-    _responseFrom(*responseFrom),
     _mutex(),
     _serverGUID(),
     _serverChangeCount(-1),
@@ -34,11 +33,11 @@ BeaconHandler::~BeaconHandler()
 void BeaconHandler::beaconNotify(osiSockAddr* /*from*/, int8 remoteTransportRevision,
                                  TimeStamp* timestamp, ServerGUID const & guid, int16 sequentalID,
                                  int16 changeCount,
-                                 PVFieldPtr /*data*/)
+                                 const PVFieldPtr& /*data*/)
 {
     bool networkChanged = updateBeacon(remoteTransportRevision, timestamp, guid, sequentalID, changeCount);
-    if (networkChanged)
-        changedTransport();
+    // TODO: reduce search timers
+    (void)networkChanged;
 }
 
 bool BeaconHandler::updateBeacon(int8 /*remoteTransportRevision*/, TimeStamp* /*timestamp*/,
@@ -81,19 +80,6 @@ bool BeaconHandler::updateBeacon(int8 /*remoteTransportRevision*/, TimeStamp* /*
     }
 
     return false;
-}
-
-void BeaconHandler::changedTransport()
-{
-    TransportRegistry::transportVector_t transports;
-    _context.lock()->getTransportRegistry()->toArray(transports, &_responseFrom);
-
-    // notify all
-    for (TransportRegistry::transportVector_t::iterator iter(transports.begin()), end(transports.end());
-         iter != end; iter++)
-    {
-        (*iter)->changedTransport();
-    }
 }
 
 }

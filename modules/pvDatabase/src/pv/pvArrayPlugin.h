@@ -1,14 +1,10 @@
-/* pvDeadbandPlugin.h */
+/* pvArrayPlugin.h */
 /*
  * The License for this software can be found in the file LICENSE that is included with the distribution.
  */
 
-#ifndef PVDEADBANDPLUGIN_H
-#define PVDEADBANDPLUGIN_H
-
-#if defined(_WIN32) && !defined(NOMINMAX)
-#define NOMINMAX
-#endif
+#ifndef PVARRAYPLUGIN_H
+#define PVARRAYPLUGIN_H
 
 #include <string>
 #include <map>
@@ -20,26 +16,26 @@
 
 namespace epics { namespace pvCopy{
 
-class PVDeadbandPlugin;
-class PVDeadbandFilter;
+class PVArrayPlugin;
+class PVArrayFilter;
 
-typedef std::tr1::shared_ptr<PVDeadbandPlugin> PVDeadbandPluginPtr;
-typedef std::tr1::shared_ptr<PVDeadbandFilter> PVDeadbandFilterPtr;
+typedef std::tr1::shared_ptr<PVArrayPlugin> PVArrayPluginPtr;
+typedef std::tr1::shared_ptr<PVArrayFilter> PVArrayFilterPtr;
 
 
 /**
- * @brief  A plugin for a filter that gets a sub array from a PVScalarDeadband.
+ * @brief A plugin for a filter that gets a sub array from a PVScalarArray.
  *
  * @author mrk
  * @since date 2017.02.23
  */
-class epicsShareClass PVDeadbandPlugin : public PVPlugin
+class epicsShareClass PVArrayPlugin : public PVPlugin
 {
 private:
-    PVDeadbandPlugin();
+    PVArrayPlugin();
 public:
-    POINTER_DEFINITIONS(PVDeadbandPlugin);
-    virtual ~PVDeadbandPlugin();
+    POINTER_DEFINITIONS(PVArrayPlugin);
+    virtual ~PVArrayPlugin();
     /**
      * Factory
      */
@@ -59,32 +55,28 @@ public:
 };
 
 /**
- * @brief  A Plugin for a filter that gets a sub array from a PVScalarDeadband.
+ * @brief  A filter that gets a sub array from a PVScalarArray.
  */
-class epicsShareClass PVDeadbandFilter : public PVFilter
+class epicsShareClass PVArrayFilter : public PVFilter
 {
 private:
-    bool absolute;
-    double deadband;
-    epics::pvData::PVScalarPtr master;
-    bool firstTime;
-    double lastReportedValue;
-    
+    long start;
+    long increment;
+    long end;
+    epics::pvData::PVScalarArrayPtr masterArray;
 
-    PVDeadbandFilter(bool absolute,double deadband,epics::pvData::PVScalarPtr const & master);
+    PVArrayFilter(long start,long increment,long end,const epics::pvData::PVScalarArrayPtr & masterArray);
 public:
-    POINTER_DEFINITIONS(PVDeadbandFilter);
-    virtual ~PVDeadbandFilter();
+    POINTER_DEFINITIONS(PVArrayFilter);
+    virtual ~PVArrayFilter();
     /**
-     * Create a PVDeadbandFilter.
+     * Create a PVArrayFilter.
      * @param requestValue The value part of a name=value request option.
      * @param master The field in the master PVStructure to which the PVFilter will be attached.
      * @return The PVFilter.
      * A null is returned if master or requestValue is not appropriate for the plugin.
      */
-    static PVDeadbandFilterPtr create(
-        const std::string & requestValue,
-        const epics::pvData::PVFieldPtr & master);
+    static PVArrayFilterPtr create(const std::string & requestValue,const epics::pvData::PVFieldPtr & master);
     /**
      * Perform a filter operation
      * @param pvCopy The field in the copy PVStructure.
@@ -102,5 +94,5 @@ public:
 };
 
 }}
-#endif  /* PVDEADBANDPLUGIN_H */
+#endif  /* PVARRAYPLUGIN_H */
 

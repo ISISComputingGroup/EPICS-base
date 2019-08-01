@@ -569,6 +569,7 @@ public:
    void waitGet(double timeout);
    void waitPut(double timeout);
    void stopEvents();
+   virtual ~TestClient() {}
 private:
    TestClient(string const &channelName,PVStructurePtr const &  pvRequest);
    string channelName;
@@ -719,7 +720,7 @@ void TestIoc::start()
     thread =  std::auto_ptr<epicsThread>(new epicsThread(
         *this,
         "testIoc",
-        epicsThreadGetStackSize(epicsThreadStackSmall),
+        epicsThreadGetStackSize(epicsThreadStackBig),
         epicsThreadPriorityLow));
     thread->start();  
 #endif

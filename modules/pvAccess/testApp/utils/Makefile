@@ -14,17 +14,11 @@ TESTS += testHexDump
 
 TESTPROD_HOST += testInetAddressUtils
 testInetAddressUtils = testInetAddressUtils.cpp
-# Avoid errors from inlined htonl() etc. used as template argument
-# TODO this is gcc only
-testInetAddressUtils_CXXFLAGS = -O0
-# needed for 64-bit Windows
-testInetAddressUtils_SYS_LIBS_WIN32 += ws2_32
 testHarness_SRCS += testInetAddressUtils.cpp
 TESTS += testInetAddressUtils
 
 TESTPROD_HOST += configurationTest
 configurationTest_SRCS += configurationTest.cpp
-configurationTest_SYS_LIBS_WIN32 += ws2_32
 #testHarness_SRCS += configurationTest.cpp
 TESTS += configurationTest
 
@@ -36,3 +30,6 @@ TESTPROD_HOST += testWildcard
 testWildcard = testWildcard.cpp
 testHarness_SRCS += testWildcard.cpp
 TESTS += testWildcard
+
+TESTPROD_HOST += showauth
+showauth_SRCS += showauth.cpp

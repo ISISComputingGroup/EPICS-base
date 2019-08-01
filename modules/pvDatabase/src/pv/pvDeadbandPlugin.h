@@ -1,46 +1,42 @@
-/* pvTimeStampPlugin.h */
+/* pvDeadbandPlugin.h */
 /*
  * The License for this software can be found in the file LICENSE that is included with the distribution.
  */
 
-#ifndef PVTIMESTAMPPLUGIN_H
-#define PVTIMESTAMPPLUGIN_H
+#ifndef PVDEADBANDPLUGIN_H
+#define PVDEADBANDPLUGIN_H
 
-#if defined(_WIN32) && !defined(NOMINMAX)
-#define NOMINMAX
-#endif
 
 #include <string>
 #include <map>
 #include <pv/lock.h>
 #include <pv/pvData.h>
 #include <pv/pvPlugin.h>
-#include <pv/pvTimeStamp.h>
 
 #include <shareLib.h>
 
 namespace epics { namespace pvCopy{
 
-class PVTimestampPlugin;
-class PVTimestampFilter;
+class PVDeadbandPlugin;
+class PVDeadbandFilter;
 
-typedef std::tr1::shared_ptr<PVTimestampPlugin> PVTimestampPluginPtr;
-typedef std::tr1::shared_ptr<PVTimestampFilter> PVTimestampFilterPtr;
+typedef std::tr1::shared_ptr<PVDeadbandPlugin> PVDeadbandPluginPtr;
+typedef std::tr1::shared_ptr<PVDeadbandFilter> PVDeadbandFilterPtr;
 
 
 /**
- * @brief  A plugin for a filter that sets a timeStamp to the current time.
+ * @brief  A plugin for a filter that gets a sub array from a PVScalarDeadband.
  *
  * @author mrk
- * @since date 2017.03.24
+ * @since date 2017.02.23
  */
-class epicsShareClass PVTimestampPlugin : public PVPlugin
+class epicsShareClass PVDeadbandPlugin : public PVPlugin
 {
 private:
-    PVTimestampPlugin();
+    PVDeadbandPlugin();
 public:
-    POINTER_DEFINITIONS(PVTimestampPlugin);
-    virtual ~PVTimestampPlugin();
+    POINTER_DEFINITIONS(PVDeadbandPlugin);
+    virtual ~PVDeadbandPlugin();
     /**
      * Factory
      */
@@ -60,30 +56,32 @@ public:
 };
 
 /**
- * @brief  A filter that sets a timeStamp to the current time.
+ * @brief  A Plugin for a filter that gets a sub array from a PVScalarDeadband.
  */
-class epicsShareClass PVTimestampFilter : public PVFilter
+class epicsShareClass PVDeadbandFilter : public PVFilter
 {
 private:
-    epics::pvData::PVTimeStamp pvTimeStamp;
-    epics::pvData::TimeStamp timeStamp;
-    bool current;
-    bool copy;
-    epics::pvData::PVFieldPtr master;
+    bool absolute;
+    double deadband;
+    epics::pvData::PVScalarPtr master;
+    bool firstTime;
+    double lastReportedValue;
     
 
-    PVTimestampFilter(bool current,bool copy,epics::pvData::PVFieldPtr const & pvField);
+    PVDeadbandFilter(bool absolute,double deadband,epics::pvData::PVScalarPtr const & master);
 public:
-    POINTER_DEFINITIONS(PVTimestampFilter);
-    virtual ~PVTimestampFilter();
+    POINTER_DEFINITIONS(PVDeadbandFilter);
+    virtual ~PVDeadbandFilter();
     /**
-     * Create a PVTimestampFilter.
+     * Create a PVDeadbandFilter.
      * @param requestValue The value part of a name=value request option.
      * @param master The field in the master PVStructure to which the PVFilter will be attached.
      * @return The PVFilter.
      * A null is returned if master or requestValue is not appropriate for the plugin.
      */
-    static PVTimestampFilterPtr create(const std::string & requestValue,const epics::pvData::PVFieldPtr & master);
+    static PVDeadbandFilterPtr create(
+        const std::string & requestValue,
+        const epics::pvData::PVFieldPtr & master);
     /**
      * Perform a filter operation
      * @param pvCopy The field in the copy PVStructure.
@@ -101,5 +99,5 @@ public:
 };
 
 }}
-#endif  /* PVTIMESTAMPPLUGIN_H */
+#endif  /* PVDEADBANDPLUGIN_H */
 
