@@ -1,7 +1,8 @@
 # Cannot use $(OS_CLASS) here
 # may want to consider replacing $(ARCH) with %%EPICS_HOST_ARCH%% at some point,
 # but would need to adjust the generating of dllPath.bat too
-runIOC.bat : dllPath.bat
+# note: runIOC.bat does not directly depend on dllCopy.bat but convenient to generate it this way
+runIOC.bat : dllPath.bat dllCopy.bat
 ifneq ($(findstring win,$(EPICS_HOST_ARCH)),)
 ifeq ($(findstring cygwin,$(EPICS_HOST_ARCH)),)
 	@echo Generating runIOC.bat
