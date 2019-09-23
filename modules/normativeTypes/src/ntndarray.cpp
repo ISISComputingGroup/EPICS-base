@@ -7,6 +7,9 @@
 #include <algorithm>
 
 #include <pv/lock.h>
+#include <pv/sharedPtr.h>
+
+#include "validator.h"
 
 #define epicsExportSharedSymbols
 #include <pv/ntndarray.h>
@@ -17,9 +20,6 @@ using namespace std;
 using namespace epics::pvData;
 
 namespace epics { namespace nt {
-
-static NTFieldPtr ntField = NTField::get();
-
 
 namespace detail {
 
@@ -192,94 +192,10 @@ NTNDArrayBuilder::shared_pointer NTNDArrayBuilder::add(string const & name, Fiel
     return shared_from_this();
 }
 
-
 }
 
 const std::string NTNDArray::URI("epics:nt/NTNDArray:1.0");
 const std::string ntAttrStr("epics:nt/NTAttribute:1.0");
-
-static FieldCreatePtr fieldCreate = getFieldCreate();
-static PVDataCreatePtr pvDataCreate = getPVDataCreate();
-
-class NTValueType
-{
-public:
-    static bool isCompatible(UnionConstPtr const &u)
-    {
-        if(!u.get()) return false;
-
-        if (u->getID() != Union::defaultId()) return false;
-        if (u->isVariant()) return false;
-
-        for (int i = pvBoolean; i != pvString; ++i)
-        {
-            ScalarType scalarType = static_cast<ScalarType>(i);
-            std::string name(ScalarTypeFunc::name(scalarType));
-            name += "Value";
-            ScalarArrayConstPtr scalarField = u->getField<ScalarArray>(name);
-            if (scalarField.get() == 0 ||
-                    scalarField->getElementType() != scalarType)
-                return false;
-        }
-
-        return true;
-    }
-};
-
-class NTCodec
-{
-public:
-    static bool isCompatible(StructureConstPtr const &structure)
-    {
-        if(!structure.get()) return false;
-
-        if (structure->getID() != "codec_t") return false;
-
-        ScalarConstPtr scalarField = structure->getField<Scalar>("name");
-        if (scalarField.get() == 0 || scalarField->getScalarType() != pvString)
-            return false;
-
-        UnionConstPtr paramField = structure->getField<Union>("parameters");
-        if (paramField.get() == 0 || !paramField->isVariant())
-            return false;
-
-        return true;
-    }
-};
-
-
-class NTDimension
-{
-public:
-    static bool isCompatible(StructureConstPtr const &structure)
-    {
-        if(!structure.get()) return false;
-
-        if (structure->getID() != "dimension_t") return false;
-
-        ScalarConstPtr scalarField = structure->getField<Scalar>("size");
-        if (scalarField.get() == 0 || scalarField->getScalarType() != pvInt)
-            return false;
-
-        scalarField = structure->getField<Scalar>("offset");
-        if (scalarField.get() == 0 || scalarField->getScalarType() != pvInt)
-            return false;
-
-        scalarField = structure->getField<Scalar>("fullSize");
-        if (scalarField.get() == 0 || scalarField->getScalarType() != pvInt)
-            return false;
-
-        scalarField = structure->getField<Scalar>("binning");
-        if (scalarField.get() == 0 || scalarField->getScalarType() != pvInt)
-            return false;
-
-        scalarField = structure->getField<Scalar>("reverse");
-        if (scalarField.get() == 0 || scalarField->getScalarType() != pvBoolean)
-            return false;
-
-        return true;
-    }
-};
 
 NTNDArray::shared_pointer NTNDArray::wrap(PVStructurePtr const & pvStructure)
 {
@@ -302,84 +218,62 @@ bool NTNDArray::is_a(PVStructurePtr const & pvStructure)
     return is_a(pvStructure->getStructure());
 }
 
-bool NTNDArray::isCompatible(StructureConstPtr const &structure)
-{
-    if(!structure.get()) return false;
-
-    UnionConstPtr valueField = structure->getField<Union>("value");
-    if(!NTValueType::isCompatible(valueField)) return false;
-
-    StructureConstPtr codecField = structure->getField<Structure>("codec");
-    if(!NTCodec::isCompatible(codecField)) return false;
-
-    ScalarConstPtr compressedSizeField = structure->getField<Scalar>("compressedSize");
-    if (compressedSizeField.get() == 0)
-        return false;
-
-    if (compressedSizeField->getScalarType() != pvLong)
-        return false;
-
-
-    ScalarConstPtr uncompressedSizeField = structure->getField<Scalar>("uncompressedSize");
-    if (uncompressedSizeField.get() == 0)
-        return false;
-
-    if (uncompressedSizeField->getScalarType() != pvLong)
-        return false;
-
-    StructureArrayConstPtr dimensionField = structure->getField<StructureArray>("dimension");
-    if (dimensionField.get() == 0)
-        return false;
-    StructureConstPtr dimElementStruc = dimensionField->getStructure();
-
-    if(!NTDimension::isCompatible(dimElementStruc))
-       return false;
-
-    NTFieldPtr ntField = NTField::get();
-
-    StructureConstPtr dataTimeStampField = structure->getField<Structure>(
-        "dataTimeStamp");
-    if (dataTimeStampField.get() == 0 || !ntField->isTimeStamp(dataTimeStampField))
-        return false;
-
-
-    ScalarConstPtr uniqueIdField = structure->getField<Scalar>("uniqueId");
-    if (uniqueIdField.get() == 0)
-        return false;
-
-    if (uniqueIdField->getScalarType() != pvInt)
-        return false;
-
-
-    StructureArrayConstPtr attributeField = structure->getField<StructureArray>( "attribute");
-    if (!attributeField)
-        return false;
-
-    if (!NTNDArrayAttribute::isCompatible(attributeField->getStructure()))
-        return false;
-
-
-    FieldConstPtr field = structure->getField("descriptor");
-    if (field.get())
+namespace {
+    Result& isValue(Result& result)
     {
-        ScalarConstPtr descriptorField = structure->getField<Scalar>("descriptor");
-        if (!descriptorField || descriptorField->getScalarType() != pvString)
-            return false;
+        result.is<Union>(Union::defaultId());
+
+        for (int i = pvBoolean; i < pvString; ++i) {
+            ScalarType type = static_cast<ScalarType>(i);
+            string name(ScalarTypeFunc::name(type));
+            result.has<ScalarArray>(name + "Value");
+        }
+
+        return result;
     }
 
-    field = structure->getField("alarm");
-    if (field.get() && !ntField->isAlarm(field))
+    Result& isCodec(Result& result)
+    {
+        return result
+            .is<Structure>("codec_t")
+            .has<Scalar>("name")
+            .has<Union>("parameters");
+    }
+
+    Result& isDimension(Result& result)
+    {
+        return result
+            .is<StructureArray>("dimension_t[]")
+            .has<Scalar>("size")
+            .has<Scalar>("offset")
+            .has<Scalar>("fullSize")
+            .has<Scalar>("binning")
+            .has<Scalar>("reverse");
+    }
+}
+
+bool NTNDArray::isCompatible(StructureConstPtr const &structure)
+{
+    if (!structure)
         return false;
 
-    field = structure->getField("timeStamp");
-    if (field.get() && !ntField->isTimeStamp(field))
-        return false;
+    Result result(structure);
 
-    field = structure->getField("display");
-    if (field.get() && !ntField->isDisplay(field))
-        return false;
-
-    return true;
+    return result
+        .is<Structure>()
+        .has<&isValue>("value")
+        .has<&isCodec>("codec")
+        .has<Scalar>("compressedSize")
+        .has<Scalar>("uncompressedSize")
+        .has<&isDimension>("dimension")
+        .has<Scalar>("uniqueId")
+        .has<&NTField::isTimeStamp, Structure>("dataTimeStamp")
+        .has<&NTNDArrayAttribute::isAttribute, StructureArray>("attribute")
+        .maybeHas<Scalar>("descriptor")
+        .maybeHas<&NTField::isAlarm, Structure>("alarm")
+        .maybeHas<&NTField::isTimeStamp, Structure>("timeStamp")
+        .maybeHas<&NTField::isDisplay, Structure>("display")
+        .valid();
 }
 
 
@@ -389,7 +283,6 @@ bool NTNDArray::isCompatible(PVStructurePtr const & pvStructure)
 
     return isCompatible(pvStructure->getStructure());
 }
-
 
 bool NTNDArray::isValid()
 {

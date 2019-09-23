@@ -83,18 +83,8 @@ public:
         return _receiveBuffer.getSize();
     }
 
-    virtual std::size_t getSocketReceiveBufferSize() const OVERRIDE FINAL;
-
     virtual epics::pvData::int16 getPriority() const OVERRIDE FINAL {
         return PVA_DEFAULT_PRIORITY;
-    }
-
-    virtual epics::pvData::int8 getRevision() const OVERRIDE FINAL {
-        return PVA_PROTOCOL_REVISION;
-    }
-
-    virtual void setRemoteRevision(epics::pvData::int8 /*revision*/) OVERRIDE FINAL {
-        // noop
     }
 
     virtual void setRemoteTransportReceiveBufferSize(
@@ -107,14 +97,6 @@ public:
         // noop for UDP (limited by 64k; MAX_UDP_SEND for PVA)
     }
 
-    virtual void aliveNotification() OVERRIDE FINAL {
-        // noop
-    }
-
-    virtual void changedTransport() OVERRIDE FINAL {
-        // noop
-    }
-
     virtual bool verify(epics::pvData::int32 /*timeoutMs*/) OVERRIDE FINAL {
         // noop
         return true;
@@ -124,12 +106,8 @@ public:
         // noop
     }
 
-    virtual void authNZMessage(epics::pvData::PVField::shared_pointer const & data) OVERRIDE FINAL {
+    virtual void authNZMessage(epics::pvData::PVStructure::shared_pointer const & data) OVERRIDE FINAL {
         // noop
-    }
-
-    virtual std::tr1::shared_ptr<SecuritySession> getSecuritySession() const OVERRIDE FINAL {
-        return std::tr1::shared_ptr<SecuritySession>();
     }
 
     // NOTE: this is not yet used for UDP
@@ -149,10 +127,7 @@ public:
 
     virtual void close() OVERRIDE FINAL;
 
-    virtual void ensureData(std::size_t size) OVERRIDE FINAL {
-        if (_receiveBuffer.getRemaining() < size)
-            throw std::underflow_error("no more data in UDP packet");
-    }
+    virtual void ensureData(std::size_t size) OVERRIDE FINAL;
 
     virtual void alignData(std::size_t alignment) OVERRIDE FINAL {
         _receiveBuffer.align(alignment);
@@ -309,7 +284,7 @@ protected:
      */
     ResponseHandler::shared_pointer _responseHandler;
 
-    virtual void run();
+    virtual void run() OVERRIDE FINAL;
 
 private:
     bool processBuffer(Transport::shared_pointer const & transport, osiSockAddr& fromAddress, epics::pvData::ByteBuffer* receiveBuffer);

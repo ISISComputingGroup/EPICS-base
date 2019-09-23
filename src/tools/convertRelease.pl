@@ -130,13 +130,16 @@ sub dllPath {
     close OUT;
 }
 
+#
+# File to copy dependent DLLs into bin directory of IOC 
+#
 sub dllCopy {
     unlink $outfile;
     open(OUT, ">$outfile") or die "$! creating $outfile";
     print OUT "\@ECHO OFF\n";
     foreach my $dir (binDirs()) {
         $dir =~ s%/%\\%g;
-        print OUT "XCOPY /Q /Y ",$dir,"\\*.dll .\n";
+        print OUT "XCOPY /R /I /Q /Y ",$dir,"\\*.dll \%MYDIR\%..\\..\\bin\\$arch\n";
     }
     close OUT;
 }

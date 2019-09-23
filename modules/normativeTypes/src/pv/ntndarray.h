@@ -10,16 +10,16 @@
 #include <string>
 
 #ifdef epicsExportSharedSymbols
-#   define ntscalarArrayEpicsExportSharedSymbols
+#   define ntndarrayEpicsExportSharedSymbols
 #   undef epicsExportSharedSymbols
 #endif
 
 #include <pv/pvDisplay.h>
 #include <pv/pvControl.h>
 
-#ifdef ntscalarArrayEpicsExportSharedSymbols
+#ifdef ntndarrayEpicsExportSharedSymbols
 #   define epicsExportSharedSymbols
-#	undef ntscalarArrayEpicsExportSharedSymbols
+#	undef ntndarrayEpicsExportSharedSymbols
 #endif
 
 #include <pv/ntfield.h>
@@ -139,7 +139,7 @@ public:
      * and if so returns an NTScalarArray which wraps it.
      * This method will return null if the structure is is not compatible
      * or is null.
-     * 
+     *
      * @param pvStructure the PVStructure to be wrapped
      * @return NTScalarArray instance wrapping pvStructure on success, null otherwise
      */
@@ -150,7 +150,7 @@ public:
      * <p>
      * No checks are made as to whether the specified PVStructure
      * is compatible with NTNDArray or is non-null.
-     * 
+     *
      * @param pvStructure the PVStructure to be wrapped
      * @return NTNDArray instance wrapping pvStructure
      */
@@ -163,7 +163,7 @@ public:
      * version of NTNDArray through its type ID, including checking version numbers.
      * The return value does not depend on whether the structure is actually
      * compatible in terms of its introspection type.
-     * 
+     *
      * @param structure the pvStructure to test
      * @return (false,true) if the specified Structure (is not, is) a compatible NTNDArray
      */
@@ -176,7 +176,7 @@ public:
      * version of NTNDArray through its type ID, including checking version numbers.
      * The return value does not depend on whether the structure is actually
      * compatible in terms of its introspection type.
-     * 
+     *
      * @param pvStructure the PVStructure to test
      * @return (false,true) if the specified PVStructure (is not, is) a compatible NTNDArray
      */
@@ -187,7 +187,7 @@ public:
      * <p>
      * Checks if the specified Structure is compatible with this version
      * of NTNDArray through the introspection interface.
-     * 
+     *
      * @param structure the Structure to test
      * @return (false,true) if the specified Structure (is not, is) a compatible NTNDArray
      */

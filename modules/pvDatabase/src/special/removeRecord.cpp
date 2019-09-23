@@ -8,9 +8,28 @@
  * @author mrk
  * @date 2013.04.18
  */
-#define epicsExportSharedSymbols
 
-#include <pv/removeRecord.h>
+#include <string>
+#include <cstring>
+#include <stdexcept>
+#include <memory>
+#include <set>
+
+#include <pv/lock.h>
+#include <pv/pvType.h>
+#include <pv/pvData.h>
+#include <pv/pvTimeStamp.h>
+#include <pv/timeStamp.h>
+#include <pv/rpcService.h>
+#include <pv/pvAccess.h>
+#include <pv/status.h>
+#include <pv/serverContext.h>
+
+
+#define epicsExportSharedSymbols
+#include "pv/pvStructureCopy.h"
+#include "pv/pvDatabase.h"
+#include "pv/removeRecord.h"
 
 using std::tr1::static_pointer_cast;
 using namespace epics::pvData;
@@ -65,7 +84,7 @@ void RemoveRecord::process()
         pvResult->put(name + " not found");
         return;
     }
-    pvRecord->destroy();
+    pvRecord->remove();
     pvResult->put("success");
 }
 
