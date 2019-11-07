@@ -6,14 +6,13 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
+LIBCOM := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+TOP = ../../..
 
-TOP = ..
 include $(TOP)/configure/CONFIG
 
 # Uncomment this to remove the (benign) valgrind helper stubs
 #USR_CFLAGS += -DNVALGRIND
-
-LIBCOM = $(TOP)/src
 
 INC += valgrind/valgrind.h
 
@@ -49,11 +48,11 @@ include $(LIBCOM)/yajl/Makefile
 # Library to build:
 LIBRARY=Com
 
-Com_SYS_LIBS_WIN32 = dbghelp ws2_32 advapi32 user32
-
 ifeq ($(COMMANDLINE_LIBRARY),WINEDITLINE)
 Com_LIBS_WIN32 = WinEditLine
 endif
+
+Com_SYS_LIBS_WIN32 = ws2_32 advapi32 user32 dbghelp
 
 Com_RCS = Com.rc
 

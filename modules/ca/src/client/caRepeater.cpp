@@ -32,6 +32,7 @@
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "epicsAssert.h"
+#include "osiUnistd.h"
 #include "udpiiu.h"
 
 int main()
@@ -43,6 +44,7 @@ int main()
 		ShowWindowAsync(conwin, SW_HIDE);
 	}
 #endif /* _WIN32 */
+    chdir ( "/" );
     ca_repeater ();
     return ( 0 );
 }

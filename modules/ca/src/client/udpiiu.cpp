@@ -438,7 +438,7 @@ void udpRecvThread::run ()
         }
         else if ( status > 0 ) {
             this->iiu.postMsg ( src, this->iiu.recvBuf, 
-                (arrayElementCount) status, epicsTime::getCurrent() );
+                (arrayElementCount) status, epicsTime::getMonotonic() );
         }
 
     } while ( ! this->iiu.shutdownCmd );

@@ -23,11 +23,11 @@
 #include <stdio.h>
 #include <sys/timeb.h>
 
+#define EPICS_PRIVATE_API
 #define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "epicsEvent.h"
 #include "iocLog.h"
-#include "errlog.h"
 #include "epicsMutex.h"
 #include "epicsThread.h"
 #include "epicsTime.h"
@@ -35,11 +35,15 @@
 #include "epicsAssert.h"
 #include "epicsExit.h"
 #include "epicsSignal.h"
+#include "epicsExport.h"
 #include "epicsString.h"
 #include "epicsStdio.h"
 #include "macLib.h"
 
 #include "logClient.h"
+
+int logClientDebug = 0;
+epicsExportAddress (int, logClientDebug);
 
 typedef struct {
     char                msgBuf[0x4000];
@@ -49,8 +53,10 @@ typedef struct {
     SOCKET              sock;
     epicsThreadId       restartThreadId;
     epicsEventId        stateChangeNotify;
+    epicsEventId        shutdownNotify;
     unsigned            connectCount;
     unsigned            nextMsgIndex;
+    unsigned            backlog;
     unsigned            connected;
     unsigned            shutdown;
     unsigned            shutdownConfirm;
@@ -58,7 +64,6 @@ typedef struct {
 } logClient;
 
 static const double      LOG_RESTART_DELAY = 5.0; /* sec */
-static const double      LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT = 5.0; /* sec */
 static const double      LOG_SERVER_SHUTDOWN_TIMEOUT = 30.0; /* sec */
 
 /*
@@ -71,10 +76,10 @@ static char* logClientPrefix = NULL;
  */
 static void logClientClose ( logClient *pClient )
 {
-#   ifdef DEBUG
+    if (logClientDebug) {
         fprintf (stderr, "log client: lingering for connection close...");
         fflush (stderr);
-#   endif
+    }
 
     /*
      * mutex on
@@ -89,8 +94,6 @@ static void logClientClose ( logClient *pClient )
         pClient->sock = INVALID_SOCKET;
     }
 
-    pClient->nextMsgIndex = 0u;
-    memset ( pClient->msgBuf, '\0', sizeof ( pClient->msgBuf ) );
     pClient->connected = 0u;
 
     /*
@@ -98,9 +101,8 @@ static void logClientClose ( logClient *pClient )
      */
     epicsMutexUnlock (pClient->mutex);
 
-#   ifdef DEBUG
+    if (logClientDebug)
         fprintf (stderr, "done\n");
-#   endif
 }
 
 /*
@@ -118,6 +120,7 @@ static void logClientDestroy (logClientId id)
     epicsMutexMustLock ( pClient->mutex );
     pClient->shutdown = 1u;
     epicsMutexUnlock ( pClient->mutex );
+    epicsEventSignal ( pClient->shutdownNotify );
 
     /* unblock log client thread blocking in send() or connect() */
     interruptInfo =
@@ -159,21 +162,15 @@ static void logClientDestroy (logClientId id)
         return;
     }
 
-    errlogRemoveListeners ( logClientSendMessage, (void *) pClient );
-
     logClientClose ( pClient );
 
     epicsMutexDestroy ( pClient->mutex );
-   
     epicsEventDestroy ( pClient->stateChangeNotify );
+    epicsEventDestroy ( pClient->shutdownNotify );
 
     free ( pClient );
 }
 
-/*
- * This method requires the pClient->mutex be owned already.
- */
- 
 static const char* xml_format = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 "<message>"
 "<clientName>%s</clientName>"
@@ -199,8 +196,11 @@ static int timezoneOffset(char* buffer, int len_buffer, epicsTimeStamp* the_time
 	return 0;
 }
 
-static void sendMessageChunk(logClient * pClient, const char * orig_message)
-{
+
+/*
+ * This method requires the pClient->mutex be owned already.
+ */
+static void sendMessageChunk(logClient * pClient, const char * orig_message) {
     int i;
     unsigned char c;
     unsigned int strSize, max_len_msg;
@@ -210,9 +210,9 @@ static void sendMessageChunk(logClient * pClient, const char * orig_message)
 	char event_time[32];
     epicsTimeStamp the_time;
     /* severity to use when it has not otherwise been specified via e.g. errlogSevPrintf()
-       Changed from MAJOR to MINOR to reduce number of messages displayed by default in IBEX GUI */
+ *        Changed from MAJOR to MINOR to reduce number of messages displayed by default in IBEX GUI */
     static const char* default_severity = "MINOR";
-	
+
     if ( ! pClient || ! orig_message ) {
         return;
     }
@@ -248,8 +248,9 @@ static void sendMessageChunk(logClient * pClient, const char * orig_message)
 	message = message_ptr = (char*)malloc(max_len_msg + 1);
 	epicsSnprintf(message, max_len_msg, xml_format, (iocname != NULL ? iocname : "UNKNOWN"), sev_str, orig_message, event_time);
 	message[max_len_msg] = '\0';
+
     strSize = strlen ( message );
-	// remove any invalid characters
+        // remove any invalid characters
 	for(i=0; i<strSize; ++i)
 	{
         c = message[i];
@@ -267,65 +268,26 @@ static void sendMessageChunk(logClient * pClient, const char * orig_message)
         unsigned msgBufBytesLeft = 
             sizeof ( pClient->msgBuf ) - pClient->nextMsgIndex;
 
-        if ( strSize > msgBufBytesLeft ) {
-            int status;
-
-            if ( ! pClient->connected ) {
-                break;
-            }
-
-// as we use XML messages try to avoid sending half a message that may be invalid XML
-// so we only split a message if it will not fit into an empty buffer
-            if ( strSize > sizeof(pClient->msgBuf) ) {
-                if ( msgBufBytesLeft > 0u ) {
-                    memcpy ( & pClient->msgBuf[pClient->nextMsgIndex],
-                        message, msgBufBytesLeft );
-                    pClient->nextMsgIndex += msgBufBytesLeft;
-                    strSize -= msgBufBytesLeft;
-                    message += msgBufBytesLeft;
-                }
-            }
-
-            status = send ( pClient->sock, pClient->msgBuf, 
-                pClient->nextMsgIndex, 0 );
-            if ( status > 0 ) {
-                unsigned nSent = (unsigned) status;
-                if ( nSent < pClient->nextMsgIndex ) {
-                    unsigned newNextMsgIndex = pClient->nextMsgIndex - nSent;
-                    memmove ( pClient->msgBuf, & pClient->msgBuf[nSent], 
-                        newNextMsgIndex );
-                    pClient->nextMsgIndex = newNextMsgIndex;
-                }
-                else {
-                    pClient->nextMsgIndex = 0u;
-                }
-            }
-            else {
-                if ( ! pClient->shutdown ) {
-                    char sockErrBuf[64];
-                    if ( status ) {
-                        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-                    }
-                    else {
-                        strcpy ( sockErrBuf, "server initiated disconnect" );
-                    }
-                    fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
-                        pClient->name, sockErrBuf );
-                }
-                logClientClose ( pClient );
-                break;
-            }
+        if ( msgBufBytesLeft < strSize && pClient->nextMsgIndex != 0u && pClient->connected)
+        {
+            /* buffer is full, thus flush it */
+            logClientFlush ( pClient );
+            msgBufBytesLeft = sizeof ( pClient->msgBuf ) - pClient->nextMsgIndex;
         }
-        else {
-            memcpy ( & pClient->msgBuf[pClient->nextMsgIndex],
-                message, strSize );
-            pClient->nextMsgIndex += strSize;
+        if ( msgBufBytesLeft == 0u ) {
+            fprintf ( stderr, "log client: messages to \"%s\" are lost\n",
+                pClient->name );
             break;
         }
+        if ( msgBufBytesLeft > strSize) msgBufBytesLeft = strSize;
+        memcpy ( & pClient->msgBuf[pClient->nextMsgIndex],
+            message, msgBufBytesLeft );
+        pClient->nextMsgIndex += msgBufBytesLeft;
+        strSize -= msgBufBytesLeft;
+        message += msgBufBytesLeft;
     }
-	free(message_ptr); /* message itself can get incremented, hence need message_ptr for free() */
+    free(message_ptr); /* message itself can get incremented, hence need message_ptr for free() */
 }
-
 
 /* 
  * logClientSend ()
@@ -333,12 +295,11 @@ static void sendMessageChunk(logClient * pClient, const char * orig_message)
 void epicsShareAPI logClientSend ( logClientId id, const char * message )
 {
     logClient * pClient = ( logClient * ) id;
-
 	/* we have got called during an IOC shutdown, checking   pClient->shutdown
-	should help as it will either be 1 (set during logClientDestroy) or some
-	random value (after free() is called in logClientDestroy) but it is
-	unlikely to be 0 in either case */
-	if ( ! pClient || ! message || pClient->shutdown ) {
+ * 	should help as it will either be 1 (set during logClientDestroy) or some
+ * 		random value (after free() is called in logClientDestroy) but it is
+ * 			unlikely to be 0 in either case */
+    if ( ! pClient || ! message  || pClient->shutdown ) {
         return;
     }
 
@@ -355,43 +316,54 @@ void epicsShareAPI logClientSend ( logClientId id, const char * message )
 
 void epicsShareAPI logClientFlush ( logClientId id )
 {
+    unsigned nSent;
+    int status = 0;
+
     logClient * pClient = ( logClient * ) id;
 
-    if ( ! pClient ) {
+    if ( ! pClient || ! pClient->connected ) {
         return;
     }
 
     epicsMutexMustLock ( pClient->mutex );
 
-    while ( pClient->nextMsgIndex && pClient->connected ) {
-        int status = send ( pClient->sock, pClient->msgBuf, 
-            pClient->nextMsgIndex, 0 );
-        if ( status > 0 ) {
-            unsigned nSent = (unsigned) status;
-            if ( nSent < pClient->nextMsgIndex ) {
-                unsigned newNextMsgIndex = pClient->nextMsgIndex - nSent;
-                memmove ( pClient->msgBuf, & pClient->msgBuf[nSent], 
-                    newNextMsgIndex );
-                pClient->nextMsgIndex = newNextMsgIndex;
-            }
-            else {
-                pClient->nextMsgIndex = 0u;
-            }
+    nSent = pClient->backlog;
+    while ( nSent < pClient->nextMsgIndex && pClient->connected ) {
+        status = send ( pClient->sock, pClient->msgBuf + nSent,
+            pClient->nextMsgIndex - nSent, 0 );
+        if ( status < 0 ) break;
+        nSent += status;
+    }
+
+    if ( pClient->backlog > 0 && status >= 0 )
+    {
+        /* On Linux send 0 bytes can detect EPIPE */
+        /* NOOP on Windows, fails on vxWorks */
+        errno = 0;
+        status = send ( pClient->sock, NULL, 0, 0 );
+        if (!(errno == ECONNRESET || errno == EPIPE)) status = 0;
+    }
+
+    if ( status < 0 ) {
+        if ( ! pClient->shutdown ) {
+            char sockErrBuf[128];
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
+                pClient->name, sockErrBuf );
         }
-        else {
-            if ( ! pClient->shutdown ) {
-                char sockErrBuf[64];
-                if ( status ) {
-                    epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-                }
-                else {
-                    strcpy ( sockErrBuf, "server initiated disconnect" );
-                }
-                fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
-                    pClient->name, sockErrBuf );
-            }
-            logClientClose ( pClient );
-            break;
+        pClient->backlog = 0;
+        logClientClose ( pClient );
+    }
+    else if ( nSent > 0 && pClient->nextMsgIndex > 0 ) {
+        int backlog = epicsSocketUnsentCount ( pClient->sock );
+        if (backlog >= 0) {
+            pClient->backlog = backlog;
+            nSent -= backlog;
+        }
+        pClient->nextMsgIndex -= nSent;
+        if ( nSent > 0 && pClient->nextMsgIndex > 0 ) {
+            memmove ( pClient->msgBuf, & pClient->msgBuf[nSent],
+                pClient->nextMsgIndex );
         }
     }
     epicsMutexUnlock ( pClient->mutex );
@@ -402,10 +374,10 @@ void epicsShareAPI logClientFlush ( logClientId id )
  */
 static void logClientMakeSock (logClient *pClient)
 {
-    
-#   ifdef DEBUG
+    if (logClientDebug) {
         fprintf (stderr, "log client: creating socket...");
-#   endif
+        fflush (stderr);
+    }
 
     epicsMutexMustLock (pClient->mutex);
    
@@ -414,7 +386,7 @@ static void logClientMakeSock (logClient *pClient)
      */
     pClient->sock = epicsSocketCreate ( AF_INET, SOCK_STREAM, 0 );
     if ( pClient->sock == INVALID_SOCKET ) {
-        char sockErrBuf[64];
+        char sockErrBuf[128];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf ( stderr, "log client: no socket error %s\n", 
@@ -423,10 +395,8 @@ static void logClientMakeSock (logClient *pClient)
     
     epicsMutexUnlock (pClient->mutex);
 
-#   ifdef DEBUG
+    if (logClientDebug)
         fprintf (stderr, "done\n");
-#   endif
-
 }
 
 /*
@@ -466,7 +436,7 @@ static void logClientConnect (logClient *pClient)
             }
             else {
                 if ( pClient->connFailStatus != errnoCpy && ! pClient->shutdown ) {
-                    char sockErrBuf[64];
+                    char sockErrBuf[128];
                     epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
                     fprintf (stderr,
@@ -492,7 +462,7 @@ static void logClientConnect (logClient *pClient)
     optval = TRUE;
     status = setsockopt (pClient->sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval));
     if (status<0) {
-        char sockErrBuf[64];
+        char sockErrBuf[128];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf (stderr, "log client: unable to enable keepalive option because \"%s\"\n", sockErrBuf);
@@ -504,11 +474,11 @@ static void logClientConnect (logClient *pClient)
      */
     status = shutdown (pClient->sock, SHUT_RD);
     if (status < 0) {
-        char sockErrBuf[64];
+        char sockErrBuf[128];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
-        fprintf (stderr, "%s:%d shutdown(%d,SHUT_RD) error was \"%s\"\n", 
-            __FILE__, __LINE__, pClient->sock, sockErrBuf);
+        fprintf (stderr, "%s:%d shutdown(sock,SHUT_RD) error was \"%s\"\n", 
+            __FILE__, __LINE__, sockErrBuf);
         /* not fatal (although it shouldn't happen) */
     }
 
@@ -525,7 +495,7 @@ static void logClientConnect (logClient *pClient)
         lingerval.l_linger = 60*5; 
         status = setsockopt (pClient->sock, SOL_SOCKET, SO_LINGER, (char *) &lingerval, sizeof(lingerval));
         if (status<0) {
-            char sockErrBuf[64];
+            char sockErrBuf[128];
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             fprintf (stderr, "log client: unable to set linger options because \"%s\"\n", sockErrBuf);
@@ -557,14 +527,10 @@ static void logClientRestart ( logClientId id )
 
         epicsMutexUnlock ( pClient->mutex );
 
-        if ( isConn ) {
-            logClientFlush ( pClient );
-        }
-        else {
-            logClientConnect ( pClient );
-        }
-        
-        epicsThreadSleep ( LOG_RESTART_DELAY );
+        if ( ! isConn ) logClientConnect ( pClient );
+        logClientFlush ( pClient );
+
+        epicsEventWaitWithTimeout ( pClient->shutdownNotify, LOG_RESTART_DELAY);
 
         epicsMutexMustLock ( pClient->mutex );
     }
@@ -580,9 +546,7 @@ static void logClientRestart ( logClientId id )
 logClientId epicsShareAPI logClientCreate (
     struct in_addr server_addr, unsigned short server_port)
 {
-    epicsTimeStamp begin, current;
     logClient *pClient;
-    double diff;
 
     pClient = calloc (1, sizeof (*pClient));
     if (pClient==NULL) {
@@ -607,14 +571,22 @@ logClientId epicsShareAPI logClientCreate (
     pClient->shutdownConfirm = 0;
 
     epicsAtExit (logClientDestroy, (void*) pClient);
-    
+
     pClient->stateChangeNotify = epicsEventCreate (epicsEventEmpty);
     if ( ! pClient->stateChangeNotify ) {
         epicsMutexDestroy ( pClient->mutex );
         free ( pClient );
         return NULL;
     }
-   
+
+    pClient->shutdownNotify = epicsEventCreate (epicsEventEmpty);
+    if ( ! pClient->shutdownNotify ) {
+        epicsMutexDestroy ( pClient->mutex );
+        epicsEventDestroy ( pClient->stateChangeNotify );
+        free ( pClient );
+        return NULL;
+    }
+
     pClient->restartThreadId = epicsThreadCreate (
         "logRestart", epicsThreadPriorityLow, 
         epicsThreadGetStackSize(epicsThreadStackSmall),
@@ -622,33 +594,12 @@ logClientId epicsShareAPI logClientCreate (
     if ( pClient->restartThreadId == NULL ) {
         epicsMutexDestroy ( pClient->mutex );
         epicsEventDestroy ( pClient->stateChangeNotify );
+        epicsEventDestroy ( pClient->shutdownNotify );
         free (pClient);
         fprintf(stderr, "log client: unable to start log client connection watch dog thread\n");
         return NULL;
     }
 
-    /*
-     * attempt to synchronize with circuit connect
-     */
-    epicsTimeGetCurrent ( & begin );
-    epicsMutexMustLock ( pClient->mutex );
-    do {
-        epicsMutexUnlock ( pClient->mutex );
-        epicsEventWaitWithTimeout ( 
-            pClient->stateChangeNotify, 
-            LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT / 10.0 ); 
-        epicsTimeGetCurrent ( & current );
-        diff = epicsTimeDiffInSeconds ( & current, & begin );
-        epicsMutexMustLock ( pClient->mutex );
-    }
-    while ( ! pClient->connected && diff < LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT );
-    epicsMutexUnlock ( pClient->mutex );
-
-    if ( ! pClient->connected ) {
-        fprintf (stderr, "log client create: timed out synchronizing with circuit connect to \"%s\" after %.1f seconds\n",
-            pClient->name, LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT );
-    }
-        
     return (void *) pClient;
 }
 
@@ -666,24 +617,21 @@ void epicsShareAPI logClientShow (logClientId id, unsigned level)
         printf ("log client: disconnected from log server at \"%s\"\n", pClient->name);
     }
 
-    if (level>1) {
-        printf ("log client: sock=%s, connect cycles = %u\n",
-            pClient->sock==INVALID_SOCKET?"INVALID":"OK",
-            pClient->connectCount);
-    }
-
     if (logClientPrefix) {
         printf ("log client: prefix is \"%s\"\n", logClientPrefix);
     }
-}
 
-/*
- * logClientSendMessage (); deprecated
- */
-void logClientSendMessage ( logClientId id, const char * message )
-{
-    if ( !iocLogDisable ) {
-        logClientSend (id, message);
+    if (level>0) {
+        printf ("log client: sock %s, connect cycles = %u\n",
+            pClient->sock==INVALID_SOCKET?"INVALID":"OK",
+            pClient->connectCount);
+    }
+    if (level>1) {
+        printf ("log client: %u bytes in buffer\n", pClient->nextMsgIndex);
+        if (pClient->nextMsgIndex)
+            printf("-------------------------\n"
+                "%.*s-------------------------\n",
+                (int)(pClient->nextMsgIndex), pClient->msgBuf);
     }
 }
 

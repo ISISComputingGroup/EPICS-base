@@ -1,11 +1,8 @@
 /*************************************************************************\
-* Copyright (C) 2017 Science and Technology Facilities Council.
+* Copyright (C) 2017 Freddie Akeroyd
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*
- *      Author: Freddie Akeroyd (STFC)
- */
 
 #include <windows.h>
 #include <dbghelp.h>
@@ -96,7 +93,16 @@ int epicsFindAddr(void *addr, epicsSymbol *sym_p)
 
 int epicsFindAddrGetFeatures(void)
 {
+#if defined(_MINGW)
+/* 64bit MINGW can lookup DLL public symbols, 32bit cannot - but we need to be a dynamic build to have a DLL to lookup */
+#   if defined(_WIN64) && defined(EPICS_CALL_DLL)
+        return EPICS_STACKTRACE_DYN_SYMBOLS;
+#   else
+        return 0; /* only able to print addresses */
+#   endif /* _WIN64 && EPICS_CALL_DLL */
+#else
     return  EPICS_STACKTRACE_LCL_SYMBOLS
         | EPICS_STACKTRACE_GBL_SYMBOLS
         | EPICS_STACKTRACE_DYN_SYMBOLS;
+#endif /* _MINGW */
 }
