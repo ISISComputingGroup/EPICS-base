@@ -5,6 +5,7 @@
 # All RTEMS targets use the same Makefile fragment
 #
 EXE = .elf
+RTEMS_BSP = mvme2100
 RTEMS_TARGET_CPU = powerpc
 GNU_TARGET = powerpc-rtems
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
@@ -13,7 +14,6 @@ ARCH_DEP_CFLAGS += -DHAVE_PPCBUG
 OP_SYS_LDLIBS += -lbspExt
 
 MUNCH_SUFFIX = .boot
-MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
 define MUNCH_CMD
 	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< rtems
 	gzip -f9 rtems

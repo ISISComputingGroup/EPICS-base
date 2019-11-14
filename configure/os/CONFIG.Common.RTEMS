@@ -27,9 +27,13 @@ ifneq ($(CONFIG),$(TOP)/configure)
 -include $(TOP)/configure/CONFIG_SITE.Common.RTEMS
 endif
 
+#--------------------------------------------------
+# Set RTEMS_BSP from T_A if not already done
+RTEMS_BSP ?= $(subst RTEMS-,,$(T_A))
+
 #-------------------------------------------------------
 # Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.
-include $(RTEMS_BASE)/$(RTEMS_TARGET_CPU)-rtems$(RTEMS_VERSION)/$(subst RTEMS-,,$(T_A))/Makefile.inc
+include $(RTEMS_BASE)/$(RTEMS_TARGET_CPU)-rtems$(RTEMS_VERSION)/$(RTEMS_BSP)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(CONFIG.CC)
 
@@ -72,7 +76,7 @@ CPPFLAGS += $($(BUILD_CLASS)_CPPFLAGS) $(POSIX_CPPFLAGS) $(OPT_CPPFLAGS)\
  $(USR_CPPFLAGS) $(CMD_CPPFLAGS) $(ARCH_DEP_CPPFLAGS) $(OP_SYS_CPPFLAGS)\
  $(OP_SYS_INCLUDE_CPPFLAGS) $(CODE_CPPFLAGS)
 
-ECHO = @$(if $(findstring s,$(patsubst T_A=%,,$(MAKEFLAGS))),$(NOP),echo)
+ECHO = @$(if $(findstring s,$(MFLAGS)),$(NOP),echo)
 
 #--------------------------------------------------
 # Although RTEMS uses gcc, it wants to use gcc its own way
@@ -135,6 +139,13 @@ MOD_LDFLAGS = $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(POSIX_LDFLAGS) \
 
 LINK.mod = $(CCC) -o $@ $(PRODDIR_LDFLAGS) $(MOD_LDFLAGS)
 LINK.mod += $(PROD_LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(MOD_LDLIBS)
+
+#--------------------------------------------------
+# Here munching means creating a bootable object binary
+ifdef MUNCH_SUFFIX
+  MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
+  TESTMUNCHNAME = $(TESTPRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
+endif
 
 #--------------------------------------------------
 # RTEMS has neither shared libraries nor dynamic loading

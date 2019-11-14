@@ -12,7 +12,7 @@ include $(CONFIG)/RULES_DIRS_ISIS
 
 ARCHS += $(BUILD_ARCHS)
 ACTIONS += inc build install buildInstall clean realclean archclean
-ACTIONS += runtests tapfiles
+ACTIONS += runtests tapfiles clean-tests test-results junitfiles
 
 dirActionArchTargets = $(foreach dir, $(DIRS), \
     $(foreach action, $(ACTIONS), \
@@ -89,13 +89,11 @@ $(DIRS) $(dirActionTargets) $(dirArchTargets) $(dirActionArchTargets) :
 $(ARCHS) $(ACTIONS) $(actionArchTargets) :%: \
     $(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
 
-.PHONY : $(DIRS) all host rebuild
-.PHONY : $(ARCHS) $(ACTIONS)
-.PHONY : $(dirActionTargets) $(dirArchTargets)
-.PHONY : $(dirActionArchTargets)
-.PHONY : $(actionArchTargets)
 
+.PHONY: $(DIRS) all host rebuild
+.PHONY: $(ARCHS) $(ACTIONS)
+.PHONY: $(dirActionTargets) $(dirArchTargets)
+.PHONY: $(dirActionArchTargets)
+.PHONY: $(actionArchTargets)
 
-#  User specific rules
-#
--include $(HOME)/configure/RULES_USER
+include $(CONFIG)/RULES_COMMON

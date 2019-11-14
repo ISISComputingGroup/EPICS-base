@@ -5,18 +5,29 @@
 # to native line endings on checkout.
 *.c text
 *.cpp text
+*.cxx text
 *.h text
 *.hpp text
 *.java text
 *.sh text eol=lf
+*.csh text eol=lf
 *.bat text
 *.cmd text
 *.db text
 *.dbd text
 *.template text
 *.substitutions text
-*.pm text
+*.opi text
+*.adl text
+*.html text
+*.xml text
 *.pl text
+*.plt text
+*.pm text
+*.css text
+*.md text
+*.dox text
+*.msc text
 
 # Declare files that will always have CRLF line endings on checkout.
 *.sln text eol=crlf
@@ -24,6 +35,3 @@
 # Denote all files that are truly binary and should not be modified.
 *.png binary
 *.jpg binary
-*.class binary
-*.vi binary
-

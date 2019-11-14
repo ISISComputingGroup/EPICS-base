@@ -1,18 +1,13 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in the file LICENSE that is included with this distribution.
 #*************************************************************************
-#
-#  RULES_TARGET
-#
-#  This file is to be maintained by the community.
-#
-#-----------------------------------------------------------------------
+
+# RULES_TARGET
 
 define TARGET_template
 $(1)_$(2) += $$(if $$(strip $$($(1)_$(2)_$$(OS_CLASS))), \
@@ -20,7 +15,7 @@ $(1)_$(2) += $$(if $$(strip $$($(1)_$(2)_$$(OS_CLASS))), \
              $$($(1)_$(2)_DEFAULT))
 endef
 
-$(foreach type, SRCS RCS OBJS LDFLAGS OBJLIBS LDOBJS SYS_LIBS , \
+$(foreach type, SRCS RCS OBJS LDFLAGS LDOBJS SYS_LIBS , \
 $(foreach target, $(PROD) $(TESTPROD) $(LIBRARY) $(TESTLIBRARY) $(LOADABLE_LIBRARY) , \
     $(eval $(call TARGET_template,$(strip $(target)),$(type)))))
 
@@ -35,6 +30,17 @@ endef
 
 $(foreach target, $(PROD) $(TESTPROD), \
     $(eval $(call PROD_template,$(strip $(target)))))
+
+#-----------------------------------------------------------------------
+
+# These must be done before PROD2_template
+define TESTLIBRARY_template
+$(1)_DIR = .
+TESTBUILD_LIBRARY += $$(if $$(strip $$($(1)_OBJSNAME) $$(LIBRARY_OBJS)),$(1),)
+endef
+
+$(foreach target, $(TESTLIBRARY), \
+    $(eval $(call TESTLIBRARY_template,$(strip $(target)))))
 
 #-----------------------------------------------------------------------
 
@@ -123,16 +129,6 @@ $(foreach target, $(LIBRARY), \
 
 #-----------------------------------------------------------------------
 
-define LIBRARY3_template
-$(1)_DIR = .
-TESTBUILD_LIBRARY += $$(if $$(strip $$($(1)_OBJSNAME) $$(LIBRARY_OBJS)),$(1),)
-endef
-
-$(foreach target, $(TESTLIBRARY), \
-    $(eval $(call LIBRARY3_template,$(strip $(target)))))
-
-#-----------------------------------------------------------------------
-
 define LOADABLE_LIBRARY_template
 LOADABLE_BUILD_LIBRARY += $$(if $$(strip $$($(1)_OBJSNAME) $$(LIBRARY_OBJS)),$(1),)
 
@@ -151,4 +147,3 @@ $(foreach target, $(LOADABLE_LIBRARY), \
     $(eval $(call LOADABLE_LIBRARY_template,$(strip $(target)))))
 
 #-----------------------------------------------------------------------
-

@@ -28,3 +28,5 @@ PATH := $(EPICS_BASE_BIN):$(PATH)
 # this is so that if sh.exe is available in PATH, using echo still works
 SHELL = cmd
 
+# Silence the tr1 namespace deprecation warnings
+USR_CXXFLAGS_WIN32 += -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING
