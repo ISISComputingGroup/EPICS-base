@@ -1,2 +1,2 @@
-ACTIONS += doxygen kit zip uninstall
+ACTIONS += doxygen kit zip uninstall distclean
 include $(CONFIG)/RULES_DIRS
