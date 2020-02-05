@@ -27,6 +27,7 @@ ifeq ($(findstring cygwin,$(EPICS_HOST_ARCH)),)
 	@echo call %%MYDIR%%dllPath.bat>> $@
 	@echo call $(subst /,\,$(EPICS_ROOT))\utils_win32\master\bin\shorten_path.bat PATH>> $@
 	@echo set "PATH=%%PATH%%;%%PREPATH%%">> $@
+	@echo if exist "%%MYDIR%%dllPath_extra.bat" call %%MYDIR%%dllPath_extra.bat>> $@
 	@echo if "%%1" == "" (>> $@
 	@echo    set "CMDST=st.cmd">> $@
 	@echo ) else (>> $@
