@@ -97,6 +97,10 @@ for %%i in ( Community Professional Enterprise ) do (
         set "VCVERSION=15.0"
         set "_vcvarsalldir=%_progfiles%\Microsoft Visual Studio\2017\%%i\VC\Auxiliary\Build"
     )
+    if exist "%_progfiles%\Microsoft Visual Studio\2019\%%i\VC\Auxiliary\Build" (
+        set "VCVERSION=16.0"
+        set "_vcvarsalldir=%_progfiles%\Microsoft Visual Studio\2019\%%i\VC\Auxiliary\Build"
+    )
 )
 if exist "%_vcvarsalldir%\vcvarsall.bat" (
     @echo Using Visual Studio %VCVERSION% x86 native compiler
