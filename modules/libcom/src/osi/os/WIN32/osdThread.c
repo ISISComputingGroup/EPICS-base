@@ -532,6 +532,7 @@ epicsThreadId epicsThreadCreateOpt (
     BOOL bstat;
 
     if ( ! pGbl )  {
+        fprintf(stderr, "Error: Thread %s no thread global\n", pName);
         return NULL;
     }
 
@@ -545,6 +546,7 @@ epicsThreadId epicsThreadCreateOpt (
 
     pParmWIN32 = epicsThreadParmCreate ( pName );
     if ( pParmWIN32 == 0 ) {
+        fprintf(stderr, "Error: Thread %s unable to create param\n", pName);
         return ( epicsThreadId ) pParmWIN32;
     }
     pParmWIN32->funptr = pFunc;
@@ -559,6 +561,8 @@ epicsThreadId epicsThreadCreateOpt (
             CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION, 
             & threadId );
         if ( pParmWIN32->handle == 0 ) {
+            perror("epicsThreadCreateOpt(_beginthreadex)");
+            fprintf(stderr, "Error: Thread %s unable to create thread\n", pName);
             free ( pParmWIN32 );
             return NULL;
         }
@@ -571,6 +575,7 @@ epicsThreadId epicsThreadCreateOpt (
     if (!bstat) {
         CloseHandle ( pParmWIN32->handle ); 
         free ( pParmWIN32 );
+        fprintf(stderr, "Error: Thread %s unable to set epics priority %u (OSD %d)\n", pName, opts->priority, osdPriority);
         return NULL;
     }
     
@@ -585,6 +590,7 @@ epicsThreadId epicsThreadCreateOpt (
 		    LeaveCriticalSection ( & pGbl->mutex );
         CloseHandle ( pParmWIN32->handle ); 
         free ( pParmWIN32 );
+        fprintf(stderr, "Error: Thread %s unable to resume thread\n", pName);
         return NULL;
     }
 
