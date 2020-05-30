@@ -17,7 +17,7 @@
 #include <envDefs.h>
 
 #ifdef EPICS_VERSION_INT
-  #if EPICS_VERSION_INT >= VERSION_INT(3,16,2,0)
+  #if !defined(USE_SOFTIOC) && EPICS_VERSION_INT >= VERSION_INT(3,16,2,0)
     #define USE_DBUNITTEST
     // USE_TYPED_RSET prevents deprecation warnings
     #define USE_TYPED_RSET
@@ -27,6 +27,8 @@
     #include <dbUnitTest.h>
 
     extern "C" int testIoc_registerRecordDeviceDriver(struct dbBase *pbase);
+  #else
+    #include <osiFileName.h>
   #endif
 #endif
 
@@ -173,7 +175,7 @@ private:
         TestChannelGetRequesterPtr const &getRequester,
         TestChannelPtr const &testChannel,
         PVStructurePtr const &  pvRequest);
-    
+
     TestChannelGetRequesterWPtr getRequester;
     TestChannelPtr testChannel;
     PVStructurePtr pvRequest;
@@ -293,7 +295,7 @@ private:
     TestChannelPut(
         TestChannelPutRequesterPtr const &putRequester,
         TestChannelPtr const &testChannel);
-    
+
     TestChannelPutRequesterWPtr putRequester;
     TestChannelPtr testChannel;
     PVStructurePtr pvStructure;
@@ -362,7 +364,7 @@ void TestChannelPut::connect()
 {
     string request("value");
     PVStructurePtr pvRequest(createRequest(request));
-    
+
     channelPut = testChannel->getChannel()->createChannelPut(shared_from_this(),pvRequest);
     if(!channelPut) throw std::runtime_error(testChannel->getChannelName() + " channelCreate failed ");
 }
@@ -370,7 +372,7 @@ void TestChannelPut::connect()
 void TestChannelPut::waitConnect(double timeout)
 {
     if(waitForConnect.wait(timeout)) return;
-    throw std::runtime_error(testChannel->getChannelName() 
+    throw std::runtime_error(testChannel->getChannelName()
         + " TestChannelPut::waitConnect failed ");
 }
 
@@ -378,7 +380,7 @@ void TestChannelPut::waitConnect(double timeout)
 void TestChannelPut::put(string const & value)
 {
     PVFieldPtr pvField(pvStructure->getSubField("value"));
-    if(!pvField) throw std::runtime_error(testChannel->getChannelName() 
+    if(!pvField) throw std::runtime_error(testChannel->getChannelName()
          + " TestChannelPut::put no value ");
     FieldConstPtr field(pvField->getField());
     Type type(field->getType());
@@ -403,10 +405,10 @@ void TestChannelPut::put(string const & value)
             }
             values.push_back(value.substr(pos,offset-pos));
             pos = offset+1;
-            n++;    
+            n++;
         }
         pvScalarArray->setLength(n);
-        getConvert()->fromStringArray(pvScalarArray,0,n,values,0);       
+        getConvert()->fromStringArray(pvScalarArray,0,n,values,0);
         bitSet->set(pvField->getFieldOffset());
         channelPut->put(pvStructure,bitSet);
         return;
@@ -420,7 +422,7 @@ void TestChannelPut::put(string const & value)
           return;
        }
     }
-    throw std::runtime_error(testChannel->getChannelName() 
+    throw std::runtime_error(testChannel->getChannelName()
         + " TestChannelPut::put not supported  type");
 }
 
@@ -465,7 +467,7 @@ private:
         TestChannelMonitorRequesterPtr const &putRequester,
         TestChannelPtr const &testChannel,
         PVStructurePtr const &  pvRequest);
-    
+
     TestChannelMonitorRequesterWPtr monitorRequester;
     TestChannelPtr testChannel;
     PVStructurePtr pvRequest;
@@ -503,7 +505,7 @@ void TestChannelMonitor::monitorConnect(
 {
     waitForConnect.signal();
 }
-    
+
 
 void TestChannelMonitor::monitorEvent(MonitorPtr const & monitor)
 {
@@ -722,7 +724,7 @@ void TestIoc::start()
         "testIoc",
         epicsThreadGetStackSize(epicsThreadStackBig),
         epicsThreadPriorityLow));
-    thread->start();  
+    thread->start();
 #endif
 }
 
@@ -733,12 +735,14 @@ void TestIoc::run()
     // tests with an embedded IOC fail with a Base before 3.16.2.
     // This version only works on workstation targets, it runs the
     // softIoc from Base as a separate process, using system().
-    if(system("$EPICS_BASE/bin/$EPICS_HOST_ARCH/softIoc -x test -d ../testCaProvider.db")!=0) {
-        string message(base);
-        message += "/bin/";
-        message += arch;
-        message += "/softIoc -d ../testCaProvider.db not started";
-        throw std::runtime_error(message);
+    string cmd(base);
+    cmd += OSI_PATH_SEPARATOR "bin" OSI_PATH_SEPARATOR;
+    cmd += arch;
+    cmd += OSI_PATH_SEPARATOR "softIoc -x test -d ../testCaProvider.db";
+    if (system(cmd.c_str()) != 0) {
+        string message(cmd);
+        cmd += " not started";
+        throw std::runtime_error(cmd);
     }
 #endif
 }
@@ -767,8 +771,14 @@ MAIN(testCaProvider)
 {
     testPlan(143 + EXIT_TESTS);
 
+#ifdef USE_DBUNITTEST
+    testDiag("Running IOC using dbUnitTest");
+#else
+    testDiag("Running IOC using system()");
+#endif
+
     TestIocPtr testIoc(new TestIoc());
-    testIoc->start();  
+    testIoc->start();
 
     testDiag("===Test caProvider===");
     CAClientFactory::start();
@@ -819,4 +829,3 @@ MAIN(testCaProvider)
 
     return testDone();;
 }
-

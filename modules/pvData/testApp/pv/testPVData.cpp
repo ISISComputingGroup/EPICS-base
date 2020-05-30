@@ -41,6 +41,10 @@ static string allProperties("alarm,timeStamp,display,control,valueAlarm");
 static void testSizes()
 {
 #define SHOW(T) testDiag("sizeof(" #T ")==%zu", sizeof(T))
+    SHOW(std::string);
+    SHOW(std::vector<int>);
+    SHOW(shared_vector<int>);
+    SHOW(std::tr1::shared_ptr<PVField>);
     SHOW(Field);
     SHOW(Structure);
     SHOW(StructureArray);
@@ -77,7 +81,7 @@ static void testCreatePVStructure()
     pvFields.push_back(pv1);
     PVStructurePtr pvParent = pvDataCreate->createPVStructure(
         fieldNames,pvFields);
-        
+
     std::cout << "testCreatePVStructure PASSED" << std::endl;
 }
 
@@ -340,7 +344,7 @@ static void testPVScalar()
     testPVScalarWithProperties(string("float"),pvFloat);
     testPVScalarWithProperties(string("double"),pvDouble);
     testPVScalarWithProperties(string("string"),pvString);
-    
+
     std::cout << "testPVScalar PASSED" << std::endl;
 }
 
@@ -382,7 +386,7 @@ static void testScalarArray()
 }
 
 static void testRequest()
-{        
+{
     StringArray nullNames;
     FieldConstPtrArray nullFields;
     StringArray optionNames(1);
@@ -787,4 +791,3 @@ MAIN(testPVData)
     }
     return testDone();
 }
-

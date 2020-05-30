@@ -38,7 +38,7 @@ using std::cout;
 using std::endl;
 using std::string;
 
-namespace epics { namespace pvDatabase { 
+namespace epics { namespace pvDatabase {
 
 static StructureConstPtr nullStructure;
 
@@ -68,7 +68,7 @@ static bool getProcess(PVStructurePtr pvRequest,bool processDefault)
         return  pvString->get().compare("true")==0 ? true : false;
     } else if(scalar->getScalarType()==pvBoolean) {
         PVBooleanPtr pvBoolean = static_pointer_cast<PVBoolean>(pvField);
-       	return pvBoolean->get();
+        return pvBoolean->get();
     }
     return processDefault;
 }
@@ -102,7 +102,7 @@ private:
         ChannelProcessRequester::shared_pointer const & channelProcessRequester,
         PVRecordPtr const &pvRecord,
         int nProcess)
-    : 
+    :
       channelLocal(channelLocal),
       channelProcessRequester(channelProcessRequester),
       pvRecord(pvRecord),
@@ -132,7 +132,7 @@ ChannelProcessLocalPtr ChannelProcessLocal::create(
         if(pvField) {
             PVStringPtr pvString = pvOptions->getSubField<PVString>("nProcess");
             if(pvString) {
-                int size;
+                int size=0;
                 std::stringstream ss;
                 ss << pvString->get();
                 ss >> size;
@@ -156,10 +156,7 @@ ChannelProcessLocalPtr ChannelProcessLocal::create(
 
 ChannelProcessLocal::~ChannelProcessLocal()
 {
-    PVRecordPtr pvr(pvRecord.lock());
-    if(pvr && pvr->getTraceLevel()>0) {
-        cout << "~ChannelProcessLocal() " << pvr->getRecordName() << endl;
-    }
+//cout << "~ChannelProcessLocal()\n";
 }
 
 std::tr1::shared_ptr<Channel> ChannelProcessLocal::getChannel()
@@ -238,7 +235,7 @@ private:
         PVStructurePtr const&pvStructure,
         BitSetPtr const & bitSet,
         PVRecordPtr const &pvRecord)
-    : 
+    :
       firstTime(true),
       callProcess(callProcess),
       channelLocal(channelLocal),
@@ -304,10 +301,7 @@ ChannelGetLocalPtr ChannelGetLocal::create(
 
 ChannelGetLocal::~ChannelGetLocal()
 {
-    PVRecordPtr pvr(pvRecord.lock());
-    if(pvr && pvr->getTraceLevel()>0) {
-        cout << "~ChannelGetLocal() " << pvr->getRecordName() << endl;
-    }
+//cout << "~ChannelGetLocal()\n";
 }
 
 std::tr1::shared_ptr<Channel> ChannelGetLocal::getChannel()
@@ -469,10 +463,7 @@ ChannelPutLocalPtr ChannelPutLocal::create(
 
 ChannelPutLocal::~ChannelPutLocal()
 {
-    PVRecordPtr pvr(pvRecord.lock());
-    if(pvr && pvr->getTraceLevel()>0) {
-        cout << "~ChannelPutLocal() " << pvr->getRecordName() << endl;
-    }
+//cout << "~ChannelPutLocal()\n";
 }
 
 std::tr1::shared_ptr<Channel> ChannelPutLocal::getChannel()
@@ -532,7 +523,7 @@ void ChannelPutLocal::put(
     PVRecordPtr pvr(pvRecord.lock());
     if(!pvr) throw std::logic_error("pvRecord is deleted");
     try {
-        {   
+        {
             epicsGuard <PVRecord> guard(*pvr);
             pvr->beginGroupPut();
             pvCopy->updateMaster(pvStructure, bitSet);
@@ -543,7 +534,7 @@ void ChannelPutLocal::put(
         }
         requester->putDone(Status::Ok,getPtrSelf());
         if(pvr->getTraceLevel()>1)
-        {   
+        {
             cout << "ChannelPutLocal::put" << endl;
         }
     } catch(std::exception& ex) {
@@ -590,7 +581,7 @@ private:
         PVStructurePtr const&pvGetStructure,
         BitSetPtr const & getBitSet,
         PVRecordPtr const &pvRecord)
-    : 
+    :
       callProcess(callProcess),
       channelLocal(channelLocal),
       channelPutGetRequester(channelPutGetRequester),
@@ -662,10 +653,7 @@ ChannelPutGetLocalPtr ChannelPutGetLocal::create(
 
 ChannelPutGetLocal::~ChannelPutGetLocal()
 {
-    PVRecordPtr pvr(pvRecord.lock());
-    if(pvr && pvr->getTraceLevel()>0) {
-        cout << "~ChannelPutGetLocal() " << pvr->getRecordName() << endl;
-    }
+//cout << "~ChannelPutGetLocal()\n";
 }
 
 std::tr1::shared_ptr<Channel> ChannelPutGetLocal::getChannel()
@@ -862,10 +850,7 @@ ChannelRPCLocalPtr ChannelRPCLocal::create(
 
 ChannelRPCLocal::~ChannelRPCLocal()
 {
-    PVRecordPtr pvr(pvRecord.lock());
-    if(pvr && pvr->getTraceLevel()>0) {
-        cout << "~ChannelRPCLocal() " << pvr->getRecordName() << endl;
-    }
+//cout << "~ChannelRPCLocal()\n";
 }
 
 std::tr1::shared_ptr<Channel> ChannelRPCLocal::getChannel()
@@ -902,7 +887,7 @@ void ChannelRPCLocal::processRequest(
         status = Status(Status::STATUSTYPE_FATAL, "Unexpected exception caught while calling RPCService.request(PVStructure).");
         ok = false;
     }
-    
+
     // check null result
     if (ok && !result)
     {
@@ -1001,7 +986,7 @@ private:
         PVArrayPtr const &pvArray,
         PVArrayPtr const &pvCopy,
         PVRecordPtr const &pvRecord)
-    : 
+    :
       channelLocal(channelLocal),
       channelArrayRequester(channelArrayRequester),
       pvArray(pvArray),
@@ -1104,10 +1089,7 @@ ChannelArrayLocalPtr ChannelArrayLocal::create(
 
 ChannelArrayLocal::~ChannelArrayLocal()
 {
-    PVRecordPtr pvr(pvRecord.lock());
-    if(pvr && pvr->getTraceLevel()>0) {
-        cout << "~ChannelArrayLocal() " << pvr->getRecordName() << endl;
-    }
+//cout << "~ChannelArrayLocal()\n";
 }
 
 std::tr1::shared_ptr<Channel> ChannelArrayLocal::getChannel()
@@ -1246,7 +1228,7 @@ ChannelLocal::ChannelLocal(
     ChannelProviderLocalPtr const & provider,
     ChannelRequester::shared_pointer const & requester,
     PVRecordPtr const & pvRecord)
-:   
+:
     requester(requester),
     provider(provider),
     pvRecord(pvRecord)
@@ -1261,12 +1243,7 @@ ChannelLocal::ChannelLocal(
 
 ChannelLocal::~ChannelLocal()
 {
-    PVRecordPtr pvr(pvRecord.lock());
-    if(!pvr) return;
-    if(pvr->getTraceLevel()>0)
-    {
-        cout << "~ChannelLocal()" << endl;
-    }
+// cout << "~ChannelLocal()" << endl;
 }
 
 ChannelProvider::shared_pointer ChannelLocal::getProvider()
@@ -1296,7 +1273,7 @@ string ChannelLocal::getRequesterName()
          << " requester exists " << (requester ? "true" : "false")
          << endl;
     }
-    
+
     if(!requester) return string();
     return requester->getRequesterName();
 }
@@ -1319,7 +1296,7 @@ void ChannelLocal::message(
     string recordName("record deleted");
     if(pvr) recordName = pvr->getRecordName();
     cout << recordName
-         << " message " << message 
+         << " message " << message
          << " messageType " << getMessageTypeName(messageType)
          << endl;
 }
@@ -1362,8 +1339,8 @@ void ChannelLocal::getField(GetFieldRequester::shared_pointer const &requester,
             pvr->getPVRecordStructure()->getPVStructure()->getStructure();
         requester->getDone(Status::Ok,structure);
         return;
-    } 
-    PVFieldPtr pvField = 
+    }
+    PVFieldPtr pvField =
         pvr->getPVRecordStructure()->getPVStructure()->getSubField(subField);
     if(pvField) {
         requester->getDone(Status::Ok,pvField->getField());
@@ -1479,7 +1456,7 @@ ChannelRPC::shared_pointer ChannelLocal::createChannelRPC(
          << endl;
     }
 
-    ChannelRPCLocalPtr channelRPC = 
+    ChannelRPCLocalPtr channelRPC =
         ChannelRPCLocal::create(
             getPtrSelf(),
             channelRPCRequester,
