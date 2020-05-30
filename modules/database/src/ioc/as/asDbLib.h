@@ -12,12 +12,14 @@
 #ifndef INCdbAsLibh
 #define INCdbAsLibh
 
+#include <stdio.h>
+
 #include "callback.h"
 #include "shareLib.h"
 
 typedef struct {
-    epicsCallback	callback;
-    long	status;
+    epicsCallback   callback;
+    long            status;
 } ASDBCALLBACK;
 
 struct dbChannel;

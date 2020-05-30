@@ -5,12 +5,12 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
- *      Author:		Jeff Hill 
- *      Date:       04-05-94 
+ *      Author:     Jeff Hill
+ *      Date:       04-05-94
  */
 
 #include <ctype.h>
@@ -18,7 +18,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define epicsExportSharedSymbols
 #include "osiSock.h"
 #include "epicsAssert.h"
 #include "errlog.h"
@@ -44,7 +43,7 @@ static size_t ifreqSize ( struct ifreq *pifreq )
 
     size = ifreq_size ( pifreq );
     if ( size < sizeof ( *pifreq ) ) {
-	    size = sizeof ( *pifreq );
+        size = sizeof ( *pifreq );
     }
     return size;
 }
@@ -65,10 +64,9 @@ static struct ifreq * ifreqNext ( struct ifreq *pifreq )
 /*
  * osiSockDiscoverBroadcastAddresses ()
  */
-
 #define INADDR_LOOPBACK_BCAST ((unsigned long)0x7fffffff)
 
-epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
+LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
 {
     static const unsigned           nelem = 100;
@@ -94,11 +92,11 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
             return;
         }
     }
-     
+
     /*
      * use pool so that we avoid using too much stack space
      *
-     * nelem is set to the maximum interfaces 
+     * nelem is set to the maximum interfaces
      * on one machine here
      */
     pIfreqList = (struct ifreq *) calloc ( nelem, sizeof(*pifreq) );
@@ -106,7 +104,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
         errlogPrintf ("osiSockDiscoverBroadcastAddresses(): no memory to complete request\n");
         return;
     }
-    
+
     ifconf.ifc_len = nelem * sizeof(*pifreq);
     ifconf.ifc_req = pIfreqList;
     status = socket_ioctl (socket, SIOCGIFCONF, &ifconf);
@@ -115,7 +113,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
         free (pIfreqList);
         return;
     }
-    
+
     pIfreqListEnd = (struct ifreq *) (ifconf.ifc_len + (char *) pIfreqList);
     pIfreqListEnd--;
 
@@ -126,7 +124,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
          * find the next ifreq
          */
         pnextifreq = ifreqNext (pifreq);
-        
+
         /* determine ifreq size */
         current_ifreqsize = ifreqSize ( pifreq );
         /* copy current ifreq to aligned bufferspace (to start of pIfreqList buffer) */
@@ -138,7 +136,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
             (unsigned)current_ifreqsize));
 
         /*
-         * If its not an internet interface then dont use it 
+         * If its not an internet interface then dont use it
          */
         if ( pIfreqList->ifr_addr.sa_family != AF_INET ) {
              ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): interface \"%s\" was not AF_INET\n", pIfreqList->ifr_name) );
@@ -178,7 +176,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
         }
 
         /*
-         * dont use the loop back interface 
+         * dont use the loop back interface
          */
         if ( pIfreqList->ifr_flags & IFF_LOOPBACK ) {
              ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): ignoring loopback interface: \"%s\"\n", pIfreqList->ifr_name) );
@@ -196,10 +194,10 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
          * If this is an interface that supports
          * broadcast fetch the broadcast address.
          *
-         * Otherwise if this is a point to point 
+         * Otherwise if this is a point to point
          * interface then use the destination address.
          *
-         * Otherwise CA will not query through the 
+         * Otherwise CA will not query through the
          * interface.
          */
         if ( pIfreqList->ifr_flags & IFF_BROADCAST ) {
@@ -247,7 +245,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
 
     free ( pIfreqList );
 }
-     
+
 /*
  * osiLocalAddr ()
  */
@@ -265,26 +263,26 @@ static void osiLocalAddrOnce (void *raw)
 
     memset ( (void *) &addr, '\0', sizeof ( addr ) );
     addr.sa.sa_family = AF_UNSPEC;
-    
+
     pIfreqList = (struct ifreq *) calloc ( nelem, sizeof(*pIfreqList) );
     if ( ! pIfreqList ) {
         errlogPrintf ( "osiLocalAddr(): no memory to complete request\n" );
         goto fail;
     }
- 
+
     ifconf.ifc_len = nelem * sizeof ( *pIfreqList );
     ifconf.ifc_req = pIfreqList;
     status = socket_ioctl ( *psocket, SIOCGIFCONF, &ifconf );
     if ( status < 0 || ifconf.ifc_len == 0 ) {
         char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
+        epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
         errlogPrintf (
             "osiLocalAddr(): SIOCGIFCONF ioctl failed because \"%s\"\n",
             sockErrBuf );
         goto fail;
     }
-    
+
     pIfreqListEnd = (struct ifreq *) ( ifconf.ifc_len + (char *) ifconf.ifc_req );
     pIfreqListEnd--;
 
@@ -348,7 +346,7 @@ fail:
 }
 
 
-epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
+LIBCOM_API osiSockAddr epicsStdCall osiLocalAddr (SOCKET socket)
 {
     epicsThreadOnce(&osiLocalAddrId, osiLocalAddrOnce, &socket);
     return osiLocalAddrResult;

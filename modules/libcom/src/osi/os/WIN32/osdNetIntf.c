@@ -34,7 +34,6 @@
 /*
  * EPICS
  */
-#define epicsExportSharedSymbols
 #include "osiSock.h"
 #include "errlog.h"
 #include "epicsThread.h"
@@ -122,7 +121,7 @@ fail:
     free ( pIfinfoList );
 }
 
-epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
+LIBCOM_API osiSockAddr epicsStdCall osiLocalAddr (SOCKET socket)
 {
     epicsThreadOnce(&osiLocalAddrId, osiLocalAddrOnce, (void*)&socket);
     return osiLocalAddrResult;
@@ -133,7 +132,7 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
 /*
  * osiSockDiscoverBroadcastAddresses ()
  */
-epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
+LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
 {
     int                 status;

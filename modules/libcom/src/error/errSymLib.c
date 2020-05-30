@@ -19,7 +19,6 @@
 #include <math.h>
 #include <limits.h>
 
-#define epicsExportSharedSymbols
 #include "cantProceed.h"
 #include "epicsAssert.h"
 #include "epicsStdio.h"
@@ -192,7 +191,7 @@ void errSymLookup(long status, char * pBuf, size_t bufLength)
 {
     const char* msg = errSymLookupInternal(status);
     if(msg) {
-        strncpy(pBuf, msg, bufLength);
+        strncpy(pBuf, msg, bufLength-1);
         pBuf[bufLength-1] = '\0';
         return;
     }

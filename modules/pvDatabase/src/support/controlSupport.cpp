@@ -25,11 +25,11 @@ using namespace epics::pvData;
 using namespace epics::pvAccess;
 using namespace std;
 
-namespace epics { namespace pvDatabase { 
+namespace epics { namespace pvDatabase {
 
 ControlSupport::~ControlSupport()
 {
-cout << "ControlSupport::~ControlSupport()\n";
+//cout << "ControlSupport::~ControlSupport()\n";
 }
 
 epics::pvData::StructureConstPtr ControlSupport::controlField(ScalarType scalarType)
@@ -135,4 +135,3 @@ void ControlSupport::reset()
 
 
 }}
-
