@@ -32,12 +32,14 @@ HDEPENDS_METHOD = MKMF
 
 #
 # -W<d> display warnings at level d
+#    -Wall is for W4 plus extra
 #    -W4 is for maximum (lint type) warnings
 #    -W3 is for production quality warnings
 #    -W2 displays significant warnings
 #    -W1 is the default and shows severe warnings only
 # -w<d><n> Set warning C<n> to be shown at level <d>
-WARN_CFLAGS_YES = -W3
+#WARN_CFLAGS_YES = -W3
+WARN_CFLAGS_YES = -Wall -wd4820 -wd4668 -wd5045 -wd4710 -wd4514
 WARN_CFLAGS_NO  = -W1
 
 #
@@ -102,10 +104,12 @@ CODE_CPPFLAGS += -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
 #
 # -W<n> disable warnings from levels > n
 # -w<n><m> set warning m to level n
+# -Wall is for W4 plus extra
 # -w44355 "'this' used in the base initializer list"
 # -w44344 "behavior change: use of explicit template arguments results in ..."
 # -w44251 "class needs to have dll-interface to be used by clients of ..."
-WARN_CXXFLAGS_YES = -W3 -w44355 -w44344 -w44251
+#WARN_CXXFLAGS_YES = -W3 -w44355 -w44344 -w44251
+WARN_CXXFLAGS_YES = -Wall -wd4820 -wd4668 -wd5045 -wd4710 -wd4514 -wd5026 -wd5027 -wd4625 -wd4626
 WARN_CXXFLAGS_NO  = -W1
 
 #
