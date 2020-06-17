@@ -205,7 +205,7 @@ static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
     InitializeCriticalSection ( & pWin32ThreadGlobal->mutex );
     ellInit ( & pWin32ThreadGlobal->threadList );
     pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS = TlsAlloc();
-    if ( pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS == 0xFFFFFFFF ) {
+    if ( pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS == TLS_OUT_OF_INDEXES ) {
         DeleteCriticalSection ( & pWin32ThreadGlobal->mutex );
         free ( pWin32ThreadGlobal );
         pWin32ThreadGlobal = 0;
@@ -1076,7 +1076,7 @@ LIBCOM_API epicsThreadPrivateId epicsStdCall epicsThreadPrivateCreate ()
     epicsThreadPrivateOSD *p = ( epicsThreadPrivateOSD * ) malloc ( sizeof ( *p ) );
     if ( p ) {
         p->key = TlsAlloc ();
-        if ( p->key == 0xFFFFFFFF ) {
+        if ( p->key == TLS_OUT_OF_INDEXES ) {
             free ( p );
             p = 0;
         }
@@ -1089,7 +1089,9 @@ LIBCOM_API epicsThreadPrivateId epicsStdCall epicsThreadPrivateCreate ()
  */
 LIBCOM_API void epicsStdCall epicsThreadPrivateDelete ( epicsThreadPrivateId p )
 {
+    assert ( p != NULL && p->key != TLS_OUT_OF_INDEXES );
     BOOL stat = TlsFree ( p->key );
+    p->key = TLS_OUT_OF_INDEXES;
     assert ( stat );
     free ( p );
 }
