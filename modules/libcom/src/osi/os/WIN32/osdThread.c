@@ -1101,6 +1101,7 @@ LIBCOM_API void epicsStdCall epicsThreadPrivateDelete ( epicsThreadPrivateId p )
  */
 LIBCOM_API void epicsStdCall epicsThreadPrivateSet ( epicsThreadPrivateId pPvt, void *pVal )
 {
+    assert ( pPvt != NULL && pPvt->key != TLS_OUT_OF_INDEXES );
     BOOL stat = TlsSetValue ( pPvt->key, (void *) pVal );
     assert (stat);
 }
@@ -1110,7 +1111,10 @@ LIBCOM_API void epicsStdCall epicsThreadPrivateSet ( epicsThreadPrivateId pPvt, 
  */
 LIBCOM_API void * epicsStdCall epicsThreadPrivateGet ( epicsThreadPrivateId pPvt )
 {
-    return ( void * ) TlsGetValue ( pPvt->key );
+    assert ( pPvt != NULL && pPvt->key != TLS_OUT_OF_INDEXES );
+    void* pVal =  ( void * ) TlsGetValue ( pPvt->key );
+    assert(pVal != NULL || GetLastError() == ERROR_SUCCESS);
+    return pVal;
 }
 
 /*
