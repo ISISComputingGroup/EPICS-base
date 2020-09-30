@@ -46,7 +46,7 @@ epicsUInt64 epicsMonotonicGet(void)
         } else
             return val.QuadPart;
     } else {
-        epicsUInt64 ret = GetTickCount();
+        epicsUInt64 ret = GetTickCount64();
         ret *= 1000000;
         return ret;
     }
