@@ -79,14 +79,17 @@ expandRelease(\%macros);
 
 # This is a perl switch statement:
 for ($outfile) {
-    m/releaseTops/       and do { releaseTops();         last; };
-    m/dllPath\.bat/      and do { dllPath();             last; };
-    m/dllCopy\.bat/      and do { dllCopy();             last; };
-    m/relPaths\.sh/      and do { relPaths();            last; };
-    m/ModuleDirs\.pm/    and do { moduleDirs();          last; };
-    m/cdCommands/        and do { cdCommands();          last; };
-    m/envPaths/          and do { envPaths();            last; };
-    m/checkRelease/      and do { checkRelease();        last; };
+    m/releaseTops/               and do { releaseTops();         last; };
+    m/dllPath\.bat/              and do { dllPath();             last; };
+    if (defined($arch)) {
+        m/dllPath-$arch\.bat/    and do { dllPath();             last; };
+    }
+    m/dllCopy\.bat/              and do { dllCopy();             last; };
+    m/relPaths\.sh/              and do { relPaths();            last; };
+    m/ModuleDirs\.pm/            and do { moduleDirs();          last; };
+    m/cdCommands/                and do { cdCommands();          last; };
+    m/envPaths/                  and do { envPaths();            last; };
+    m/checkRelease/              and do { checkRelease();        last; };
     die "Output file type \'$outfile\' not supported";
 }
 
