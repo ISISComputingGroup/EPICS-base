@@ -1,8 +1,6 @@
 # Cannot use $(OS_CLASS) here
-# may want to consider replacing $(ARCH) with %%EPICS_HOST_ARCH%% at some point,
-# but would need to adjust the generating of dllPath.bat too
-# note: runIOC.bat does not directly depend on dllCopy.bat but convenient to generate it this way
-runIOC.bat : dllPath.bat
+runIOC.bat : dllPath-$(EPICS_HOST_ARCH).bat
+
 ifneq ($(findstring win,$(EPICS_HOST_ARCH)),)
 ifeq ($(findstring cygwin,$(EPICS_HOST_ARCH)),)
 	@echo Generating runIOC.bat
@@ -24,7 +22,7 @@ ifeq ($(findstring cygwin,$(EPICS_HOST_ARCH)),)
 	@echo set "PREPATH=%%PATH%%">> $@
 	@echo call $(subst /,\,$(EPICS_ROOT))\utils_win32\master\bin\shorten_path.bat PREPATH>> $@
 	@echo set "PATH=">> $@
-	@echo call %%MYDIR%%dllPath.bat>> $@
+	@echo call %%MYDIR%%dllPath-%%EPICS_HOST_ARCH%%.bat>> $@
 	@echo call $(subst /,\,$(EPICS_ROOT))\utils_win32\master\bin\shorten_path.bat PATH>> $@
 	@echo set "PATH=%%PATH%%;%%PREPATH%%">> $@
 	@echo if exist "%%MYDIR%%dllPath_extra.bat" call %%MYDIR%%dllPath_extra.bat>> $@
