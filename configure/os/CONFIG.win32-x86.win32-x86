@@ -12,6 +12,8 @@ CMPLR_CLASS = msvc
 
 ## ISIS STFC: disable whole program optimisation as affects binary compatibility
 ## ISIS STFC: between different versions of visual studio
+## ISIS STFC: See https://docs.microsoft.com/en-us/cpp/porting/binary-compat-2015-2017?view=msvc-160
+
 OPT_WHOLE_PROGRAM = NO
 
 #-------------------------------------------------------
