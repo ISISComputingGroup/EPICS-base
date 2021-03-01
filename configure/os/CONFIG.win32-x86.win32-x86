@@ -10,7 +10,9 @@ VALID_BUILDS = Host Ioc
 
 CMPLR_CLASS = msvc
 
-OPT_WHOLE_PROGRAM = YES
+## ISIS STFC: disable whole program optimisation as affects binary compatibility
+## ISIS STFC: between different versions of visual studio
+OPT_WHOLE_PROGRAM = NO
 
 #-------------------------------------------------------
 
