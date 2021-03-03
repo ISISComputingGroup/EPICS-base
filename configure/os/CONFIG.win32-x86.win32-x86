@@ -11,7 +11,8 @@ VALID_BUILDS = Host Ioc
 CMPLR_CLASS = msvc
 
 ## ISIS STFC: disable whole program optimisation as affects binary compatibility
-## ISIS STFC: between different versions of visual studio
+## ISIS STFC: between different versions of visual studio. Debug and static builds have it disabled 
+## ISIS STFC: by default - this just applies it to DLL Release builds too
 ## ISIS STFC: See https://docs.microsoft.com/en-us/cpp/porting/binary-compat-2015-2017?view=msvc-160
 
 OPT_WHOLE_PROGRAM = NO
