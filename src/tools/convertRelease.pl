@@ -140,6 +140,8 @@ sub dllCopy {
     unlink $outfile;
     open(OUT, ">$outfile") or die "$! creating $outfile";
     print OUT "\@ECHO OFF\n";
+    print OUT "setlocal\n";
+    print OUT "set MYDIR=\%~dp0\n";
     foreach my $dir (binDirs()) {
         $dir =~ s%/%\\%g;
         print OUT "XCOPY /R /I /Q /Y ",$dir,"\\*.dll \%MYDIR\%..\\..\\bin\\$arch\n";
