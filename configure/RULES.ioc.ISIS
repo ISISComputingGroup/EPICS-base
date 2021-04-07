@@ -1,6 +1,9 @@
 # Cannot use $(OS_CLASS) here
 runIOC.bat : dllPath-$(EPICS_HOST_ARCH).bat
 
+# $(ARCH) is arch set in Makefile, it will create RunIOC.bat tied to
+# EPICS_HOST_ARCH of first build. If we use %%EPICS_HOST_ARCH%% the file
+# can work in a multi-architecture tree
 ifneq ($(findstring win,$(EPICS_HOST_ARCH)),)
 ifeq ($(findstring cygwin,$(EPICS_HOST_ARCH)),)
 	@echo Generating runIOC.bat
@@ -31,7 +34,7 @@ ifeq ($(findstring cygwin,$(EPICS_HOST_ARCH)),)
 	@echo ) else (>> $@
 	@echo    set "CMDST=%%1">> $@
 	@echo )>> $@
-	@echo %%MYDIR%%..\..\bin\$(ARCH)\%%IOCEXE%% %%CMDST%%>> $@
+	@echo %%MYDIR%%..\..\bin\%%EPICS_HOST_ARCH%%\%%IOCEXE%% %%CMDST%%>> $@
 	@echo set "PATH=%%OLDPATH%%">> $@
 	@echo set EPICS_CAS_INTF_ADDR_LIST=%%OLDEPICS_CAS_INTF_ADDR_LIST%%>> $@
 	@echo set EPICS_CAS_BEACON_ADDR_LIST=%%OLDEPICS_CAS_BEACON_ADDR_LIST%%>> $@
