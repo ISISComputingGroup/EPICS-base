@@ -51,8 +51,8 @@ WARN_CFLAGS_NO  = -W1
 # -Oy- re-enable creation of frame pointers
 # -Zi generate temporary program database for debugging information
 # -Z7 puts debugging information in object file
-OPT_CFLAGS_YES_YES = -Ox -GL -Oy- -Z7
-OPT_CFLAGS_YES_NO = -Ox -Oy- -Z7
+OPT_CFLAGS_YES_YES = -Z7
+OPT_CFLAGS_YES_NO = -Z7
 OPT_CFLAGS_YES = $(OPT_CFLAGS_YES_$(OPT_WHOLE_PROGRAM))
 
 #
@@ -121,8 +121,8 @@ WARN_CXXFLAGS_NO  = -W1
 # -Oy- re-enable creation of frame pointers
 # -Zi generate program database for debugging information
 # -Z7 puts debugging information in object file
-OPT_CXXFLAGS_YES_YES = -Ox -GL -Oy- -Z7
-OPT_CXXFLAGS_YES_NO = -Ox -Oy- -Z7
+OPT_CXXFLAGS_YES_YES = -Z7
+OPT_CXXFLAGS_YES_NO = -Z7
 OPT_CXXFLAGS_YES = $(OPT_CXXFLAGS_YES_$(OPT_WHOLE_PROGRAM))
 
 #
