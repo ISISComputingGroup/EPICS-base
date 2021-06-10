@@ -12,3 +12,7 @@ else
 MYSQLLIB = mysqlcppconn # libmysql
 endif
 endif
+
+ioctests:
+
+.PHONY: ioctests

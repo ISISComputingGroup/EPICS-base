@@ -1,2 +1,2 @@
-ACTIONS += ioctests doxygen kit zip uninstall distclean
+ACTIONS += doxygen kit zip uninstall distclean
 include $(CONFIG)/RULES_DIRS
