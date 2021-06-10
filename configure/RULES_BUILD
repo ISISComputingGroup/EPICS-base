@@ -572,7 +572,7 @@ include $(CONFIG)/RULES_EXPAND
 .PRECIOUS: $(COMMON_INC)
 
 .PHONY: all host inc build install clean rebuild buildInstall build_clean
-.PHONY: runtests tapfiles clean-tests test-results junitfiles
+.PHONY: runtests ioctests tapfiles clean-tests test-results junitfiles
 .PHONY: checkRelease warnRelease noCheckRelease FORCE
 
 include $(CONFIG)/RULES_COMMON
