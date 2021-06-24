@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -62,7 +63,7 @@ void testRefCount()
     Q1->release();
 }
 
-static const double delayVerifyOffset = 1.0; // sec 
+static const double delayVerifyOffset = 1.0; // sec
 
 class delayVerify : public epicsTimerNotify {
 public:
@@ -112,10 +113,13 @@ double delayVerify::checkError () const
     double actualDelay =  this->expireStamp - this->beginStamp;
     double measuredError = actualDelay - this->expectedDelay;
     double percentError = 100.0 * fabs ( measuredError ) / this->expectedDelay;
-    if ( ! testOk ( percentError < messageThresh, "%f < %f", percentError, messageThresh ) ) {
-        testDiag ( "delay = %f s, error = %f s (%.1f %%)", 
-            this->expectedDelay, measuredError, percentError );
-    }
+    if(testImpreciseTiming())
+        testTodoBegin("imprecise");
+    testOk ( percentError < messageThresh, "%f < %f, delay = %f s, error = %f s (%.1f %%)",
+             percentError, messageThresh,
+             this->expectedDelay, measuredError, percentError  );
+    if(testImpreciseTiming())
+        testTodoEnd();
     return measuredError;
 }
 
@@ -145,7 +149,7 @@ void testAccuracy ()
 
     testDiag ( "Testing timer accuracy" );
 
-    epicsTimerQueueActive &queue = 
+    epicsTimerQueueActive &queue =
         epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMax );
 
     for ( i = 0u; i < nTimers; i++ ) {
@@ -156,7 +160,7 @@ void testAccuracy ()
 
     expireCount = nTimers;
     for ( i = 0u; i < nTimers; i++ ) {
-        epicsTime cur = epicsTime::getMonotonic ();
+        epicsTime cur = epicsTime::getCurrent ();
         pTimers[i]->setBegin ( cur );
         pTimers[i]->start ( cur + pTimers[i]->delay () );
     }
@@ -168,7 +172,7 @@ void testAccuracy ()
         averageMeasuredError += pTimers[i]->checkError ();
     }
     averageMeasuredError /= nTimers;
-    testDiag ("average timer delay error %f ms", 
+    testDiag ("average timer delay error %f ms",
         averageMeasuredError * 1000 );
     queue.release ();
 }
@@ -239,7 +243,7 @@ void testCancel ()
 
     testDiag ( "Testing timer cancellation" );
 
-    epicsTimerQueueActive &queue = 
+    epicsTimerQueueActive &queue =
         epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMin );
 
     for ( i = 0u; i < nTimers; i++ ) {
@@ -253,7 +257,7 @@ void testCancel ()
         testDiag ( "cancelCount = %u", cancelVerify::cancelCount );
 
     testDiag ( "starting %d timers", nTimers );
-    epicsTime exp = epicsTime::getMonotonic () + 4.0;
+    epicsTime exp = epicsTime::getCurrent () + 4.0;
     for ( i = 0u; i < nTimers; i++ ) {
         pTimers[i]->start ( exp );
     }
@@ -328,7 +332,7 @@ void testExpireDestroy ()
 
     testDiag ( "Testing timer destruction in expire()" );
 
-    epicsTimerQueueActive &queue = 
+    epicsTimerQueueActive &queue =
         epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMin );
 
     for ( i = 0u; i < nTimers; i++ ) {
@@ -339,7 +343,7 @@ void testExpireDestroy ()
     testOk1 ( expireDestroyVerify::destroyCount == 0 );
 
     testDiag ( "starting %d timers", nTimers );
-    epicsTime cur = epicsTime::getMonotonic ();
+    epicsTime cur = epicsTime::getCurrent ();
     for ( i = 0u; i < nTimers; i++ ) {
         pTimers[i]->start ( cur );
     }
@@ -370,7 +374,7 @@ private:
 };
 
 periodicVerify::periodicVerify ( epicsTimerQueue & queueIn ) :
-    timer ( queueIn.createTimer () ), nExpire ( 0u ), 
+    timer ( queueIn.createTimer () ), nExpire ( 0u ),
         cancelCalled ( false )
 {
 }
@@ -422,7 +426,7 @@ void testPeriodic ()
 
     testDiag ( "Testing periodic timers" );
 
-    epicsTimerQueueActive &queue = 
+    epicsTimerQueueActive &queue =
         epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMin );
 
     for ( i = 0u; i < nTimers; i++ ) {
@@ -432,7 +436,7 @@ void testPeriodic ()
     testOk1 ( timerCount == nTimers );
 
     testDiag ( "starting %d timers", nTimers );
-    epicsTime cur = epicsTime::getMonotonic ();
+    epicsTime cur = epicsTime::getCurrent ();
     for ( i = 0u; i < nTimers; i++ ) {
         pTimers[i]->start ( cur );
     }

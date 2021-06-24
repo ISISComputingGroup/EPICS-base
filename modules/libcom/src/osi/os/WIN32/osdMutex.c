@@ -3,9 +3,9 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* SPDX-License-Identifier: EPICS
+* EPICS Base is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* osdMutex.c */
 /*
@@ -22,16 +22,16 @@
 
 #define VC_EXTRALEAN
 #define STRICT
-/* 
+/*
  * Defining this allows the *much* faster critical
  * section mutex primitive to be used. Unfortunately,
- * using certain of these functions drops support for W95\W98\WME 
- * unless we specify "delay loading" when we link with the 
- * DLL so that DLL entry points are not resolved until they 
+ * using certain of these functions drops support for W95\W98\WME
+ * unless we specify "delay loading" when we link with the
+ * DLL so that DLL entry points are not resolved until they
  * are used. The code does have run time switches so
- * that the more advanced calls are not called unless 
+ * that the more advanced calls are not called unless
  * they are available in the windows OS, but this feature
- * isnt going to be very useful unless we specify "delay 
+ * isnt going to be very useful unless we specify "delay
  * loading" when we link with the DLL.
  *
  * It appears that the only entry point used here that causes
@@ -39,13 +39,14 @@
  */
 #include <windows.h>
 
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#define EPICS_PRIVATE_API
+
+#include "libComAPI.h"
 #include "epicsMutex.h"
 #include "epicsAssert.h"
 #include "epicsStdio.h"
 
-typedef struct epicsMutexOSD { 
+typedef struct epicsMutexOSD {
     union {
         CRITICAL_SECTION criticalSection;
     } os;
@@ -54,7 +55,7 @@ typedef struct epicsMutexOSD {
 /*
  * epicsMutexCreate ()
  */
-epicsMutexOSD * epicsMutexOsdCreate ( void ) 
+epicsMutexOSD * epicsMutexOsdCreate ( void )
 {
     epicsMutexOSD * pSem;
  
@@ -77,7 +78,7 @@ void epicsMutexOsdDestroy ( epicsMutexOSD * pSem )
 /*
  * epicsMutexOsdUnlock ()
  */
-void epicsMutexOsdUnlock ( epicsMutexOSD * pSem ) 
+void epicsMutexOsdUnlock ( epicsMutexOSD * pSem )
 {
     LeaveCriticalSection ( &pSem->os.criticalSection );
 }
@@ -85,7 +86,7 @@ void epicsMutexOsdUnlock ( epicsMutexOSD * pSem )
 /*
  * epicsMutexOsdLock ()
  */
-epicsMutexLockStatus epicsMutexOsdLock ( epicsMutexOSD * pSem ) 
+epicsMutexLockStatus epicsMutexOsdLock ( epicsMutexOSD * pSem )
 {
     EnterCriticalSection ( &pSem->os.criticalSection );
     return epicsMutexLockOK;
@@ -112,4 +113,6 @@ void epicsMutexOsdShow ( epicsMutexOSD * pSem, unsigned level )
         printf ("epicsMutex: win32 critical section at %p\n",
             (void * ) & pSem->os.criticalSection );
 }
+
+void epicsMutexOsdShowAll(void) {}
 
