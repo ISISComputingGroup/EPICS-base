@@ -122,7 +122,7 @@ long epicsStdCall asInitialize(ASINPUTFUNCPTR inputfunction)
         while(puagname) {
             pgphentry = gphAdd(pasbasenew->phash,puagname->user,puag);
             if(!pgphentry) {
-                errlogSevPrintf((errlogInfo, , "Duplicated user '%s' in UAG '%s'\n",
+                errlogSevPrintf(errlogInfo, "Duplicated user '%s' in UAG '%s'\n",
                     puagname->user, puag->name);
             }
             puagname = (UAGNAME *)ellNext(&puagname->node);
