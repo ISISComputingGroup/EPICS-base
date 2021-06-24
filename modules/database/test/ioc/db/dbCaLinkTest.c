@@ -1,6 +1,7 @@
 /*************************************************************************\
 * Copyright (c) 2015 Brookhaven Science Assoc. as operator of Brookhaven
 *               National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
  \*************************************************************************/
@@ -26,6 +27,7 @@
 #include "dbAccess.h"
 #include "epicsStdio.h"
 #include "dbEvent.h"
+#include "shareLib.h"
 
 /* Declarations from cadef.h and db_access.h which we can't include here */
 typedef void * chid;
@@ -416,7 +418,7 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
     dbScanLock((dbCommon*)ptarg);
     fillArray(buftarg, ptarg->nelm, 1);
     ptarg->nord = ptarg->nelm;
-    db_post_events(ptarg, ptarg->bptr, DBE_VALUE|DBE_ALARM|DBE_ARCHIVE);
+    db_post_events(ptarg, &ptarg->val, DBE_VALUE|DBE_ALARM|DBE_ARCHIVE);
     dbScanUnlock((dbCommon*)ptarg);
 
     waitForUpdateN(psrclnk, 2);
@@ -540,7 +542,7 @@ static void testreTargetTypeChange(void)
     dbScanLock((dbCommon*)ptarg1);
     fillArrayDouble(buftarg1, ptarg1->nelm, 1);
     ptarg1->nord = ptarg1->nelm;
-    db_post_events(ptarg1, ptarg1->bptr, DBE_VALUE|DBE_ALARM|DBE_ARCHIVE);
+    db_post_events(ptarg1, &ptarg1->val, DBE_VALUE|DBE_ALARM|DBE_ARCHIVE);
     dbScanUnlock((dbCommon*)ptarg1);
 
     epicsEventMustWait(waitEvent); /* wait for update */

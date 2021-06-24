@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -73,9 +74,7 @@
 /** \brief Size of a record name without the nil terminator */
 #define PVNAME_SZ (PVNAME_STRINGSZ - 1)
 
-/**
- * \def PVLINK_STRINGSZ
- * \brief Buffer size for the string representation of a DBF_*LINK field
+/** \brief Buffer size for the string representation of a DBF_*LINK field
  */
 #define PVLINK_STRINGSZ 1024
 

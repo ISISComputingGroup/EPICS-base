@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -12,14 +13,7 @@
  *
  * \brief Contains a few templates out of the C++ standard header algorithm
  *
- * \note The templates are provided here in a much smaller file. Standard algorithm
- * contains many templates for sorting and searching through C++ template containers
- * which are not used in EPICS. If all you need from there is std::min(),
- * std::max() and/or std::swap() your code may compile faster if you include
- * epicsAlgorithm.h and use epicsMin(), epicsMax() and epicsSwap() instead.
- *
- * The C++ standard only requires types to be less-than comparable, so
- * the epicsMin and epicsMax templates only use operator <.
+ * \deprecated Use std::min()/max()/swap() in new code
  */
 
 #ifndef __EPICS_ALGORITHM_H__

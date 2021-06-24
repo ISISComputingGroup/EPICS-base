@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -19,12 +20,18 @@
  *
  * The typical C++ use of a mutual exclusion semaphore is:
  \code
-     epicsMutex *plock = new epicsMutex;
+     epicsMutex lock;
      ...
      ...
-     plock->lock();
-     // process resources
-     plock->unlock();
+     {
+         epicsMutex::guard_t G(lock); // lock
+         // process resources
+     } // unlock
+     // or for compatiblity
+     {
+         epicsGuard<epicsMutex> G(lock); // lock
+         // process resources
+     } // unlock
  \endcode
  *
  * \note The implementation:
@@ -251,6 +258,9 @@ void epicsMutexOsdUnlock(struct epicsMutexOSD *);
 epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD *);
 epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD *);
 void epicsMutexOsdShow(struct epicsMutexOSD *,unsigned  int level);
+#ifdef EPICS_PRIVATE_API
+void epicsMutexOsdShowAll(void);
+#endif
 
 #ifdef __cplusplus
 }
