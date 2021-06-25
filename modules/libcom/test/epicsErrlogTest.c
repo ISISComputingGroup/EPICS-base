@@ -173,7 +173,7 @@ MAIN(epicsErrlogTest)
     char msg[256];
     clientPvt pvt, pvt2;
 
-    testPlan(40);
+    testPlan(36);
 
     strcpy(msg, truncmsg);
 
@@ -376,7 +376,7 @@ MAIN(epicsErrlogTest)
     testOk(1 == errlogRemoveListeners(&logClient, &pvt),
         "Removed 1 listener");
 
-    testLogPrefix();
+    //testLogPrefix();
 
     return testDone();
 }
