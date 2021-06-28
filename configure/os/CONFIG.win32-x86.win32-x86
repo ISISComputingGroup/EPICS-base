@@ -6,7 +6,7 @@
 
 # Win32 valid build types and include directory suffixes
 
-VALID_BUILDS = Host Ioc
+VALID_BUILDS = Host Ioc Command
 
 CMPLR_CLASS = msvc
 
@@ -56,8 +56,7 @@ OPT_CFLAGS_YES_NO = -Ox -Oy- -Z7
 OPT_CFLAGS_YES = $(OPT_CFLAGS_YES_$(OPT_WHOLE_PROGRAM))
 
 #
-# -Zi generate program database for debugging information
-# -Z7 puts debugging information in object file
+# -Z7 generate C7 compatible debugging information (inside .obj)
 # -RTCsu enable run-time error checks
 OPT_CFLAGS_NO = -Z7 -RTCsu
 
@@ -115,6 +114,9 @@ CODE_CPPFLAGS += -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
 WARN_CXXFLAGS_YES = -W3 -w44355 -w44344 -w44251
 WARN_CXXFLAGS_NO  = -W1
 
+# Silence tr1 namespace deprecation warnings
+WARN_CXXFLAGS += -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING
+
 #
 # -Ox maximum optimizations
 # -GL whole program optimization
@@ -126,8 +128,7 @@ OPT_CXXFLAGS_YES_NO = -Ox -Oy- -Z7
 OPT_CXXFLAGS_YES = $(OPT_CXXFLAGS_YES_$(OPT_WHOLE_PROGRAM))
 
 #
-# -Zi generate program database for debugging information
-# -Z7 puts debugging information in object file
+# -Z7 generate C7 compatible debugging information (inside .obj)
 # -RTCsu enable run-time error checks
 OPT_CXXFLAGS_NO = -RTCsu -Z7
 
@@ -155,7 +156,6 @@ STATIC_LDFLAGS_EXTRA_YES=/NODEFAULTLIB:MSVCRT.LIB /NODEFAULTLIB:MSVCRTD.LIB /NOD
 STATIC_LDFLAGS_EXTRA_NO=/NODEFAULTLIB:LIBCMT.LIB /NODEFAULTLIB:LIBCMTD.LIB /NODEFAULTLIB:MSVCRT$(VISC_NODEFLIB_DEBUG_$(HOST_OPT)).LIB
 RANLIB=
 
-#
 # add -profile here to run the ms profiler
 # -LTCG whole program optimization
 # -incremental:no full linking

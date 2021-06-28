@@ -11,6 +11,7 @@ MKDIR = $(PERL) -MExtUtils::Command -e mkpath
 RMDIR = $(PERL) -MExtUtils::Command -e rm_rf
 NOP = $(PERL) -e ''
 CAT = $(PERL) -MExtUtils::Command -e cat
+TOUCH = $(PERL) -MExtUtils::Command -e touch
 
 WIND_HOST_TYPE = x86-win32
 OSITHREAD_USE_DEFAULT_STACK = NO
@@ -29,4 +30,4 @@ PATH := $(EPICS_BASE_BIN):$(PATH)
 SHELL = cmd
 
 # Silence the tr1 namespace deprecation warnings
-USR_CXXFLAGS_WIN32 += -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING
+#USR_CXXFLAGS_WIN32 += -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING
