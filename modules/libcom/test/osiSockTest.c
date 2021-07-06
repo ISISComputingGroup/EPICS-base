@@ -242,8 +242,10 @@ void udpSockFanoutTestRx(void* raw)
         int n = recvfrom(info->sock, buf.bytes, sizeof(buf.bytes), 0, &src.sa, &srclen);
         buf.bytes[sizeof(buf.bytes)-1] = '\0';
 
-        /* we ignore SOCK_EMSGSIZE as this would be a UDP packet that is not ours and larger than our buffer */
-        if(n<0 && SOCKERRNO != SOCK_EMSGSIZE) {
+        if(n<0) {
+            if(SOCKERRNO==SOCK_EMSGSIZE || SOCKERRNO==SOCK_EINTR)
+                continue;
+
             testDiag("recvfrom error (%d)", (int)SOCKERRNO);
             break;
         } else if((n==sizeof(buf.bytes)) && buf.msg.cmd==htons(6) && buf.msg.size==htons(16)

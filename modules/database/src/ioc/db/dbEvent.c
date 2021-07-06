@@ -84,6 +84,7 @@ struct event_user {
     epicsMutexId        lock;
     epicsEventId        ppendsem;       /* Wait while empty */
     epicsEventId        pflush_sem;     /* wait for flush */
+    epicsEventId        pexitsem;       /* wait for event task to join */
 
     EXTRALABORFUNC      *extralabor_sub;/* off load to event task */
     void                *extralabor_arg;/* parameter to above */
@@ -121,6 +122,8 @@ static void *dbevFieldLogFreeList;
 static char *EVENT_PEND_NAME = "eventTask";
 
 static struct evSubscrip canceledEvent;
+
+static epicsMutexId stopSync;
 
 static unsigned short ringSpace ( const struct event_que *pevq )
 {
@@ -260,6 +263,10 @@ int dbel ( const char *pname, unsigned level )
  */
 void db_init_event_freelists (void)
 {
+    if (!stopSync) {
+        stopSync = epicsMutexMustCreate();
+    }
+
     if (!dbevEventUserFreeList) {
         freeListInitPvt(&dbevEventUserFreeList,
             sizeof(struct event_user),8);
@@ -299,6 +306,9 @@ dbEventCtx db_init_events (void)
         return NULL;
     }
 
+    /* Flag will be cleared when event task starts */
+    evUser->pendexit = TRUE;
+
     evUser->firstque.evUser = evUser;
     evUser->firstque.writelock = epicsMutexCreate();
     if (!evUser->firstque.writelock)
@@ -312,6 +322,9 @@ dbEventCtx db_init_events (void)
         goto fail;
     evUser->lock = epicsMutexCreate();
     if (!evUser->lock)
+        goto fail;
+    evUser->pexitsem = epicsEventCreate(epicsEventEmpty);
+    if (!evUser->pexitsem)
         goto fail;
 
     evUser->flowCtrlMode = FALSE;
@@ -327,6 +340,8 @@ fail:
         epicsEventDestroy (evUser->ppendsem);
     if(evUser->pflush_sem)
         epicsEventDestroy (evUser->pflush_sem);
+    if(evUser->pexitsem)
+        epicsEventDestroy (evUser->pexitsem);
     freeListFree(dbevEventUserFreeList,evUser);
     return NULL;
 }
@@ -347,6 +362,7 @@ DBCORE_API void db_cleanup_events(void)
     dbevFieldLogFreeList = NULL;
 }
 
+    /* intentionally leak stopSync to avoid possible shutdown races */
 /*
  *  DB_CLOSE_EVENTS()
  *
@@ -368,15 +384,31 @@ void db_close_events (dbEventCtx ctx)
      * hazardous to the system's health.
      */
     epicsMutexMustLock ( evUser->lock );
-    evUser->pendexit = TRUE;
+    if(!evUser->pendexit) { /* event task running */
+        evUser->pendexit = TRUE;
+        epicsMutexUnlock ( evUser->lock );
+
+        /* notify the waiting task */
+        epicsEventSignal(evUser->ppendsem);
+        /* wait for task to exit */
+        epicsEventMustWait(evUser->pexitsem);
+        epicsThreadMustJoin(evUser->taskid);
+
+        epicsMutexMustLock ( evUser->lock );
+    }
+
     epicsMutexUnlock ( evUser->lock );
 
-    /* notify the waiting task */
-    epicsEventSignal(evUser->ppendsem);
+    epicsMutexMustLock (stopSync);
 
-    if(evUser->taskid)
-        epicsThreadMustJoin(evUser->taskid);
-    /* evUser has been deleted by the worker */
+    epicsEventDestroy(evUser->pexitsem);
+    epicsEventDestroy(evUser->ppendsem);
+    epicsEventDestroy(evUser->pflush_sem);
+    epicsMutexDestroy(evUser->lock);
+
+    epicsMutexUnlock (stopSync);
+
+    freeListFree(dbevEventUserFreeList, evUser);
 }
 
 /*
@@ -1063,17 +1095,16 @@ static void event_task (void *pParm)
         }
     }
 
-    epicsEventDestroy(evUser->ppendsem);
-    epicsEventDestroy(evUser->pflush_sem);
-    epicsMutexDestroy(evUser->lock);
-
-    if (dbevEventUserFreeList)
-        freeListFree(dbevEventUserFreeList, evUser);
-    else
-        fprintf(stderr, "%s exiting but dbevEventUserFreeList already NULL\n",
-                __FUNCTION__);
-
     taskwdRemove(epicsThreadGetIdSelf());
+
+    /* use stopSync to ensure pexitsem is not destroy'd
+     * until epicsEventSignal() has returned.
+     */
+    epicsMutexMustLock (stopSync);
+
+    epicsEventSignal(evUser->pexitsem);
+
+    epicsMutexUnlock(stopSync);
 
     return;
 }
@@ -1114,6 +1145,7 @@ int db_start_events (
          epicsMutexUnlock ( evUser->lock );
          return DB_EVENT_ERROR;
      }
+     evUser->pendexit = FALSE;
      epicsMutexUnlock ( evUser->lock );
      return DB_EVENT_OK;
 }
