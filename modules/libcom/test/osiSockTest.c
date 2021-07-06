@@ -237,7 +237,7 @@ void udpSockFanoutTestRx(void* raw)
     while(!epicsTimeGetCurrent(&now) && epicsTimeDiffInSeconds(&now, &start)<=5.0) {
         union CASearchU buf;
         osiSockAddr src;
-        osiSocklen_t srclen = sizeof(src.sa);
+        osiSocklen_t srclen = sizeof(src);
 
         int n = recvfrom(info->sock, buf.bytes, sizeof(buf.bytes), 0, &src.sa, &srclen);
         buf.bytes[sizeof(buf.bytes)-1] = '\0';
@@ -320,14 +320,13 @@ void udpSockFanoutTestIface(const osiSockAddr* addr)
     epicsSocketEnableAddressUseForDatagramFanout(rx1.sock);
     epicsSocketEnableAddressUseForDatagramFanout(rx2.sock);
 
-    if(bind(rx1.sock, &any.sa, sizeof(any.sa)))
+    if(bind(rx1.sock, &any.sa, sizeof(any)))
         testFail("Can't bind test socket rx1 %d", (int)SOCKERRNO);
-    if(bind(rx2.sock, &any.sa, sizeof(any.sa)))
+    if(bind(rx2.sock, &any.sa, sizeof(any)))
         testFail("Can't bind test socket rx2 %d", (int)SOCKERRNO);
 
     /* test to see if send is possible (not EPERM) */
-    buf.msg.p1 = buf.msg.p2 = htonl(key); /* need to set as packet may get picked up by udpSockFanoutTestRx */
-    ret = sendto(sender, buf.bytes, sizeof(buf.bytes), 0, &addr->sa, sizeof(addr->sa));
+    ret = sendto(sender, buf.bytes, sizeof(buf.bytes), 0, &addr->sa, sizeof(*addr));
     if(ret!=(int)sizeof(buf.bytes)) {
         testDiag("test sendto() error %d (%d)", ret, (int)SOCKERRNO);
         goto cleanup;
@@ -341,7 +340,7 @@ void udpSockFanoutTestIface(const osiSockAddr* addr)
         epicsThreadSleep(0.5);
 
         buf.msg.p1 = buf.msg.p2 = htonl(key + i);
-        ret = sendto(sender, buf.bytes, sizeof(buf.bytes), 0, &addr->sa, sizeof(addr->sa));
+        ret = sendto(sender, buf.bytes, sizeof(buf.bytes), 0, &addr->sa, sizeof(*addr));
         if(ret!=(int)sizeof(buf.bytes))
             testDiag("sendto() error %d (%d)", ret, (int)SOCKERRNO);
     }
