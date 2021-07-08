@@ -1,9 +1,3 @@
-######################################################################
-# SPDX-License-Identifier: EPICS
-# EPICS BASE is distributed subject to a Software License Agreement
-# found in file LICENSE that is included with this distribution.
-######################################################################
-
 package DBD::Recfield;
 use DBD::Base;
 our @ISA = qw(DBD::Base);
@@ -185,7 +179,7 @@ sub toDeclaration {
     my $name = $this->C_name;
     my $result = sprintf "    %-19s %-12s", $ctype, "$name;";
     my $prompt = $this->attribute('prompt');
-    $result .= "/**< \@brief $prompt */" if defined $prompt;
+    $result .= "/* $prompt */" if defined $prompt;
     return $result;
 }
 
@@ -217,7 +211,7 @@ sub toDeclaration {
     my $size = $this->attribute('size');
     my $result = sprintf "    %-19s %-12s", 'char', "${name}[${size}];";
     my $prompt = $this->attribute('prompt');
-    $result .= "/**< \@brief $prompt */" if defined $prompt;
+    $result .= "/* $prompt */" if defined $prompt;
     return $result;
 }
 
@@ -540,7 +534,7 @@ sub toDeclaration {
     my $extra = $this->attribute('extra');
     my $result = sprintf "    %-31s ", "$extra;";
     my $prompt = $this->attribute('prompt');
-    $result .= "/**< \@brief $prompt */" if defined $prompt;
+    $result .= "/* $prompt */" if defined $prompt;
     return $result;
 }
 

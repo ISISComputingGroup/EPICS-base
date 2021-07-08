@@ -3,15 +3,14 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 /*
- * Author:  Janet Anderson
- * Date:    9/23/91
- */
+ * Author: 	Janet Anderson
+ * Date:	9/23/91
+ */ 
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -60,27 +59,36 @@ static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
 static long get_alarm_double(DBADDR *, struct dbr_alDouble *);
 
 rset longoutRSET={
-    RSETNUMBER,
-    report,
-    initialize,
-    init_record,
-    process,
-    special,
-    get_value,
-    cvt_dbaddr,
-    get_array_info,
-    put_array_info,
-    get_units,
-    get_precision,
-    get_enum_str,
-    get_enum_strs,
-    put_enum_str,
-    get_graphic_double,
-    get_control_double,
-    get_alarm_double
+	RSETNUMBER,
+	report,
+	initialize,
+	init_record,
+	process,
+	special,
+	get_value,
+	cvt_dbaddr,
+	get_array_info,
+	put_array_info,
+	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
+	put_enum_str,
+	get_graphic_double,
+	get_control_double,
+	get_alarm_double
 };
 epicsExportAddress(rset,longoutRSET);
 
+
+struct longoutdset { /* longout input dset */
+	long		number;
+	DEVSUPFUN	dev_report;
+	DEVSUPFUN	init;
+	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
+	DEVSUPFUN	get_ioint_info;
+	DEVSUPFUN	write_longout;/*(-1,0)=>(failure,success*/
+};
 static void checkAlarms(longoutRecord *prec);
 static void monitor(longoutRecord *prec);
 static long writeValue(longoutRecord *prec);
@@ -89,7 +97,7 @@ static void convert(longoutRecord *prec, epicsInt32 value);
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct longoutRecord *prec = (struct longoutRecord *)pcommon;
-    longoutdset *pdset = (longoutdset *) prec->dset;
+    struct longoutdset *pdset = (struct longoutdset *) prec->dset;
 
     if (pass == 0) return 0;
 
@@ -101,7 +109,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     /* must have  write_longout functions defined */
-    if ((pdset->common.number < 5) || (pdset->write_longout == NULL)) {
+    if ((pdset->number < 5) || (pdset->write_longout == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "longout: init_record");
         return S_dev_missingSup;
     }
@@ -109,8 +117,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
     if (recGblInitConstantLink(&prec->dol, DBF_LONG, &prec->val))
         prec->udf=FALSE;
 
-    if (pdset->common.init_record) {
-        long status = pdset->common.init_record(pcommon);
+    if (pdset->init_record) {
+        long status = pdset->init_record(prec);
 
         if (status)
             return status;
@@ -125,75 +133,68 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct longoutRecord *prec = (struct longoutRecord *)pcommon;
-    longoutdset  *pdset = (longoutdset *)(prec->dset);
-    long                status=0;
-    epicsInt32          value;
-    unsigned char       pact=prec->pact;
+    struct longoutdset  *pdset = (struct longoutdset *)(prec->dset);
+	long		 status=0;
+	epicsInt32	 value;
+	unsigned char    pact=prec->pact;
 
-    if( (pdset==NULL) || (pdset->write_longout==NULL) ) {
-        prec->pact=TRUE;
-        recGblRecordError(S_dev_missingSup,(void *)prec,"write_longout");
-        return(S_dev_missingSup);
-    }
-    if (!prec->pact) {
-        if (!dbLinkIsConstant(&prec->dol) &&
-                prec->omsl == menuOmslclosed_loop) {
-            status = dbGetLink(&prec->dol, DBR_LONG, &value, 0, 0);
-            if (!dbLinkIsConstant(&prec->dol) && !status)
-                prec->udf=FALSE;
-        }
+	if( (pdset==NULL) || (pdset->write_longout==NULL) ) {
+		prec->pact=TRUE;
+		recGblRecordError(S_dev_missingSup,(void *)prec,"write_longout");
+		return(S_dev_missingSup);
+	}
+	if (!prec->pact) {
+		if (!dbLinkIsConstant(&prec->dol) &&
+                    prec->omsl == menuOmslclosed_loop) {
+                        status = dbGetLink(&prec->dol, DBR_LONG, &value, 0, 0);
+			if (!dbLinkIsConstant(&prec->dol) && !status)
+				prec->udf=FALSE;
+		}
+		else {
+			value = prec->val;
+		}
+		if (!status) convert(prec,value);
+	}
+
+	/* check for alarms */
+	checkAlarms(prec);
+
+        if (prec->nsev < INVALID_ALARM )
+                status=writeValue(prec); /* write the new value */
         else {
-            value = prec->val;
-        }
-        if (!status) convert(prec,value);
-
-        /* Update the timestamp before writing output values so it
-         * will be uptodate if any downstream records fetch it via TSEL */
-        recGblGetTimeStampSimm(prec, prec->simm, NULL);
-    }
-
-    /* check for alarms */
-    checkAlarms(prec);
-
-    if (prec->nsev < INVALID_ALARM )
-            status=writeValue(prec); /* write the new value */
-    else {
-        switch (prec->ivoa) {
-            case (menuIvoaContinue_normally) :
-                status=writeValue(prec); /* write the new value */
-                break;
-            case (menuIvoaDon_t_drive_outputs) :
-                break;
-            case (menuIvoaSet_output_to_IVOV) :
-                if(prec->pact == FALSE){
-                        prec->val=prec->ivov;
+                switch (prec->ivoa) {
+                    case (menuIvoaContinue_normally) :
+                        status=writeValue(prec); /* write the new value */
+                        break;
+                    case (menuIvoaDon_t_drive_outputs) :
+                        break;
+                    case (menuIvoaSet_output_to_IVOV) :
+                        if(prec->pact == FALSE){
+                                prec->val=prec->ivov;
+                        }
+                        status=writeValue(prec); /* write the new value */
+                        break;
+                    default :
+                        status=-1;
+                        recGblRecordError(S_db_badField,(void *)prec,
+                                "longout:process Illegal IVOA field");
                 }
-                status=writeValue(prec); /* write the new value */
-                break;
-            default :
-                status=-1;
-                recGblRecordError(S_db_badField,(void *)prec,
-                        "longout:process Illegal IVOA field");
         }
-    }
 
-    /* check if device support set pact */
-    if ( !pact && prec->pact ) return(0);
-    prec->pact = TRUE;
+	/* check if device support set pact */
+	if ( !pact && prec->pact ) return(0);
+	prec->pact = TRUE;
 
-    if ( pact ) {
-        /* Update timestamp again for asynchronous devices */
-        recGblGetTimeStampSimm(prec, prec->simm, NULL);
-    }
+    recGblGetTimeStampSimm(prec, prec->simm, NULL);
 
-    /* check event list */
-    monitor(prec);
+	/* check event list */
+	monitor(prec);
 
-    /* process the forward scan link record */
-    recGblFwdLink(prec);
+	/* process the forward scan link record */
+	recGblFwdLink(prec);
 
-    prec->pact=FALSE;
-    return(status);
+	prec->pact=FALSE;
+	return(status);
 }
 
 static long special(DBADDR *paddr, int after)
@@ -231,7 +232,7 @@ static long get_units(DBADDR *paddr,char *units)
 static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
     longoutRecord *prec=(longoutRecord *)paddr->precord;
-
+    
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
         case indexof(HIHI):
@@ -381,7 +382,7 @@ static void monitor(longoutRecord *prec)
 
 static long writeValue(longoutRecord *prec)
 {
-    longoutdset *pdset = (longoutdset *) prec->dset;
+    struct longoutdset *pdset = (struct longoutdset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {
@@ -422,9 +423,9 @@ static long writeValue(longoutRecord *prec)
 static void convert(longoutRecord *prec, epicsInt32 value)
 {
         /* check drive limits */
-    if(prec->drvh > prec->drvl) {
-        if (value > prec->drvh) value = prec->drvh;
-        else if (value < prec->drvl) value = prec->drvl;
-    }
-    prec->val = value;
+	if(prec->drvh > prec->drvl) {
+        	if (value > prec->drvh) value = prec->drvh;
+        	else if (value < prec->drvl) value = prec->drvl;
+	}
+	prec->val = value;
 }

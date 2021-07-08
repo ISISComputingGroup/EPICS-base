@@ -1,7 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2013 Brookhaven National Laboratory.
 * Copyright (c) 2013 ITER Organization.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
  \*************************************************************************/
@@ -23,6 +22,7 @@
 #include "epicsEvent.h"
 #include "epicsThread.h"
 
+#define epicsExportSharedSymbols
 #include "dbAccess.h"
 #include "dbBase.h"
 #include "dbChannel.h"
@@ -32,7 +32,6 @@
 #include "initHooks.h"
 #include "iocInit.h"
 #include "errSymTbl.h"
-#include "iocshRegisterCommon.h"
 
 static dbEventCtx testEvtCtx;
 static epicsMutexId testEvtLock;
@@ -98,7 +97,6 @@ void testdbCleanup(void)
     db_cleanup_events();
     initHookFree();
     registryFree();
-    clearRegistrarOnce();
     pdbbase = NULL;
     dbmfFreeChunks();
 }
@@ -111,13 +109,12 @@ union anybuf {
 
 long testdbVPutField(const char* pv, short dbrType, va_list ap)
 {
-    dbChannel *chan = dbChannelCreate(pv);
+    DBADDR addr;
     union anybuf pod;
-    long ret = S_dbLib_recNotFound;
 
-    if(!chan || (ret=dbChannelOpen(chan))) {
-        testFail("Channel error (%p, %ld) : %s", chan, ret, pv);
-        goto done;
+    if (dbNameToAddr(pv, &addr)) {
+        testFail("Missing PV \"%s\"", pv);
+        return S_dbLib_recNotFound;
     }
 
     switch(dbrType) {
@@ -125,18 +122,14 @@ long testdbVPutField(const char* pv, short dbrType, va_list ap)
         const char *uarg = va_arg(ap,char*);
         strncpy(pod.valStr, uarg, sizeof(pod.valStr));
         pod.valStr[sizeof(pod.valStr)-1] = '\0';
-        ret = dbChannelPutField(chan, dbrType, pod.valStr, 1);
-        break;
+        return dbPutField(&addr, dbrType, pod.valStr, 1);
     }
 
     /* The Type parameter takes into consideration
      * the C language rules for promotion of argument types
      * in variadic functions.
      */
-#define OP(DBR,Type,mem) case DBR: \
-        pod.val.mem = va_arg(ap,Type); \
-        ret = dbChannelPutField(chan, dbrType, pod.bytes, 1); \
-        break;
+#define OP(DBR,Type,mem) case DBR: {pod.val.mem = va_arg(ap,Type); break;}
     OP(DBR_CHAR, int, int8);
     OP(DBR_UCHAR, int, uInt8);
     OP(DBR_SHORT, int, int16);
@@ -151,15 +144,11 @@ long testdbVPutField(const char* pv, short dbrType, va_list ap)
 #undef OP
     default:
         testFail("invalid DBR: dbPutField(\"%s\", %d, ...)",
-                  dbChannelName(chan), dbrType);
-        ret = S_db_badDbrtype;
-        break;
+                  addr.precord->name, dbrType);
+        return S_db_badDbrtype;
     }
 
-done:
-    if(chan)
-        dbChannelDelete(chan);
-    return ret;
+    return dbPutField(&addr, dbrType, pod.bytes, 1);
 }
 
 void testdbPutFieldOk(const char* pv, int dbrType, ...)
@@ -198,35 +187,23 @@ void testdbGetFieldEqual(const char* pv, int dbrType, ...)
 
 void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
 {
-    dbChannel *chan = dbChannelCreate(pv);
-    db_field_log *pfl = NULL;
+    DBADDR addr;
     long nReq = 1;
     union anybuf pod;
-    long status = S_dbLib_recNotFound;
+    long status;
 
-    if(!chan || (status=dbChannelOpen(chan))) {
-        testFail("Channel error (%p, %ld) : %s", chan, status, pv);
-        goto done;
+    if(dbNameToAddr(pv, &addr)) {
+        testFail("Missing PV \"%s\"", pv);
+        return;
     }
 
-    if(ellCount(&chan->filters)) {
-        pfl = db_create_read_log(chan);
-        if (!pfl) {
-            testFail("can't db_create_read_log w/ %s", pv);
-            goto done;
-        }
-
-        pfl = dbChannelRunPreChain(chan, pfl);
-        pfl = dbChannelRunPostChain(chan, pfl);
-    }
-
-    status = dbChannelGetField(chan, dbrType, pod.bytes, NULL, &nReq, pfl);
+    status = dbGetField(&addr, dbrType, pod.bytes, NULL, &nReq, NULL);
     if (status) {
         testFail("dbGetField(\"%s\", %d, ...) -> %#lx (%s)", pv, dbrType, status, errSymMsg(status));
-        goto done;
+        return;
     } else if(nReq==0) {
         testFail("dbGetField(\"%s\", %d, ...) -> zero length", pv, dbrType);
-        goto done;
+        return;
     }
 
     switch(dbrType) {
@@ -256,56 +233,35 @@ void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
     default:
         testFail("dbGetField(\"%s\", %d) -> unsupported dbf", pv, dbrType);
     }
-
-done:
-    db_delete_field_log(pfl);
-    if(chan)
-        dbChannelDelete(chan);
 }
 
 void testdbPutArrFieldOk(const char* pv, short dbrType, unsigned long count, const void *pbuf)
 {
-    dbChannel *chan = dbChannelCreate(pv);
-    long status = -1;
+    DBADDR addr;
+    long status;
 
-    if(!chan || (status=dbChannelOpen(chan))) {
-        testFail("Channel error (%p, %ld) : %s", chan, status, pv);
-        goto done;
+    if (dbNameToAddr(pv, &addr)) {
+        testFail("Missing PV \"%s\"", pv);
+        return;
     }
 
-    status = dbChannelPutField(chan, dbrType, pbuf, count);
+    status = dbPutField(&addr, dbrType, pbuf, count);
 
     testOk(status==0, "dbPutField(\"%s\", dbr=%d, count=%lu, ...) -> %ld", pv, dbrType, count, status);
-
-done:
-    if(chan)
-        dbChannelDelete(chan);
 }
 
 void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsigned long cnt, const void *pbufraw)
 {
-    dbChannel *chan = dbChannelCreate(pv);
-    db_field_log *pfl = NULL;
+    DBADDR addr;
     const long vSize = dbValueSize(dbfType);
     const long nStore = vSize * nRequest;
-    long status = S_dbLib_recNotFound;
-    char *gbuf, *gstore = NULL;
+    long status;
+    char *gbuf, *gstore;
     const char *pbuf = pbufraw;
 
-    if(!chan || (status=dbChannelOpen(chan))) {
-        testFail("Channel error (%p, %ld) : %s", chan, status, pv);
-        goto done;
-    }
-
-    if(ellCount(&chan->filters)) {
-        pfl = db_create_read_log(chan);
-        if (!pfl) {
-            testFail("can't db_create_read_log w/ %s", pv);
-            goto done;
-        }
-
-        pfl = dbChannelRunPreChain(chan, pfl);
-        pfl = dbChannelRunPostChain(chan, pfl);
+    if(dbNameToAddr(pv, &addr)) {
+        testFail("Missing PV \"%s\"", pv);
+        return;
     }
 
     gbuf = gstore = malloc(nStore);
@@ -314,7 +270,7 @@ void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsign
         return;
     }
 
-    status = dbChannelGetField(chan, dbfType, gbuf, NULL, &nRequest, pfl);
+    status = dbGetField(&addr, dbfType, gbuf, NULL, &nRequest, NULL);
     if (status) {
         testFail("dbGetField(\"%s\", %d, ...) -> %#lx", pv, dbfType, status);
 
@@ -359,10 +315,7 @@ void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsign
         testOk(match, "dbGetField(\"%s\", dbrType=%d, nRequest=%ld ...) match", pv, dbfType, nRequest);
     }
 
-done:
     free(gstore);
-    if(chan)
-        dbChannelDelete(chan);
 }
 
 dbCommon* testdbRecordPtr(const char* pv)

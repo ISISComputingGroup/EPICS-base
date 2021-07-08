@@ -3,9 +3,9 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
  * Breakpoint Tables
@@ -15,19 +15,19 @@
  */
 
 #ifndef INCcvtTableh
-#define INCcvtTableh    1
+#define INCcvtTableh	1
 
-#include "dbCoreAPI.h"
+#include "shareLib.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Global Routines*/
-DBCORE_API long cvtEngToRawBpt(
+epicsShareFunc long cvtEngToRawBpt(
     double *pval,short linr,short init,void **ppbrk,short *plbrk);
 
-DBCORE_API long cvtRawToEngBpt(
+epicsShareFunc long cvtRawToEngBpt(
     double *pval,short linr,short init,void **ppbrk, short *plbrk);
 
 #ifdef __cplusplus

@@ -3,7 +3,6 @@
 * Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 *
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -17,12 +16,13 @@
 #include <errno.h>
 #include <string.h>
 
+#define epicsExportSharedSymbols
 #include "ellLib.h"
 #include "epicsMutex.h"
 #include "epicsThread.h"
 
-LIBCOM_API extern EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
-LIBCOM_API extern EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
+epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
+epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
 
 typedef struct epicsThreadHook {
     ELLNODE                   node;
@@ -52,7 +52,7 @@ static void threadHookInit(void)
     epicsThreadOnce(&flag, threadHookOnce, NULL);
 }
 
-LIBCOM_API int epicsThreadHookAdd(EPICS_THREAD_HOOK_ROUTINE hook)
+epicsShareFunc int epicsThreadHookAdd(EPICS_THREAD_HOOK_ROUTINE hook)
 {
     epicsThreadHook *pHook;
 
@@ -72,11 +72,10 @@ LIBCOM_API int epicsThreadHookAdd(EPICS_THREAD_HOOK_ROUTINE hook)
         return 0;
     }
     fprintf(stderr, "epicsThreadHookAdd: Locking problem\n");
-    free(pHook);
     return -1;
 }
 
-LIBCOM_API int epicsThreadHookDelete(EPICS_THREAD_HOOK_ROUTINE hook)
+epicsShareFunc int epicsThreadHookDelete(EPICS_THREAD_HOOK_ROUTINE hook)
 {
     if (!hook) return 0;
     threadHookInit();
@@ -98,13 +97,13 @@ LIBCOM_API int epicsThreadHookDelete(EPICS_THREAD_HOOK_ROUTINE hook)
     return -1;
 }
 
-LIBCOM_API void osdThreadHooksRunMain(epicsThreadId id)
+epicsShareFunc void osdThreadHooksRunMain(epicsThreadId id)
 {
     if (epicsThreadHookMain)
         epicsThreadHookMain(id);
 }
 
-LIBCOM_API void osdThreadHooksRun(epicsThreadId id)
+epicsShareFunc void osdThreadHooksRun(epicsThreadId id)
 {
     threadHookInit();
 
@@ -122,7 +121,7 @@ LIBCOM_API void osdThreadHooksRun(epicsThreadId id)
     }
 }
 
-LIBCOM_API void epicsThreadHooksShow(void)
+epicsShareFunc void epicsThreadHooksShow(void)
 {
     threadHookInit();
 

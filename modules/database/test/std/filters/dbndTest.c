@@ -2,7 +2,6 @@
 * Copyright (c) 2010 Brookhaven National Laboratory.
 * Copyright (c) 2010 Helmholtz-Zentrum Berlin
 *     fuer Materialien und Energie GmbH.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -130,7 +129,7 @@ MAIN(dbndTest)
     dbEventCtx evtctx;
     int logsFree, logsFinal;
 
-    testPlan(72);
+    testPlan(77);
 
     testdbPrepare();
 
@@ -148,7 +147,7 @@ MAIN(dbndTest)
 
     testOk(!!(plug = dbFindFilter(dbnd, strlen(dbnd))), "plugin dbnd registered correctly");
 
-    testOk(!!(pch = dbChannelCreate("x.VAL{dbnd:{}}")), "dbChannel with plugin dbnd (delta=0) created");
+    testOk(!!(pch = dbChannelCreate("x.VAL{\"dbnd\":{}}")), "dbChannel with plugin dbnd (delta=0) created");
     testOk((ellCount(&pch->filters) == 1), "channel has one plugin");
 
     /* Start the free-list */
@@ -171,9 +170,12 @@ MAIN(dbndTest)
            "dbnd has one filter with argument in pre chain");
     testOk((ellCount(&pch->post_chain) == 0), "dbnd has no filter in post chain");
 
-    /* Field logs of type ref: pass any update */
+    /* Field logs of type ref and rec: pass any update */
 
-    testHead("Field logs of type ref");
+    testHead("Field logs of type ref and rec");
+    fl1.type = dbfl_type_rec;
+    mustPassTwice(pch, &fl1, "abs field_log=rec", 0., 0);
+
     fl1.type = dbfl_type_ref;
     mustPassTwice(pch, &fl1, "abs field_log=ref", 0., 0);
 
@@ -199,7 +201,7 @@ MAIN(dbndTest)
     /* Delta = -1: pass any update */
 
     testHead("Delta = -1: pass any update");
-    testOk(!!(pch = dbChannelCreate("x.VAL{dbnd:{d:-1.0}}")), "dbChannel with plugin dbnd (delta=-1) created");
+    testOk(!!(pch = dbChannelCreate("x.VAL{\"dbnd\":{\"d\":-1.0}}")), "dbChannel with plugin dbnd (delta=-1) created");
     testOk(!(dbChannelOpen(pch)), "dbChannel with plugin dbnd opened");
 
     pfl2 = db_create_read_log(pch);
@@ -217,7 +219,7 @@ MAIN(dbndTest)
     /* Delta = absolute */
 
     testHead("Delta = absolute");
-    testOk(!!(pch = dbChannelCreate("x.VAL{dbnd:{d:3}}")), "dbChannel with plugin dbnd (delta=3) created");
+    testOk(!!(pch = dbChannelCreate("x.VAL{\"dbnd\":{\"d\":3}}")), "dbChannel with plugin dbnd (delta=3) created");
     testOk(!(dbChannelOpen(pch)), "dbChannel with plugin dbnd opened");
 
     pfl2 = db_create_read_log(pch);
@@ -251,7 +253,7 @@ MAIN(dbndTest)
     /* Delta = relative */
 
     testHead("Delta = relative");
-    testOk(!!(pch = dbChannelCreate("x.VAL{dbnd:{m:'rel',d:50}}")),
+    testOk(!!(pch = dbChannelCreate("x.VAL{\"dbnd\":{\"m\":\"rel\",\"d\":50}}")),
            "dbChannel with plugin dbnd (mode=rel, delta=50) created");
     testOk(!(dbChannelOpen(pch)), "dbChannel with plugin dbnd opened");
 

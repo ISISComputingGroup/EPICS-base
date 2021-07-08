@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
  *      Authors:        Benjamin Franksen (BESY) and Marty Kraimer
@@ -17,6 +16,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "ellLib.h"
 #include "epicsMutex.h"
@@ -120,25 +120,14 @@ const char *initHookName(int state)
         "initHookAfterInitialProcess",
         "initHookAfterCaServerInit",
         "initHookAfterIocBuilt",
-
         "initHookAtIocRun",
         "initHookAfterDatabaseRunning",
         "initHookAfterCaServerRunning",
         "initHookAfterIocRunning",
-
         "initHookAtIocPause",
         "initHookAfterCaServerPaused",
         "initHookAfterDatabasePaused",
         "initHookAfterIocPaused",
-
-        "initHookAtShutdown",
-        "initHookAfterCloseLinks",
-        "initHookAfterStopScan",
-        "initHookAfterStopCallback",
-        "initHookAfterStopLinks",
-        "initHookBeforeFree",
-        "initHookAfterShutdown",
-
         "initHookAfterInterruptAccept",
         "initHookAtEnd"
     };

@@ -3,21 +3,20 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* epicsMutex.cpp */
-/*  Author: Marty Kraimer and Jeff Hill Date: 03APR01   */
+/*	Author: Marty Kraimer and Jeff Hill	Date: 03APR01	*/
 
 /*
  * NOTES:
- * 1) LOG_LAST_OWNER feature is normally commented out because
- * it slows down the system at run time, anfd because its not
+ * 1) LOG_LAST_OWNER feature is normally commented out because 
+ * it slows down the system at run time, anfd because its not 
  * currently safe to convert a thread id to a thread name because
  * the thread may have exited making the thread id invalid.
  */
-#define EPICS_PRIVATE_API
 
 #include <new>
 
@@ -26,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#define epicsExportSharedSymbols
 #include "epicsStdio.h"
 #include "epicsThread.h"
 #include "valgrind/valgrind.h"
@@ -83,7 +83,7 @@ static void epicsMutexOsiInit(void *) {
     epicsMutexGlobalLock = epicsMutexOsdCreate();
 }
 
-epicsMutexId epicsStdCall epicsMutexOsiCreate(
+epicsMutexId epicsShareAPI epicsMutexOsiCreate(
     const char *pFileName,int lineno)
 {
     epicsMutexOSD * id;
@@ -97,7 +97,7 @@ epicsMutexId epicsStdCall epicsMutexOsiCreate(
     epicsMutexLockStatus lockStat =
         epicsMutexOsdLock(epicsMutexGlobalLock);
     assert ( lockStat == epicsMutexLockOK );
-    epicsMutexParm *pmutexNode =
+    epicsMutexParm *pmutexNode = 
         reinterpret_cast < epicsMutexParm * > ( ellFirst(&freeList) );
     if(pmutexNode) {
         ellDelete(&freeList,&pmutexNode->node);
@@ -117,7 +117,7 @@ epicsMutexId epicsStdCall epicsMutexOsiCreate(
     return(pmutexNode);
 }
 
-epicsMutexId epicsStdCall epicsMutexOsiMustCreate(
+epicsMutexId epicsShareAPI epicsMutexOsiMustCreate(
     const char *pFileName,int lineno)
 {
     epicsMutexId id = epicsMutexOsiCreate(pFileName,lineno);
@@ -125,7 +125,7 @@ epicsMutexId epicsStdCall epicsMutexOsiMustCreate(
     return(id );
 }
 
-void epicsStdCall epicsMutexDestroy(epicsMutexId pmutexNode)
+void epicsShareAPI epicsMutexDestroy(epicsMutexId pmutexNode)
 {
     epicsMutexLockStatus lockStat =
         epicsMutexOsdLock(epicsMutexGlobalLock);
@@ -138,15 +138,15 @@ void epicsStdCall epicsMutexDestroy(epicsMutexId pmutexNode)
     epicsMutexOsdUnlock(epicsMutexGlobalLock);
 }
 
-void epicsStdCall epicsMutexUnlock(epicsMutexId pmutexNode)
+void epicsShareAPI epicsMutexUnlock(epicsMutexId pmutexNode)
 {
     epicsMutexOsdUnlock(pmutexNode->id);
 }
 
-epicsMutexLockStatus epicsStdCall epicsMutexLock(
+epicsMutexLockStatus epicsShareAPI epicsMutexLock(
     epicsMutexId pmutexNode)
 {
-    epicsMutexLockStatus status =
+    epicsMutexLockStatus status = 
         epicsMutexOsdLock(pmutexNode->id);
 #   ifdef LOG_LAST_OWNER
         if ( status == epicsMutexLockOK ) {
@@ -156,10 +156,10 @@ epicsMutexLockStatus epicsStdCall epicsMutexLock(
     return status;
 }
 
-epicsMutexLockStatus epicsStdCall epicsMutexTryLock(
+epicsMutexLockStatus epicsShareAPI epicsMutexTryLock(
     epicsMutexId pmutexNode)
 {
-    epicsMutexLockStatus status =
+    epicsMutexLockStatus status = 
         epicsMutexOsdTryLock(pmutexNode->id);
 #   ifdef LOG_LAST_OWNER
         if ( status == epicsMutexLockOK ) {
@@ -189,13 +189,13 @@ void epicsMutexCleanup(void)
     epicsMutexOsdUnlock(epicsMutexGlobalLock);
 }
 
-void epicsStdCall epicsMutexShow(
+void epicsShareAPI epicsMutexShow(
     epicsMutexId pmutexNode, unsigned  int level)
 {
 #   ifdef LOG_LAST_OWNER
         char threadName [255];
         if ( pmutexNode->lastOwner ) {
-#           error currently not safe to fetch name for stale thread
+#           error currently not safe to fetch name for stale thread 
             epicsThreadGetName ( pmutexNode->lastOwner,
                 threadName, sizeof ( threadName ) );
         }
@@ -207,7 +207,7 @@ void epicsStdCall epicsMutexShow(
             pmutexNode->pFileName, pmutexNode->lineno);
 #   else
         printf("epicsMutexId %p source %s line %d\n",
-            (void *)pmutexNode, pmutexNode->pFileName,
+            (void *)pmutexNode, pmutexNode->pFileName, 
             pmutexNode->lineno);
 #   endif
     if ( level > 0 ) {
@@ -215,7 +215,7 @@ void epicsStdCall epicsMutexShow(
     }
 }
 
-void epicsStdCall epicsMutexShowAll(int onlyLocked,unsigned  int level)
+void epicsShareAPI epicsMutexShowAll(int onlyLocked,unsigned  int level)
 {
     epicsMutexParm *pmutexNode;
 
@@ -224,7 +224,6 @@ void epicsStdCall epicsMutexShowAll(int onlyLocked,unsigned  int level)
 
     printf("ellCount(&mutexList) %d ellCount(&freeList) %d\n",
         ellCount(&mutexList),ellCount(&freeList));
-    epicsMutexOsdShowAll();
     epicsMutexLockStatus lockStat =
         epicsMutexOsdLock(epicsMutexGlobalLock);
     assert ( lockStat == epicsMutexLockOK );
@@ -236,7 +235,7 @@ void epicsStdCall epicsMutexShowAll(int onlyLocked,unsigned  int level)
             if(status==epicsMutexLockOK) {
                 epicsMutexOsdUnlock(pmutexNode->id);
                 pmutexNode =
-                    reinterpret_cast < epicsMutexParm * >
+                    reinterpret_cast < epicsMutexParm * > 
                         ( ellNext(&pmutexNode->node) );
                 continue;
             }
@@ -266,7 +265,7 @@ epicsMutex :: epicsMutex ( const char *pFileName, int lineno ) :
     }
 }
 
-epicsMutex ::~epicsMutex ()
+epicsMutex ::~epicsMutex () 
 {
     epicsMutexDestroy ( this->id );
 }
@@ -284,7 +283,7 @@ bool epicsMutex::tryLock ()
     epicsMutexLockStatus status = epicsMutexTryLock ( this->id );
     if ( status == epicsMutexLockOK ) {
         return true;
-    }
+    } 
     else if ( status != epicsMutexLockTimeout ) {
         throw invalidMutex ();
     }
@@ -296,27 +295,27 @@ void epicsMutex::unlock ()
     epicsMutexUnlock ( this->id );
 }
 
-void epicsMutex :: show ( unsigned level ) const
+void epicsMutex :: show ( unsigned level ) const 
 {
     epicsMutexShow ( this->id, level );
 }
 
-static epicsThreadPrivate < epicsDeadlockDetectMutex >
+static epicsThreadPrivate < epicsDeadlockDetectMutex >  
     * pCurrentMutexLevel = 0;
 
 static epicsThreadOnceId epicsDeadlockDetectMutexInit = EPICS_THREAD_ONCE_INIT;
 
 extern "C"
-void epicsDeadlockDetectMutexInitFunc ( void * )
+void epicsDeadlockDetectMutexInitFunc ( void * ) 
 {
     pCurrentMutexLevel = new epicsThreadPrivate < epicsDeadlockDetectMutex > ();
 }
 
 epicsDeadlockDetectMutex::
-    epicsDeadlockDetectMutex ( hierarchyLevel_t level ) :
+    epicsDeadlockDetectMutex ( hierarchyLevel_t level ) : 
     hierarchyLevel ( level ), pPreviousLevel ( 0 )
 {
-    epicsThreadOnce ( & epicsDeadlockDetectMutexInit,
+    epicsThreadOnce ( & epicsDeadlockDetectMutexInit, 
         epicsDeadlockDetectMutexInitFunc, 0 );
 }
 

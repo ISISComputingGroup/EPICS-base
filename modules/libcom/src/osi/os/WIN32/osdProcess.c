@@ -3,11 +3,11 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/*
+/* 
  * Operating System Dependent Implementation of osiProcess.h
  *
  * Author: Jeff Hill
@@ -24,9 +24,10 @@
 #define STRICT
 #include <windows.h>
 
+#define epicsExportSharedSymbols
 #include "osiProcess.h"
 
-LIBCOM_API osiGetUserNameReturn epicsStdCall osiGetUserName (char *pBuf, unsigned bufSizeIn)
+epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, unsigned bufSizeIn)
 {
     DWORD bufsize;
 
@@ -47,24 +48,20 @@ LIBCOM_API osiGetUserNameReturn epicsStdCall osiGetUserName (char *pBuf, unsigne
     return osiGetUserNameSuccess;
 }
 
-LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess 
+epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProcess 
     ( const char *pProcessName, const char *pBaseExecutableName )
 {
-    BOOL silent = pProcessName && pProcessName[0]=='!';
-    BOOL status;
-    STARTUPINFO startupInfo;
-    PROCESS_INFORMATION processInfo;
+	BOOL status;
+	STARTUPINFO startupInfo;
+	PROCESS_INFORMATION processInfo;
 
-    if(silent)
-        pProcessName++; /* skip '!' */
-
-    GetStartupInfo ( &startupInfo );
-    startupInfo.lpReserved = NULL;
-    startupInfo.lpTitle = (char *) pProcessName;
-    startupInfo.dwFlags = STARTF_USESHOWWINDOW;
-    startupInfo.wShowWindow = SW_SHOWMINNOACTIVE;
-
-    status =  CreateProcess (
+	GetStartupInfo ( &startupInfo ); 
+	startupInfo.lpReserved = NULL;
+	startupInfo.lpTitle = (char *) pProcessName;
+	startupInfo.dwFlags = STARTF_USESHOWWINDOW;
+	startupInfo.wShowWindow = SW_SHOWMINNOACTIVE;
+	
+	status =  CreateProcess ( 
         NULL, /* pointer to name of executable module (not required if command line is specified) */
         (char *) pBaseExecutableName, /* pointer to command line string */
         NULL, /* pointer to process security attributes */
@@ -75,20 +72,20 @@ LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess
         NULL, /* pointer to current directory name  (defaults to caller's current directory) */
         &startupInfo, /* pointer to STARTUPINFO */
         &processInfo /* pointer to PROCESS_INFORMATION */
-    );
+    ); 
     if ( status == 0 ) {
         DWORD W32status;
         LPVOID errStrMsgBuf;
         LPVOID complteMsgBuf;
-
-        W32status = FormatMessage (
+        
+        W32status = FormatMessage ( 
             FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
             NULL,
             GetLastError (),
             MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), /* Default language */
-                (LPTSTR) &errStrMsgBuf,
+            	(LPTSTR) &errStrMsgBuf,
             0,
-            NULL
+            NULL 
         );
 
         if ( W32status ) {
@@ -97,16 +94,16 @@ LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess
             pFmtArgs[1] = (char *) pBaseExecutableName;
             pFmtArgs[2] = errStrMsgBuf;
             pFmtArgs[3] = "Changes may be required in your \"path\" environment variable.";
-
-            W32status = FormatMessage(
-                FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_STRING |
+            
+            W32status = FormatMessage( 
+                FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_STRING | 
                     FORMAT_MESSAGE_ARGUMENT_ARRAY | 80,
                 "%1 \"%2\". %3 %4",
                 0,
                 MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), /* Default language */
                 (LPTSTR) &complteMsgBuf,
                 0,
-                pFmtArgs
+                pFmtArgs 
             );
             if (W32status) {
                 fprintf (stderr, "%s\n", (char *) complteMsgBuf);
@@ -115,11 +112,11 @@ LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess
             else {
                 fprintf (stderr, "%s\n", (char *) errStrMsgBuf);
             }
-
+            
             /* Free the buffer. */
             LocalFree (errStrMsgBuf);
         }
-        else if(!silent) {
+        else {
             fprintf (stderr, "!!WARNING!!\n");
             fprintf (stderr, "Unable to locate executable \"%s\".\n", pBaseExecutableName);
             fprintf (stderr, "You may need to modify your \"path\" environment variable.\n");

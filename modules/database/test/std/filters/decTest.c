@@ -4,7 +4,6 @@
 * Copyright (c) 2010 Brookhaven National Laboratory.
 * Copyright (c) 2010 Helmholtz-Zentrum Berlin
 *     fuer Materialien und Energie GmbH.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -149,20 +148,20 @@ MAIN(decTest)
         "plugin '%s' registered correctly", myname);
 
     /* N < 1 */
-    testOk(!(pch = dbChannelCreate("x.VAL{dec:{n:-1}}")),
+    testOk(!(pch = dbChannelCreate("x.VAL{\"dec\":{\"n\":-1}}")),
            "dbChannel with dec (n=-1) failed");
-    testOk(!(pch = dbChannelCreate("x.VAL{dec:{n:0}}")),
+    testOk(!(pch = dbChannelCreate("x.VAL{\"dec\":{\"n\":0}}")),
            "dbChannel with dec (n=0) failed");
     /* Bad parms */
-    testOk(!(pch = dbChannelCreate("x.VAL{dec:{}}")),
+    testOk(!(pch = dbChannelCreate("x.VAL{\"dec\":{}}")),
            "dbChannel with dec (no parm) failed");
-    testOk(!(pch = dbChannelCreate("x.VAL{dec:{x:true}}")),
+    testOk(!(pch = dbChannelCreate("x.VAL{\"dec\":{\"x\":true}}")),
            "dbChannel with dec (x=true) failed");
 
     /* No Decimation (N=1) */
 
     testHead("No Decimation (n=1)");
-    testOk(!!(pch = dbChannelCreate("x.VAL{dec:{n:1}}")),
+    testOk(!!(pch = dbChannelCreate("x.VAL{\"dec\":{\"n\":1}}")),
            "dbChannel with plugin dec (n=1) created");
 
     /* Start the free-list */
@@ -192,7 +191,7 @@ MAIN(decTest)
     /* Decimation (N=2) */
 
     testHead("Decimation (n=2)");
-    testOk(!!(pch = dbChannelCreate("x.VAL{dec:{n:2}}")),
+    testOk(!!(pch = dbChannelCreate("x.VAL{\"dec\":{\"n\":2}}")),
            "dbChannel with plugin dec (n=2) created");
 
     checkAndOpenChannel(pch, plug);
@@ -222,7 +221,7 @@ MAIN(decTest)
     /* Decimation (N=3) */
 
     testHead("Decimation (n=3)");
-    testOk(!!(pch = dbChannelCreate("x.VAL{dec:{n:3}}")),
+    testOk(!!(pch = dbChannelCreate("x.VAL{\"dec\":{\"n\":3}}")),
            "dbChannel with plugin dec (n=3) created");
 
     checkAndOpenChannel(pch, plug);
@@ -252,7 +251,7 @@ MAIN(decTest)
     /* Decimation (N=4) */
 
     testHead("Decimation (n=4)");
-    testOk(!!(pch = dbChannelCreate("x.VAL{dec:{n:4}}")),
+    testOk(!!(pch = dbChannelCreate("x.VAL{\"dec\":{\"n\":4}}")),
            "dbChannel with plugin dec (n=4) created");
 
     checkAndOpenChannel(pch, plug);

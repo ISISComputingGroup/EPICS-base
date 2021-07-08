@@ -11,28 +11,19 @@ TOP = ../../../..
 
 include $(TOP)/configure/CONFIG
 
-USR_CPPFLAGS += -DUSE_TYPED_RSET -DUSE_TYPED_DSET
+USR_CPPFLAGS += -DUSE_TYPED_RSET
 
-# Shared library ABI version.
-SHRLIB_VERSION = $(EPICS_DATABASE_MAJOR_VERSION).$(EPICS_DATABASE_MINOR_VERSION).$(EPICS_DATABASE_MAINTENANCE_VERSION)
-
-API_HEADER = dbCoreAPI.h
-dbCore_API = dbCore
+SHRLIB_VERSION = 3.17.0
 
 LIBRARY_IOC += dbCore
 dbCore_LIBS += ca Com
 dbCore_SYS_LIBS_WIN32 += ws2_32
 
 dbCore_RCS += dbCore.rc
-
-EXPAND_COMMON += databaseVersion.h@
-
-EXPAND_ME += EPICS_DATABASE_MAJOR_VERSION
-EXPAND_ME += EPICS_DATABASE_MINOR_VERSION
-EXPAND_ME += EPICS_DATABASE_MAINTENANCE_VERSION
-EXPAND_ME += EPICS_DATABASE_DEVELOPMENT_FLAG
+dbStaticHost_RCS = dbStaticHost.rc
 
 INC += databaseVersion.h
+INC += databaseVersionNum.h
 
 PROD_LIBS = Com
 
@@ -45,8 +36,12 @@ include $(IOCDIR)/misc/Makefile
 include $(IOCDIR)/registry/Makefile
 include $(IOCDIR)/rsrv/Makefile
 
-GENVERSION = epicsVCS.h
-GENVERSIONMACRO = EPICS_VCS_VERSION
+EXPANDVARS += EPICS_DATABASE_MAJOR_VERSION
+EXPANDVARS += EPICS_DATABASE_MINOR_VERSION
+EXPANDVARS += EPICS_DATABASE_MAINTENANCE_VERSION
+EXPANDVARS += EPICS_DATABASE_DEVELOPMENT_FLAG
+
+EXPANDFLAGS += $(foreach var,$(EXPANDVARS),-D$(var)="$(strip $($(var)))")
 
 include $(TOP)/configure/RULES
 
@@ -55,4 +50,8 @@ include $(IOCDIR)/bpt/RULES
 include $(IOCDIR)/db/RULES
 include $(IOCDIR)/dbtemplate/RULES
 
-epicsRelease$(DEP): $(COMMON_DIR)/$(GENVERSION)
+# Can't use EXPAND as generated headers must appear
+# in O.Common, but EXPAND emits rules for O.$(T_A)
+../O.Common/databaseVersionNum.h: ../databaseVersionNum.h@
+	$(MKDIR) $(COMMON_DIR)
+	$(EXPAND_TOOL) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@

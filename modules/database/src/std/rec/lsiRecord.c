@@ -1,7 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -67,13 +66,13 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     /* must have a read_string function */
-    if (pdset->common.number < 5 || !pdset->read_string) {
+    if (pdset->number < 5 || !pdset->read_string) {
         recGblRecordError(S_dev_missingSup, prec, "lsi: init_record");
         return S_dev_missingSup;
     }
 
-    if (pdset->common.init_record) {
-        long status = pdset->common.init_record(pcommon);
+    if (pdset->init_record) {
+        long status = pdset->init_record(prec);
 
         if (status)
             return status;
@@ -222,7 +221,7 @@ static void monitor(lsiRecord *prec)
 
 static long readValue(lsiRecord *prec)
 {
-    lsidset *pdset = (lsidset *) prec->dset;
+    struct lsidset *pdset = (struct lsidset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

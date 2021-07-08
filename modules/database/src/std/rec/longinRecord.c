@@ -3,15 +3,14 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 /* recLongin.c - Record Support Routines for Longin records */
 /*
- *      Author:     Janet Anderson
- *      Date:       9/23/91
+ *      Author: 	Janet Anderson
+ *      Date:   	9/23/91
  */
 
 #include <stddef.h>
@@ -60,30 +59,39 @@ static long get_units(DBADDR *, char *);
 #define put_enum_str NULL
 static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
 static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
-static long get_alarm_double(DBADDR *, struct dbr_alDouble  *);
+static long get_alarm_double(DBADDR *, struct dbr_alDouble	*);
 
 rset longinRSET={
-    RSETNUMBER,
-    report,
-    initialize,
-    init_record,
-    process,
-    special,
-    get_value,
-    cvt_dbaddr,
-    get_array_info,
-    put_array_info,
-    get_units,
-    get_precision,
-    get_enum_str,
-    get_enum_strs,
-    put_enum_str,
-    get_graphic_double,
-    get_control_double,
-    get_alarm_double
+	RSETNUMBER,
+	report,
+	initialize,
+	init_record,
+	process,
+	special,
+	get_value,
+	cvt_dbaddr,
+	get_array_info,
+	put_array_info,
+	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
+	put_enum_str,
+	get_graphic_double,
+	get_control_double,
+	get_alarm_double
 };
 epicsExportAddress(rset,longinRSET);
 
+
+struct longindset { /* longin input dset */
+	long		number;
+	DEVSUPFUN	dev_report;
+	DEVSUPFUN	init;
+	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
+	DEVSUPFUN	get_ioint_info;
+	DEVSUPFUN	read_longin; /*returns: (-1,0)=>(failure,success)*/
+};
 static void checkAlarms(longinRecord *prec, epicsTimeStamp *timeLast);
 static void monitor(longinRecord *prec);
 static long readValue(longinRecord *prec);
@@ -92,7 +100,7 @@ static long readValue(longinRecord *prec);
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct longinRecord *prec = (struct longinRecord *)pcommon;
-    longindset *pdset = (longindset *) prec->dset;
+    struct longindset *pdset = (struct longindset *) prec->dset;
 
     if (pass == 0) return 0;
 
@@ -105,13 +113,13 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     /* must have read_longin function defined */
-    if ((pdset->common.number < 5) || (pdset->read_longin == NULL)) {
+    if ((pdset->number < 5) || (pdset->read_longin == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "longin: init_record");
         return S_dev_missingSup;
     }
 
-    if (pdset->common.init_record) {
-        long status = pdset->common.init_record(pcommon);
+    if (pdset->init_record) {
+        long status = pdset->init_record(prec);
 
         if (status)
             return status;
@@ -126,36 +134,36 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct longinRecord *prec = (struct longinRecord *)pcommon;
-    longindset  *pdset = (longindset *)(prec->dset);
-    long                status;
-    unsigned char       pact=prec->pact;
-    epicsTimeStamp      timeLast;
+    struct longindset  *pdset = (struct longindset *)(prec->dset);
+	long		 status;
+	unsigned char    pact=prec->pact;
+	epicsTimeStamp   timeLast;
 
-    if( (pdset==NULL) || (pdset->read_longin==NULL) ) {
-        prec->pact=TRUE;
-        recGblRecordError(S_dev_missingSup,(void *)prec,"read_longin");
-        return(S_dev_missingSup);
-    }
-    timeLast = prec->time;
+	if( (pdset==NULL) || (pdset->read_longin==NULL) ) {
+		prec->pact=TRUE;
+		recGblRecordError(S_dev_missingSup,(void *)prec,"read_longin");
+		return(S_dev_missingSup);
+	}
+	timeLast = prec->time;
 
-    status=readValue(prec); /* read the new value */
-    /* check if device support set pact */
-    if ( !pact && prec->pact ) return(0);
-    prec->pact = TRUE;
+	status=readValue(prec); /* read the new value */
+	/* check if device support set pact */
+	if ( !pact && prec->pact ) return(0);
+	prec->pact = TRUE;
 
     recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
     if (status==0) prec->udf = FALSE;
 
-    /* check for alarms */
-    checkAlarms(prec, &timeLast);
-    /* check event list */
-    monitor(prec);
-    /* process the forward scan link record */
-    recGblFwdLink(prec);
+	/* check for alarms */
+	checkAlarms(prec, &timeLast);
+	/* check event list */
+	monitor(prec);
+	/* process the forward scan link record */
+	recGblFwdLink(prec);
 
-    prec->pact=FALSE;
-    return(status);
+	prec->pact=FALSE;
+	return(status);
 }
 
 static long special(DBADDR *paddr, int after)
@@ -237,7 +245,7 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
     return(0);
 }
 
-static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
+static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble	*pad)
 {
     longinRecord *prec=(longinRecord *)paddr->precord;
 
@@ -254,7 +262,7 @@ static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 
 static void checkAlarms(longinRecord *prec, epicsTimeStamp *timeLast)
 {
-    enum {
+	enum {
         range_Lolo = 1,
         range_Low,
         range_Normal,
@@ -265,7 +273,7 @@ static void checkAlarms(longinRecord *prec, epicsTimeStamp *timeLast)
         SOFT_ALARM, LOLO_ALARM, LOW_ALARM,
         NO_ALARM, HIGH_ALARM, HIHI_ALARM
     };
-
+    
     double aftc, afvl;
     epicsInt32 val, hyst, lalm;
     epicsInt32 alev;
@@ -397,7 +405,7 @@ static void monitor(longinRecord *prec)
 
 static long readValue(longinRecord *prec)
 {
-    longindset *pdset = (longindset *) prec->dset;
+    struct longindset *pdset = (struct longindset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

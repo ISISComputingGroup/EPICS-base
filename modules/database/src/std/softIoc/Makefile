@@ -28,5 +28,7 @@ softIoc_LIBS = $(EPICS_BASE_IOC_LIBS)
 
 DB += softIocExit.db
 
+FINAL_LOCATION ?= $(shell $(PERL) $(TOOLS)/fullPathName.pl $(INSTALL_LOCATION))
+
 CLEANS += epicsInstallDir.h
 

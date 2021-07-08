@@ -5,7 +5,6 @@
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2013 Helmholtz-Zentrum Berlin
 *     für Materialien und Energie GmbH.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -71,7 +70,9 @@
 #include "registryJLinks.h"
 #include "registryRecordType.h"
 
-static enum iocStateEnum iocState = iocVoid;
+static enum {
+    iocVirgin, iocBuilding, iocBuilt, iocRunning, iocPaused, iocStopped
+} iocState = iocVirgin;
 static enum {
     buildServers, buildIsolated
 } iocBuildMode;
@@ -98,11 +99,6 @@ static void iterateRecords(recIterFunc func, void *user);
 int dbThreadRealtimeLock = 1;
 epicsExportAddress(int, dbThreadRealtimeLock);
 
-enum iocStateEnum getIocState(void)
-{
-    return iocState;
-}
-
 /*
  *  Initialize EPICS on the IOC.
  */
@@ -113,7 +109,7 @@ int iocInit(void)
 
 static int iocBuild_1(void)
 {
-    if (iocState != iocVoid) {
+    if (iocState != iocVirgin && iocState != iocStopped) {
         errlogPrintf("iocBuild: IOC can only be initialized from uninitialized or stopped state\n");
         return -1;
     }
@@ -437,7 +433,7 @@ static void initDevSup(void)
         for (pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
              pdevSup;
              pdevSup = (devSup *)ellNext(&pdevSup->node)) {
-            dset *pdset = registryDeviceSupportFind(pdevSup->name);
+            struct dset *pdset = registryDeviceSupportFind(pdevSup->name);
 
             if (!pdset) {
                 errlogPrintf("device support %s not found\n",pdevSup->name);
@@ -460,7 +456,7 @@ static void finishDevSup(void)
         for (pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
              pdevSup;
              pdevSup = (devSup *)ellNext(&pdevSup->node)) {
-            dset *pdset = pdevSup->pdset;
+            struct dset *pdset = pdevSup->pdset;
 
             if (pdset && pdset->init)
                 pdset->init(1);
@@ -509,7 +505,7 @@ static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
 
     /* Initial UDF severity */
     if (precord->udf && precord->stat == UDF_ALARM)
-        precord->sevr = precord->udfs;
+    	precord->sevr = precord->udfs;
 
     /* Init DSET NOTE that result may be NULL */
     pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);
@@ -709,29 +705,23 @@ static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
 
 int iocShutdown(void)
 {
-    if (iocState == iocVoid) return 0;
-
-    initHookAnnounce(initHookAtShutdown);
+    if (iocState == iocVirgin || iocState == iocStopped)
+        return 0;
 
     iterateRecords(doCloseLinks, NULL);
-    initHookAnnounce(initHookAfterCloseLinks);
 
     if (iocBuildMode == buildIsolated) {
         /* stop and "join" threads */
         scanStop();
-        initHookAnnounce(initHookAfterStopScan);
         callbackStop();
-        initHookAnnounce(initHookAfterStopCallback);
-    } else {
-        dbStopServers();
     }
+    else
+        dbStopServers();
 
     dbCaShutdown(); /* must be before dbFreeRecord and dbChannelExit */
-    initHookAnnounce(initHookAfterStopLinks);
 
     if (iocBuildMode == buildIsolated) {
         /* free resources */
-        initHookAnnounce(initHookBeforeFree);
         scanCleanup();
         callbackCleanup();
 
@@ -744,10 +734,8 @@ int iocShutdown(void)
         iocshFree();
     }
 
-    iocState = iocVoid;
+    iocState = iocStopped;
     iocBuildMode = buildServers;
-
-    initHookAnnounce(initHookAfterShutdown);
     return 0;
 }
 

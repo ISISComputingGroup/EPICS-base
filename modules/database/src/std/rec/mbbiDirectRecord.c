@@ -5,7 +5,6 @@
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2002 Southeastern Universities Research Association, as
 *     Operator of Thomas Jefferson National Accelerator Facility.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -82,6 +81,15 @@ rset mbbiDirectRSET={
 };
 epicsExportAddress(rset,mbbiDirectRSET);
 
+struct mbbidset { /* multi bit binary input dset */
+    long number;
+    DEVSUPFUN dev_report;
+    DEVSUPFUN init;
+    DEVSUPFUN init_record;  /*returns: (-1,0)=>(failure, success)*/
+    DEVSUPFUN get_ioint_info;
+    DEVSUPFUN read_mbbi;    /*returns: (0,2)=>(success, success no convert)*/
+};
+
 static void monitor(mbbiDirectRecord *);
 static long readValue(mbbiDirectRecord *);
 
@@ -90,7 +98,7 @@ static long readValue(mbbiDirectRecord *);
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct mbbiDirectRecord *prec = (struct mbbiDirectRecord *)pcommon;
-    mbbidirectdset *pdset = (mbbidirectdset *) prec->dset;
+    struct mbbidset *pdset = (struct mbbidset *) prec->dset;
     long status = 0;
 
     if (pass == 0) return  0;
@@ -100,7 +108,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return S_dev_noDSET;
     }
 
-    if ((pdset->common.number < 5) || (pdset->read_mbbi == NULL)) {
+    if ((pdset->number < 5) || (pdset->read_mbbi == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "mbbiDirect: init_record");
         return S_dev_missingSup;
     }
@@ -112,8 +120,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
     if (prec->mask == 0 && prec->nobt <= 32)
         prec->mask = ((epicsUInt64) 1u << prec->nobt) - 1;
 
-    if (pdset->common.init_record) {
-        status = pdset->common.init_record(pcommon);
+    if (pdset->init_record) {
+        status = pdset->init_record(prec);
         if (status == 0) {
             epicsUInt32 val = prec->val;
             epicsUInt8 *pBn = &prec->b0;
@@ -133,7 +141,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct mbbiDirectRecord *prec = (struct mbbiDirectRecord *)pcommon;
-    mbbidirectdset *pdset = (mbbidirectdset *) prec->dset;
+    struct mbbidset *pdset = (struct mbbidset *) prec->dset;
     long status;
     int pact = prec->pact;
 
@@ -198,7 +206,7 @@ static long special(DBADDR *paddr, int after)
 
 static long get_precision(const DBADDR *paddr,long *precision)
 {
-    mbbiDirectRecord    *prec=(mbbiDirectRecord *)paddr->precord;
+    mbbiDirectRecord	*prec=(mbbiDirectRecord *)paddr->precord;
     if(dbGetFieldIndex(paddr)==mbbiDirectRecordVAL)
         *precision = prec->nobt;
     else
@@ -240,7 +248,7 @@ static void monitor(mbbiDirectRecord *prec)
 
 static long readValue(mbbiDirectRecord *prec)
 {
-    mbbidirectdset *pdset = (mbbidirectdset *) prec->dset;
+    struct mbbidset *pdset = (struct mbbidset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

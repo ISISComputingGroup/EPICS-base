@@ -1,7 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2016 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -11,7 +10,7 @@
 #define INC_dbJLink_H
 
 #include <stdlib.h>
-#include <dbCoreAPI.h>
+#include <shareLib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +21,7 @@ typedef enum {
     jlif_continue = 1
 } jlif_result;
 
-DBCORE_API extern const char *jlif_result_name[2];
+epicsShareExtern const char *jlif_result_name[2];
 
 typedef enum {
     jlif_key_stop = jlif_stop,
@@ -30,7 +29,7 @@ typedef enum {
     jlif_key_child_inlink, jlif_key_child_outlink, jlif_key_child_fwdlink
 } jlif_key_result;
 
-DBCORE_API extern const char *jlif_key_result_name[5];
+epicsShareExtern const char *jlif_key_result_name[5];
 
 struct link;
 struct lset;
@@ -125,18 +124,18 @@ typedef struct jlif {
      */
 } jlif;
 
-DBCORE_API long dbJLinkParse(const char *json, size_t len, short dbfType,
+epicsShareFunc long dbJLinkParse(const char *json, size_t len, short dbfType,
     jlink **ppjlink);
-DBCORE_API long dbJLinkInit(struct link *plink);
+epicsShareFunc long dbJLinkInit(struct link *plink);
 
-DBCORE_API void dbJLinkFree(jlink *);
-DBCORE_API void dbJLinkReport(jlink *, int level, int indent);
+epicsShareFunc void dbJLinkFree(jlink *);
+epicsShareFunc void dbJLinkReport(jlink *, int level, int indent);
 
-DBCORE_API long dbJLinkMapChildren(struct link *,
+epicsShareFunc long dbJLinkMapChildren(struct link *,
     jlink_map_fn rtn, void *ctx);
 
-DBCORE_API long dbjlr(const char *recname, int level);
-DBCORE_API long dbJLinkMapAll(char *recname, jlink_map_fn rtn, void *ctx);
+epicsShareFunc long dbjlr(const char *recname, int level);
+epicsShareFunc long dbJLinkMapAll(char *recname, jlink_map_fn rtn, void *ctx);
 
 #ifdef __cplusplus
 }

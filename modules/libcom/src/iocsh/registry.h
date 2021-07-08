@@ -3,30 +3,30 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 #ifndef INCregistryh
 #define INCregistryh
 
-#include "libComAPI.h"
+#include "shareLib.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define DEFAULT_TABLE_SIZE 1024
 
-LIBCOM_API int epicsStdCall registryAdd(
+epicsShareFunc int epicsShareAPI registryAdd(
     void *registryID,const char *name,void *data);
-LIBCOM_API void *epicsStdCall registryFind(
+epicsShareFunc void *epicsShareAPI registryFind(
     void *registryID,const char *name);
-LIBCOM_API int epicsStdCall registryChange(
+epicsShareFunc int epicsShareAPI registryChange(
     void *registryID,const char *name,void *data);
 
-LIBCOM_API int epicsStdCall registrySetTableSize(int size);
-LIBCOM_API void epicsStdCall registryFree(void);
-LIBCOM_API int epicsStdCall registryDump(void);
+epicsShareFunc int epicsShareAPI registrySetTableSize(int size);
+epicsShareFunc void epicsShareAPI registryFree(void);
+epicsShareFunc int epicsShareAPI registryDump(void);
 
 #ifdef __cplusplus
 }

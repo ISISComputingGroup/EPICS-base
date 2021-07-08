@@ -3,9 +3,9 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* devAoSoftCallbackCallback.c */
 /*
@@ -31,12 +31,23 @@
 
 /* Create the dset for devAoSoftCallback */
 static long write_ao(aoRecord *prec);
-
-aodset devAoSoftCallback = {
-    {6, NULL, NULL, NULL, NULL},
-    write_ao, NULL
-};
-epicsExportAddress(dset, devAoSoftCallback);
+struct {
+	long		number;
+	DEVSUPFUN	report;
+	DEVSUPFUN	init;
+	DEVSUPFUN	init_record;
+	DEVSUPFUN	get_ioint_info;
+	DEVSUPFUN	write_ao;
+	DEVSUPFUN	special_linconv;
+}devAoSoftCallback={
+	6,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	write_ao,
+	NULL};
+epicsExportAddress(dset,devAoSoftCallback);
 
 static long write_ao(aoRecord *prec)
 {

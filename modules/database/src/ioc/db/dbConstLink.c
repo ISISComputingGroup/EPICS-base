@@ -3,7 +3,6 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -19,6 +18,7 @@
 #include "dbDefs.h"
 #include "epicsStdlib.h"
 
+#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbCommon.h"
@@ -167,9 +167,6 @@ static long dbConstLoadScalar(struct link *plink, short dbrType, void *pbuffer)
 
         return dbPutConvertJSON(pstr, dbrType, pbuffer, &nReq);
     }
-
-    if(dbrType>=NELEMENTS(convert))
-        return S_db_badDbrtype;
 
     return convert[dbrType](pstr, pbuffer, NULL);
 }

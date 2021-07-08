@@ -1,7 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in the file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -9,7 +8,7 @@
 /*
  * Device support for EPICS time stamps
  *
- *   Original Author:   Eric Norum
+ *   Original Author:	Eric Norum
  */
 
 #include "dbDefs.h"
@@ -41,9 +40,12 @@ static long read_ai(aiRecord *prec)
     return 2;
 }
 
-aidset devTimestampAI = {
-    {6, NULL, initAllow, NULL, NULL},
-    read_ai,  NULL
+struct {
+    dset common;
+    DEVSUPFUN read_write;
+    DEVSUPFUN special_linconv;
+} devTimestampAI = {
+    {6, NULL, initAllow, NULL, NULL}, read_ai,  NULL
 };
 epicsExportAddress(dset, devTimestampAI);
 
@@ -66,8 +68,10 @@ static long read_stringin (stringinRecord *prec)
     return 0;
 }
 
-stringindset devTimestampSI = {
-    {5, NULL, initAllow, NULL, NULL},
-    read_stringin
+struct {
+    dset common;
+    DEVSUPFUN read_stringin;
+} devTimestampSI = {
+    {5, NULL, initAllow, NULL, NULL}, read_stringin
 };
 epicsExportAddress(dset, devTimestampSI);

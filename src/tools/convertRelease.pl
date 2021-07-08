@@ -4,7 +4,6 @@
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# SPDX-License-Identifier: EPICS
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
@@ -20,7 +19,7 @@ use Getopt::Std;
 $Getopt::Std::STANDARD_HELP_VERSION = 1;
 
 use FindBin qw($Bin);
-use lib ("$Bin/../../lib/perl", $Bin);
+use lib ("$Bin/../../lib/perl");
 
 use EPICS::Path;
 use EPICS::Release;
@@ -250,12 +249,6 @@ sub envPaths {
 # Check RELEASE file consistency with support modules
 #
 sub checkRelease {
-    die "\nEPICS_BASE must be set in a configure/RELEASE file.\n\n"
-        unless grep(m/^(EPICS_BASE)$/, @apps) &&
-            exists $macros{EPICS_BASE} &&
-            $macros{EPICS_BASE} ne '' &&
-            -f "$macros{EPICS_BASE}/configure/CONFIG_BASE";
-
     my $status = 0;
     delete $macros{RULES};
     delete $macros{TOP};
@@ -289,26 +282,24 @@ sub checkRelease {
     my $latest = AbsPath($macros{$app});
     my %paths = ($latest => $app);
     foreach $app (@modules) {
-        my $val = $macros{$app};
-        next if $val eq '';
-        my $path = AbsPath($val);
+        my $path = AbsPath($macros{$app});
         if ($path ne $latest && exists $paths{$path}) {
             my $prev = $paths{$path};
             print "\n" unless ($status);
             print "This application's RELEASE file(s) define\n";
-            print "\t$app = $val\n";
-            print "and\n\t$prev = $macros{$prev}\n";
+            print "\t$app = $macros{$app}\n";
+            print "after but not adjacent to\n\t$prev = $macros{$prev}\n";
             print "both of which resolve to $path\n"
-                if $path ne $val || $path ne $macros{$prev};
+                if $path ne $macros{$app} || $path ne $macros{$prev};
             $status = 2;
         }
         $paths{$path} = $app;
         $latest = $path;
     }
     if ($status == 2) {
-        print "Module definitions that share the same path must have their\n";
-        print "first definitions grouped together. Either remove a module,\n";
-        print "or arrange them so all those with that path are adjacent.\n";
+        print "Module definitions that share paths must be grouped together.\n";
+        print "Either remove a definition, or move it to a line immediately\n";
+        print "above or below the other(s).\n";
         print "Any non-module definitions belong in configure/CONFIG_SITE.\n";
         $status = 1;
     }

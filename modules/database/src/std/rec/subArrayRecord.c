@@ -1,7 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2002 Lawrence Berkeley Laboratory,The Control Systems
 *     Group, Systems Engineering Department
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -83,6 +82,15 @@ rset subArrayRSET={
 };
 epicsExportAddress(rset,subArrayRSET);
 
+struct sadset { /* subArray dset */
+        long            number;
+        DEVSUPFUN       dev_report;
+        DEVSUPFUN       init;
+        DEVSUPFUN       init_record; /*returns: (-1,0)=>(failure,success)*/
+        DEVSUPFUN       get_ioint_info;
+        DEVSUPFUN       read_sa; /*returns: (-1,0)=>(failure,success)*/
+};
+
 static void monitor(subArrayRecord *prec);
 static long readValue(subArrayRecord *prec);
 
@@ -90,7 +98,7 @@ static long readValue(subArrayRecord *prec);
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct subArrayRecord *prec = (struct subArrayRecord *)pcommon;
-    sadset *pdset;
+    struct sadset *pdset;
 
     if (pass==0){
         if (prec->malm <= 0)
@@ -106,19 +114,19 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     /* must have dset defined */
-    if (!(pdset = (sadset *)(prec->dset))) {
+    if (!(pdset = (struct sadset *)(prec->dset))) {
         recGblRecordError(S_dev_noDSET,(void *)prec,"sa: init_record");
         return S_dev_noDSET;
     }
 
     /* must have read_sa function defined */
-    if ( (pdset->common.number < 5) || (pdset->read_sa == NULL) ) {
+    if ( (pdset->number < 5) || (pdset->read_sa == NULL) ) {
         recGblRecordError(S_dev_missingSup,(void *)prec,"sa: init_record");
         return S_dev_missingSup;
     }
 
-    if (pdset->common.init_record)
-        return pdset->common.init_record(pcommon);
+    if (pdset->init_record)
+        return pdset->init_record(prec);
 
     return 0;
 }
@@ -126,7 +134,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct subArrayRecord *prec = (struct subArrayRecord *)pcommon;
-    sadset *pdset = (sadset *)(prec->dset);
+    struct sadset *pdset = (struct sadset *)(prec->dset);
     long           status;
     unsigned char  pact=prec->pact;
 
@@ -161,6 +169,7 @@ static long cvt_dbaddr(DBADDR *paddr)
 {
     subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 
+    paddr->pfield = prec->bptr;
     paddr->no_elements = prec->malm;
     paddr->field_type = prec->ftvl;
     paddr->field_size = dbValueSize(prec->ftvl);
@@ -173,7 +182,6 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
     subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 
-    paddr->pfield = prec->bptr;
     if (prec->udf)
        *no_elements = 0;
     else
@@ -293,7 +301,7 @@ static void monitor(subArrayRecord *prec)
     monitor_mask = recGblResetAlarms(prec);
     monitor_mask |= (DBE_LOG|DBE_VALUE);
 
-    db_post_events(prec, (void*)&prec->val, monitor_mask);
+    db_post_events(prec, prec->bptr, monitor_mask);
 
     return;
 }
@@ -301,7 +309,7 @@ static void monitor(subArrayRecord *prec)
 static long readValue(subArrayRecord *prec)
 {
     long            status;
-    sadset   *pdset = (sadset *) (prec->dset);
+    struct sadset   *pdset = (struct sadset *) (prec->dset);
 
     if (prec->nelm > prec->malm)
         prec->nelm = prec->malm;

@@ -4,7 +4,6 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2012 ITER Organization.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -21,6 +20,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#define epicsExportSharedSymbols
 #include "epicsSpin.h"
 #include "dbDefs.h"
 #include "epicsRingBytes.h"
@@ -42,7 +42,7 @@ typedef struct ringPvt {
     volatile char buffer[1]; /* actually larger */
 }ringPvt;
 
-LIBCOM_API epicsRingBytesId  epicsStdCall epicsRingBytesCreate(int size)
+epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesCreate(int size)
 {
     ringPvt *pring = malloc(sizeof(ringPvt) + size + SLOP);
     if(!pring)
@@ -55,7 +55,7 @@ LIBCOM_API epicsRingBytesId  epicsStdCall epicsRingBytesCreate(int size)
     return((void *)pring);
 }
 
-LIBCOM_API epicsRingBytesId  epicsStdCall epicsRingBytesLockedCreate(int size)
+epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesLockedCreate(int size)
 {
     ringPvt *pring = (ringPvt *)epicsRingBytesCreate(size);
     if(!pring)
@@ -64,14 +64,14 @@ LIBCOM_API epicsRingBytesId  epicsStdCall epicsRingBytesLockedCreate(int size)
     return((void *)pring);
 }
 
-LIBCOM_API void epicsStdCall epicsRingBytesDelete(epicsRingBytesId id)
+epicsShareFunc void epicsShareAPI epicsRingBytesDelete(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
     if (pring->lock) epicsSpinDestroy(pring->lock);
     free((void *)pring);
 }
 
-LIBCOM_API int epicsStdCall epicsRingBytesGet(
+epicsShareFunc int epicsShareAPI epicsRingBytesGet(
     epicsRingBytesId id, char *value,int nbytes)
 {
     ringPvt *pring = (ringPvt *)id;
@@ -115,7 +115,7 @@ LIBCOM_API int epicsStdCall epicsRingBytesGet(
     return nbytes;
 }
 
-LIBCOM_API int epicsStdCall epicsRingBytesPut(
+epicsShareFunc int epicsShareAPI epicsRingBytesPut(
     epicsRingBytesId id, char *value,int nbytes)
 {
     ringPvt *pring = (ringPvt *)id;
@@ -167,7 +167,7 @@ LIBCOM_API int epicsStdCall epicsRingBytesPut(
     return nbytes;
 }
 
-LIBCOM_API void epicsStdCall epicsRingBytesFlush(epicsRingBytesId id)
+epicsShareFunc void epicsShareAPI epicsRingBytesFlush(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
 
@@ -176,7 +176,7 @@ LIBCOM_API void epicsStdCall epicsRingBytesFlush(epicsRingBytesId id)
     if (pring->lock) epicsSpinUnlock(pring->lock);
 }
 
-LIBCOM_API int epicsStdCall epicsRingBytesFreeBytes(epicsRingBytesId id)
+epicsShareFunc int epicsShareAPI epicsRingBytesFreeBytes(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
     int nextGet, nextPut;
@@ -192,7 +192,7 @@ LIBCOM_API int epicsStdCall epicsRingBytesFreeBytes(epicsRingBytesId id)
         return pring->size - nextPut + nextGet - SLOP;
 }
 
-LIBCOM_API int epicsStdCall epicsRingBytesUsedBytes(epicsRingBytesId id)
+epicsShareFunc int epicsShareAPI epicsRingBytesUsedBytes(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
     int nextGet, nextPut;
@@ -209,14 +209,14 @@ LIBCOM_API int epicsStdCall epicsRingBytesUsedBytes(epicsRingBytesId id)
     return used;
 }
 
-LIBCOM_API int epicsStdCall epicsRingBytesSize(epicsRingBytesId id)
+epicsShareFunc int epicsShareAPI epicsRingBytesSize(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
 
     return pring->size - SLOP;
 }
 
-LIBCOM_API int epicsStdCall epicsRingBytesIsEmpty(epicsRingBytesId id)
+epicsShareFunc int epicsShareAPI epicsRingBytesIsEmpty(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
     int isEmpty;
@@ -228,18 +228,18 @@ LIBCOM_API int epicsStdCall epicsRingBytesIsEmpty(epicsRingBytesId id)
     return isEmpty;
 }
 
-LIBCOM_API int epicsStdCall epicsRingBytesIsFull(epicsRingBytesId id)
+epicsShareFunc int epicsShareAPI epicsRingBytesIsFull(epicsRingBytesId id)
 {
     return (epicsRingBytesFreeBytes(id) <= 0);
 }
 
-LIBCOM_API int epicsStdCall epicsRingBytesHighWaterMark(epicsRingBytesIdConst id)
+epicsShareFunc int epicsShareAPI epicsRingBytesHighWaterMark(epicsRingBytesIdConst id)
 {
     ringPvt *pring = (ringPvt *)id;
     return pring->highWaterMark;
 }
 
-LIBCOM_API void epicsStdCall epicsRingBytesResetHighWaterMark(epicsRingBytesId id)
+epicsShareFunc void epicsShareAPI epicsRingBytesResetHighWaterMark(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
     int used;

@@ -1,6 +1,5 @@
 /*************************************************************************\
 * Copyright (c) 2017 ITER Organization
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -12,11 +11,9 @@
 #include <testMain.h>
 #include <dbAccess.h>
 #include <epicsTime.h>
-#include <epicsEvent.h>
 #include <epicsThread.h>
 #include <errlog.h>
 #include <alarm.h>
-#include <callback.h>
 
 #include "recSup.h"
 #include "aiRecord.h"
@@ -267,7 +264,6 @@ void testSvalRead(const char *name,
                   const epicsTimeStamp *svtime)
 {
     epicsTimeStamp last;
-    double diff;
 
     if (strcmp(name, "histogram") == 0)
         strcpy(nameVAL, nameSGNL);
@@ -339,8 +335,7 @@ void testSvalRead(const char *name,
     }
 
     /* My timestamp must be later than simval's */
-    diff = epicsTimeDiffInSeconds(mytime, svtime);
-    testOk(diff >= 0.0, "simval time <= my time [TSE = 0] (%.9f sec)", diff);
+    testOk(epicsTimeLessThan(svtime, mytime), "simval time < my time [TSE = 0]");
 
     testDiag("for TSE=-2 (from device) and simmYES, take time stamp from IOC or input link");
 
@@ -356,8 +351,7 @@ void testSvalRead(const char *name,
     /* With TSE=-2 and no SIOL, timestamp is taken from IOC */
     testdbPutFieldOk(nameSIOL, DBR_STRING, "");
     testdbPutFieldOk(namePROC, DBR_LONG, 0);
-    diff = epicsTimeDiffInSeconds(mytime, &last);
-    testOk(diff >= 0.0, "new time stamp from IOC [TSE = -2, no SIOL] (%.9f sec)", diff);
+    testOk(epicsTimeLessThan(&last, mytime), "new time stamp from IOC [TSE = -2, no SIOL]");
 
     /* Reset TSE */
     testdbPutFieldOk(nameTSE, DBR_SHORT, 0);
@@ -372,7 +366,6 @@ void testSiolWrite(const char *name,
                    const epicsTimeStamp *mytime)
 {
     epicsTimeStamp now;
-    double diff;
 
     testDiag("## Writing through SIOL ##");
 
@@ -405,8 +398,7 @@ void testSiolWrite(const char *name,
     epicsTimeGetCurrent(&now);
     testdbPutFieldOk(nameTSE, DBR_SHORT, -2);
     testdbPutFieldOk(namePROC, DBR_LONG, 0);
-    diff = epicsTimeDiffInSeconds(mytime, &now);
-    testOk(diff >= 0.0, "new time stamp from IOC [TSE = -2] (%.9f sec)", diff);
+    testOk(epicsTimeLessThan(&now, mytime), "new time stamp from IOC [TSE = -2]");
 
     /* Reset TSE */
     testdbPutFieldOk(nameTSE, DBR_SHORT, 0);
@@ -416,15 +408,6 @@ void testSiolWrite(const char *name,
  * Asynchronous processing using simm:DELAY
  */
 
-static void
-ping(CALLBACK *pcb)
-{
-    epicsEventId ev;
-    callbackGetUser(ev, pcb);
-
-    epicsEventMustTrigger(ev);
-}
-
 static
 void testSimmDelay(const char *name,
                    epicsFloat64 *psdly,
@@ -432,15 +415,6 @@ void testSimmDelay(const char *name,
 {
     epicsTimeStamp now;
     const double delay = 0.01;  /* 10 ms */
-    double diff;
-    epicsEventId poked;
-    CALLBACK cb;
-
-    memset(&cb, 0, sizeof(CALLBACK));
-    poked = epicsEventMustCreate(epicsEventEmpty);
-    callbackSetCallback(ping, &cb);
-    callbackSetPriority(priorityLow, &cb);
-    callbackSetUser(poked, &cb);
 
     testDiag("## Asynchronous processing with simm:DELAY ##");
 
@@ -453,8 +427,7 @@ void testSimmDelay(const char *name,
     epicsTimeGetCurrent(&now);
     testdbPutFieldOk(namePROC, DBR_LONG, 0);
     testdbGetFieldEqual(namePACT, DBR_USHORT, 0);
-    diff = epicsTimeDiffInSeconds(mytime, &now);
-    testOk(diff >= 0.0, "time stamp is recent (%.9f sec)", diff);
+    testOk(epicsTimeLessThan(&now, mytime), "time stamp is recent");
 
     /* Process in simmYES: asynchronous */
     testDiag("simm:DELAY and simmYES processes asynchronously");
@@ -462,11 +435,9 @@ void testSimmDelay(const char *name,
     testdbPutFieldOk(namePROC, DBR_LONG, 0);
     testdbGetFieldEqual(namePACT, DBR_USHORT, 1);
     epicsTimeGetCurrent(&now);
-    callbackRequestDelayed(&cb, 1.5 * delay);
-    epicsEventWait(poked);
+    epicsThreadSleep(1.75*delay);
     testdbGetFieldEqual(namePACT, DBR_USHORT, 0);
-    diff = epicsTimeDiffInSeconds(mytime, &now);
-    testOk(diff >= 0.0, "time stamp is recent (%.9f sec)", diff);
+    testOk(epicsTimeLessThan(&now, mytime), "time stamp taken from second pass processing");
 
     /* Reset delay */
     *psdly = -1.;

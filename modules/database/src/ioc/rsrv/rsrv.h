@@ -3,7 +3,6 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -19,7 +18,7 @@
 #define rsrvh
 
 #include <stddef.h>
-#include "dbCoreAPI.h"
+#include "shareLib.h"
 
 #define RSRV_OK 0
 #define RSRV_ERROR (-1)
@@ -28,12 +27,12 @@
 extern "C" {
 #endif
 
-DBCORE_API void rsrv_register_server(void);
+epicsShareFunc void rsrv_register_server(void);
 
-DBCORE_API void casr (unsigned level);
-DBCORE_API int casClientInitiatingCurrentThread (
+epicsShareFunc void casr (unsigned level);
+epicsShareFunc int casClientInitiatingCurrentThread (
                         char * pBuf, size_t bufSize );
-DBCORE_API void casStatsFetch (
+epicsShareFunc void casStatsFetch (
                         unsigned *pChanCount, unsigned *pConnCount );
 
 #ifdef __cplusplus

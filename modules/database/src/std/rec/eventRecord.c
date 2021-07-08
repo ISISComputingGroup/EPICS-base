@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 /* recEvent.c - Record Support Routines for Event records */
@@ -60,27 +59,35 @@ static long special(DBADDR *, int);
 #define get_alarm_double NULL
 
 rset eventRSET={
-    RSETNUMBER,
-    report,
-    initialize,
-    init_record,
-    process,
-    special,
-    get_value,
-    cvt_dbaddr,
-    get_array_info,
-    put_array_info,
-    get_units,
-    get_precision,
-    get_enum_str,
-    get_enum_strs,
-    put_enum_str,
-    get_graphic_double,
-    get_control_double,
-    get_alarm_double
+	RSETNUMBER,
+	report,
+	initialize,
+	init_record,
+	process,
+	special,
+	get_value,
+	cvt_dbaddr,
+	get_array_info,
+	put_array_info,
+	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
+	put_enum_str,
+	get_graphic_double,
+	get_control_double,
+	get_alarm_double
 };
 epicsExportAddress(rset,eventRSET);
 
+struct eventdset { /* event input dset */
+	long		number;
+	DEVSUPFUN	dev_report;
+	DEVSUPFUN	init;
+	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
+	DEVSUPFUN	get_ioint_info;
+	DEVSUPFUN	read_event;/*(0)=> success */
+};
 static void monitor(eventRecord *);
 static long readValue(eventRecord *);
 
@@ -88,7 +95,7 @@ static long readValue(eventRecord *);
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct eventRecord *prec = (struct eventRecord *)pcommon;
-    eventdset *pdset;
+    struct eventdset *pdset;
     long status=0;
 
     if (pass == 0) return 0;
@@ -96,8 +103,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
     recGblInitConstantLink(&prec->siol, DBF_STRING, &prec->sval);
 
-    if( (pdset=(eventdset *)(prec->dset)) && (pdset->common.init_record) ) 
-        status=(*pdset->common.init_record)(pcommon);
+    if( (pdset=(struct eventdset *)(prec->dset)) && (pdset->init_record) ) 
+		status=(*pdset->init_record)(prec);
 
     prec->epvt = eventNameToHandle(prec->val);
 
@@ -107,28 +114,28 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct eventRecord *prec = (struct eventRecord *)pcommon;
-    eventdset  *pdset = (eventdset *)(prec->dset);
-    long             status=0;
-    unsigned char    pact=prec->pact;
+    struct eventdset  *pdset = (struct eventdset *)(prec->dset);
+	long		 status=0;
+	unsigned char    pact=prec->pact;
 
-    if((pdset!=NULL) && (pdset->common.number >= 5) && pdset->read_event ) 
-        status=readValue(prec); /* read the new value */
-    /* check if device support set pact */
-    if ( !pact && prec->pact ) return(0);
-    prec->pact = TRUE;
-
-    postEvent(prec->epvt);
+	if((pdset!=NULL) && (pdset->number >= 5) && pdset->read_event ) 
+                status=readValue(prec); /* read the new value */
+	/* check if device support set pact */
+	if ( !pact && prec->pact ) return(0);
+	prec->pact = TRUE;
+ 
+	postEvent(prec->epvt);
 
     recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
-    /* check event list */
-    monitor(prec);
+	/* check event list */
+	monitor(prec);
 
-    /* process the forward scan link record */
-    recGblFwdLink(prec);
+	/* process the forward scan link record */
+	recGblFwdLink(prec);
 
-    prec->pact=FALSE;
-    return(status);
+	prec->pact=FALSE;
+	return(status);
 }
 
 
@@ -166,7 +173,7 @@ static void monitor(eventRecord *prec)
 
 static long readValue(eventRecord *prec)
 {
-    eventdset *pdset = (eventdset *) prec->dset;
+    struct eventdset *pdset = (struct eventdset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

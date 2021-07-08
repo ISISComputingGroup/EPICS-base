@@ -3,7 +3,6 @@
 * Copyright (c) 2010 Helmholtz-Zentrum Berlin
 *     für Materialien und Energie GmbH.
 * Copyright (c) 2014 ITER Organization.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -17,7 +16,7 @@
 #ifndef CHFPLUGIN_H
 #define CHFPLUGIN_H
 
-#include <dbCoreAPI.h>
+#include <shareLib.h>
 #include <dbDefs.h>
 #include <epicsTypes.h>
 #include <dbChannel.h>
@@ -302,7 +301,7 @@ typedef struct chfPluginArgDef {
  * @param def String to be returned when 'i' isn't a valid Enum index.
  * @return The string associated with 'i'.
  */
-DBCORE_API const char* chfPluginEnumString(const chfPluginEnumType *Enums, int i, const char* def);
+epicsShareFunc const char* chfPluginEnumString(const chfPluginEnumType *Enums, int i, const char* def);
 
 /** @brief Register a plugin.
  *
@@ -310,7 +309,7 @@ DBCORE_API const char* chfPluginEnumString(const chfPluginEnumType *Enums, int i
  * @param pif Pointer to the plugin's interface.
  * @param opts Pointer to the configuration argument description table.
  */
-DBCORE_API int chfPluginRegister(const char* key, const chfPluginIf *pif, const chfPluginArgDef* opts);
+epicsShareFunc int chfPluginRegister(const char* key, const chfPluginIf *pif, const chfPluginArgDef* opts);
 
 #ifdef __cplusplus
 }

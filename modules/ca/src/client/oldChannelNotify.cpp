@@ -3,8 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS BASE is distributed subject to a Software License Agreement found
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
@@ -17,9 +17,9 @@
  *  Copyright, 1986, The Regents of the University of California.
  *
  *
- *  Author Jeffrey O. Hill
- *  johill@lanl.gov
- *  505 665 1831
+ *	Author Jeffrey O. Hill
+ *	johill@lanl.gov
+ *	505 665 1831
  */
 
 #include <string>
@@ -33,6 +33,7 @@
 
 #include "errlog.h"
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "cac.h"
@@ -173,7 +174,7 @@ void oldChannelNotify::operator delete ( void * )
 /*
  * ca_get_host_name ()
  */
-unsigned epicsStdCall ca_get_host_name (
+unsigned epicsShareAPI ca_get_host_name (
     chid pChan, char * pBuf, unsigned bufLength )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef() );
@@ -186,7 +187,7 @@ unsigned epicsStdCall ca_get_host_name (
  * !!!! not thread safe !!!!
  *
  */
-const char * epicsStdCall ca_host_name (
+const char * epicsShareAPI ca_host_name (
     chid pChan )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
@@ -196,7 +197,7 @@ const char * epicsStdCall ca_host_name (
 /*
  * ca_set_puser ()
  */
-void epicsStdCall ca_set_puser (
+void epicsShareAPI ca_set_puser (
     chid pChan, void * puser )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
@@ -206,7 +207,7 @@ void epicsStdCall ca_set_puser (
 /*
  * ca_get_puser ()
  */
-void * epicsStdCall ca_puser (
+void * epicsShareAPI ca_puser (
     chid pChan )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
@@ -216,7 +217,7 @@ void * epicsStdCall ca_puser (
 /*
  *  Specify an event subroutine to be run for connection events
  */
-int epicsStdCall ca_change_connection_event ( chid pChan, caCh * pfunc )
+int epicsShareAPI ca_change_connection_event ( chid pChan, caCh * pfunc )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
     if ( ! pChan->currentlyConnected ) {
@@ -238,7 +239,7 @@ int epicsStdCall ca_change_connection_event ( chid pChan, caCh * pfunc )
 /*
  * ca_replace_access_rights_event
  */
-int epicsStdCall ca_replace_access_rights_event (
+int epicsShareAPI ca_replace_access_rights_event (
     chid pChan, caArh *pfunc )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
@@ -265,7 +266,7 @@ int epicsStdCall ca_replace_access_rights_event (
 /*
  * ca_array_get ()
  */
-int epicsStdCall ca_array_get ( chtype type,
+int epicsShareAPI ca_array_get ( chtype type,
             arrayElementCount count, chid pChan, void *pValue )
 {
     int caStatus;
@@ -333,7 +334,7 @@ int epicsStdCall ca_array_get ( chtype type,
 /*
  * ca_array_get_callback ()
  */
-int epicsStdCall ca_array_get_callback ( chtype type,
+int epicsShareAPI ca_array_get_callback ( chtype type,
             arrayElementCount count, chid pChan,
             caEventCallBackFunc *pfunc, void *arg )
 {
@@ -410,7 +411,7 @@ void oldChannelNotify::read (
 /*
  *  ca_array_put_callback ()
  */
-int epicsStdCall ca_array_put_callback ( chtype type, arrayElementCount count,
+int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCount count,
     chid pChan, const void *pValue, caEventCallBackFunc *pfunc, void *usrarg )
 {
     int caStatus;
@@ -474,7 +475,7 @@ int epicsStdCall ca_array_put_callback ( chtype type, arrayElementCount count,
 /*
  *  ca_array_put ()
  */
-int epicsStdCall ca_array_put ( chtype type, arrayElementCount count,
+int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count,
                                 chid pChan, const void * pValue )
 {
     if ( type < 0 ) {
@@ -528,7 +529,7 @@ int epicsStdCall ca_array_put ( chtype type, arrayElementCount count,
     return caStatus;
 }
 
-int epicsStdCall ca_create_subscription (
+int epicsShareAPI ca_create_subscription (
         chtype type, arrayElementCount count, chid pChan,
         long mask, caEventCallBackFunc * pCallBack, void * pCallBackArg,
         evid * monixptr )
@@ -619,7 +620,7 @@ void oldChannelNotify::write (
 /*
  * ca_field_type()
  */
-short epicsStdCall ca_field_type ( chid pChan )
+short epicsShareAPI ca_field_type ( chid pChan )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
     return pChan->io.nativeType ( guard );
@@ -628,7 +629,7 @@ short epicsStdCall ca_field_type ( chid pChan )
 /*
  * ca_element_count ()
  */
-arrayElementCount epicsStdCall ca_element_count ( chid pChan )
+arrayElementCount epicsShareAPI ca_element_count ( chid pChan )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
     return pChan->io.nativeElementCount ( guard );
@@ -637,7 +638,7 @@ arrayElementCount epicsStdCall ca_element_count ( chid pChan )
 /*
  * ca_state ()
  */
-enum channel_state epicsStdCall ca_state ( chid pChan )
+enum channel_state epicsShareAPI ca_state ( chid pChan )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
     if ( pChan->io.connected ( guard ) ) {
@@ -654,7 +655,7 @@ enum channel_state epicsStdCall ca_state ( chid pChan )
 /*
  * ca_read_access ()
  */
-unsigned epicsStdCall ca_read_access ( chid pChan )
+unsigned epicsShareAPI ca_read_access ( chid pChan )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
     return pChan->io.accessRights(guard).readPermit();
@@ -663,7 +664,7 @@ unsigned epicsStdCall ca_read_access ( chid pChan )
 /*
  * ca_write_access ()
  */
-unsigned epicsStdCall ca_write_access ( chid pChan )
+unsigned epicsShareAPI ca_write_access ( chid pChan )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
     return pChan->io.accessRights(guard).writePermit();
@@ -672,25 +673,25 @@ unsigned epicsStdCall ca_write_access ( chid pChan )
 /*
  * ca_name ()
  */
-const char * epicsStdCall ca_name ( chid pChan )
+const char * epicsShareAPI ca_name ( chid pChan )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
     return pChan->io.pName ( guard );
 }
 
-unsigned epicsStdCall ca_search_attempts ( chid pChan )
+unsigned epicsShareAPI ca_search_attempts ( chid pChan )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
     return pChan->io.searchAttempts ( guard );
 }
 
-double epicsStdCall ca_beacon_period ( chid pChan )
+double epicsShareAPI ca_beacon_period ( chid pChan )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
     return pChan->io.beaconPeriod ( guard );
 }
 
-double epicsStdCall ca_receive_watchdog_delay ( chid pChan )
+double epicsShareAPI ca_receive_watchdog_delay ( chid pChan )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
     return pChan->io.receiveWatchdogDelay ( guard );
@@ -699,7 +700,7 @@ double epicsStdCall ca_receive_watchdog_delay ( chid pChan )
 /*
  * ca_v42_ok(chid chan)
  */
-int epicsStdCall ca_v42_ok ( chid pChan )
+int epicsShareAPI ca_v42_ok ( chid pChan )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
     return pChan->io.ca_v42_ok ( guard );

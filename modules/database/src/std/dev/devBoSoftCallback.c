@@ -3,7 +3,6 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -32,11 +31,22 @@
 /* Create the dset for devBoCallbackSoft */
 static long write_bo(boRecord *prec);
 
-bodset devBoSoftCallback = {
-    {5, NULL, NULL, NULL, NULL},
-    write_bo
+struct {
+	long		number;
+	DEVSUPFUN	report;
+	DEVSUPFUN	init;
+	DEVSUPFUN	init_record;
+	DEVSUPFUN	get_ioint_info;
+	DEVSUPFUN	write_bo;
+}devBoSoftCallback={
+	5,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	write_bo
 };
-epicsExportAddress(dset, devBoSoftCallback);
+epicsExportAddress(dset,devBoSoftCallback);
 
 static long write_bo(boRecord *prec)
 {
@@ -54,3 +64,4 @@ static long write_bo(boRecord *prec)
 
     return status;
 }
+

@@ -3,22 +3,19 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/**
- * \file epicsTypes.h
- * \author: Jeff Hill
- * 
- * \brief The core data types used by epics
+/*
+ *      Author:     Jeff Hill
+ *      Date:           5-95
  */
 
 #ifndef INC_epicsTypes_H
 #define INC_epicsTypes_H
 
-#include "libComAPI.h"
+#include "shareLib.h"
 #include "compilerDependencies.h"
 
 #ifndef stringOf
@@ -34,12 +31,9 @@ typedef enum {
     epicsTrue  = 1
 } epicsBoolean EPICS_DEPRECATED;
 
-/**
- * \name epicsTypes
+/*
  * Architecture Independent Data Types
- * 
  * These are sufficient for all our current archs
- * @{
  */
 typedef char            epicsInt8;
 typedef unsigned char   epicsUInt8;
@@ -54,28 +48,25 @@ typedef epicsUInt16     epicsEnum16;
 typedef float           epicsFloat32;
 typedef double          epicsFloat64;
 typedef epicsInt32      epicsStatus;
- /** @} */
 
-#define MAX_STRING_SIZE 40
 
-/**
- * \brief !! Dont use this - it may vanish in the future !!
- */
 typedef struct {
     unsigned    length;
     char        *pString;
 } epicsString;
 
-/**
- * \brief !! Dont use this - it may vanish in the future !!
+/*
+ * !! Dont use this - it may vanish in the future !!
  *
  * Provided only for backwards compatibility with
  * db_access.h
+ *
  */
+#define MAX_STRING_SIZE 40
 typedef char            epicsOldString[MAX_STRING_SIZE];
 
-/**
- * \brief Union of all types
+/*
+ * union of all types
  *
  * Strings included here as pointers only so that we support
  * large string types.
@@ -98,11 +89,11 @@ typedef union epics_any {
     epicsString     string;
 } epicsAny;
 
-/**
- * \brief Corresponding Type Codes
+/*
+ * Corresponding Type Codes
  * (this enum must start at zero)
  *
- * !! Update \ref epicsTypeToDBR_XXXX[] and \ref DBR_XXXXToEpicsType
+ * !! Update epicsTypeToDBR_XXXX[] and DBR_XXXXToEpicsType
  *  in db_access.h if you edit this enum !!
  */
 typedef enum {
@@ -124,13 +115,12 @@ typedef enum {
 #define invalidEpicsType(x) ((x<firstEpicsType) || (x>lastEpicsType))
 
 
-/**
- * \brief An array providing the names for each type
- * The enumeration \ref epicsType is an index to this array
+/*
+ * The enumeration "epicsType" is an index to this array
  * of type name strings.
  */
 #ifdef epicsTypesGLOBAL
-const char *epicsTypeNames [lastEpicsType+1] = {
+epicsShareDef const char *epicsTypeNames [lastEpicsType+1] = {
     "epicsInt8",
     "epicsUInt8",
     "epicsInt16",
@@ -144,16 +134,15 @@ const char *epicsTypeNames [lastEpicsType+1] = {
     "epicsOldString",
 };
 #else /* epicsTypesGLOBAL */
-LIBCOM_API extern const char *epicsTypeNames [lastEpicsType+1];
+epicsShareExtern const char *epicsTypeNames [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
-/**
- * \brief An array providing the names for each type code
- * The enumeration \ref epicsType is an index to this array
+/*
+ * The enumeration "epicsType" is an index to this array
  * of type code name strings.
  */
 #ifdef epicsTypesGLOBAL
-const char *epicsTypeCodeNames [lastEpicsType+1] = {
+epicsShareDef const char *epicsTypeCodeNames [lastEpicsType+1] = {
     "epicsInt8T",
     "epicsUInt8T",
     "epicsInt16T",
@@ -167,16 +156,11 @@ const char *epicsTypeCodeNames [lastEpicsType+1] = {
     "epicsOldStringT",
 };
 #else /* epicsTypesGLOBAL */
-LIBCOM_API extern const char *epicsTypeCodeNames [lastEpicsType+1];
+epicsShareExtern const char *epicsTypeCodeNames [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
-/**
- * \brief An array providing the sizes for each type
- * The enumeration \ref epicsType is an index to this array
- * of type code name strings.
- */
 #ifdef epicsTypesGLOBAL
-const unsigned epicsTypeSizes [lastEpicsType+1] = {
+epicsShareDef const unsigned epicsTypeSizes [lastEpicsType+1] = {
     sizeof (epicsInt8),
     sizeof (epicsUInt8),
     sizeof (epicsInt16),
@@ -190,9 +174,13 @@ const unsigned epicsTypeSizes [lastEpicsType+1] = {
     sizeof (epicsOldString),
 };
 #else /* epicsTypesGLOBAL */
-LIBCOM_API extern const unsigned epicsTypeSizes [lastEpicsType+1];
+epicsShareExtern const unsigned epicsTypeSizes [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
+/*
+ * The enumeration "epicsType" is an index to this array
+ * of type class identifiers.
+ */
 typedef enum {
     epicsIntC,
     epicsUIntC,
@@ -202,13 +190,8 @@ typedef enum {
     epicsOldStringC
 } epicsTypeClass;
 
-/**
- * \brief An array providing the class of each type
- * The enumeration \ref epicsType is an index to this array
- * of type class identifiers.
- */
 #ifdef epicsTypesGLOBAL
-const epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
+epicsShareDef const epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
     epicsIntC,
     epicsUIntC,
     epicsIntC,
@@ -222,16 +205,12 @@ const epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
     epicsOldStringC
 };
 #else /* epicsTypesGLOBAL */
-LIBCOM_API extern const epicsTypeClass epicsTypeClasses [lastEpicsType+1];
+epicsShareExtern const epicsTypeClass epicsTypeClasses [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
-/**
- * \brief An array providing the field name for each type
- * The enumeration \ref epicsType is an index to this array
- * of type code name strings.
- */
+
 #ifdef epicsTypesGLOBAL
-const char *epicsTypeAnyFieldName [lastEpicsType+1] = {
+epicsShareDef const char *epicsTypeAnyFieldName [lastEpicsType+1] = {
     "int8",
     "uInt8",
     "int16",
@@ -245,7 +224,7 @@ const char *epicsTypeAnyFieldName [lastEpicsType+1] = {
     "", /* Old Style Strings will not be in epicsAny type */
 };
 #else /* epicsTypesGLOBAL */
-LIBCOM_API extern const char *epicsTypeAnyFieldName [lastEpicsType+1];
+epicsShareExtern const char *epicsTypeAnyFieldName [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
 #endif /* INC_epicsTypes_H */

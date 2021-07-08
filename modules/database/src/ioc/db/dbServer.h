@@ -1,7 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2014 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -28,7 +27,7 @@
 #include <stddef.h>
 
 #include "ellLib.h"
-#include "dbCoreAPI.h"
+#include "shareLib.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -118,14 +117,14 @@ typedef struct dbServer {
  * This should only be called once for each server layer.
  * @param psrv Server information structure for the server
  */
-DBCORE_API int dbRegisterServer(dbServer *psrv);
+epicsShareFunc int dbRegisterServer(dbServer *psrv);
 
 /** @brief Unregister a server layer
  *
  * This should only be called when the servers are inactive.
  * @param psrv Server information structure for the server
  */
-DBCORE_API int dbUnregisterServer(dbServer *psrv);
+epicsShareFunc int dbUnregisterServer(dbServer *psrv);
 
 /** @brief Print dbServer Reports.
 *
@@ -133,7 +132,7 @@ DBCORE_API int dbUnregisterServer(dbServer *psrv);
  * This routine is provided as an IOC Shell command.
  * @param level Interest level, specifies how much detail to print.
  */
-DBCORE_API void dbsr(unsigned level);
+epicsShareFunc void dbsr(unsigned level);
 
 /** @brief Query servers for client's identity.
  *
@@ -143,31 +142,31 @@ DBCORE_API void dbsr(unsigned level);
  *  of the calling thread is printed along with the record name whenever
  *  the record is subsequently processed.
  */
-DBCORE_API int dbServerClient(char *pBuf, size_t bufSize);
+epicsShareFunc int dbServerClient(char *pBuf, size_t bufSize);
 
 /** @brief Initialize all registered servers.
  *
  * Calls all dbServer::init() methods.
  */
-DBCORE_API void dbInitServers(void);
+epicsShareFunc void dbInitServers(void);
 
 /** @brief Run all registered servers.
  *
  * Calls all dbServer::run() methods.
  */
-DBCORE_API void dbRunServers(void);
+epicsShareFunc void dbRunServers(void);
 
 /** @brief Pause all registered servers.
  *
  * Calls all dbServer::pause() methods.
  */
-DBCORE_API void dbPauseServers(void);
+epicsShareFunc void dbPauseServers(void);
 
 /** @brief Stop all registered servers.
  *
  * Calls all dbServer::stop() methods.
  */
-DBCORE_API void dbStopServers(void);
+epicsShareFunc void dbStopServers(void);
 
 #ifdef __cplusplus
 }

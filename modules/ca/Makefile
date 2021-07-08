@@ -12,4 +12,4 @@ include $(TOP)/configure/CONFIG
 
 DIRS += src
 
-include $(TOP)/configure/RULES_DIRS
+include $(TOP)/configure/RULES_TOP

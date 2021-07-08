@@ -3,9 +3,9 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* iocsh.h  ioc: call registered function*/
 /* Author:  Marty Kraimer Date: 27APR2000 */
@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 #include "compilerDependencies.h"
-#include "libComAPI.h"
+#include "shareLib.h"
 
 #if defined(vxWorks) || defined(__rtems__)
 #define IOCSH_STATIC_FUNC
@@ -62,9 +62,7 @@ typedef struct iocshFuncDef {
     const char *name;
     int nargs;
     const iocshArg * const *arg;
-    const char* usage;
 }iocshFuncDef;
-#define IOCSHFUNCDEF_HAS_USAGE
 
 typedef void (*iocshCallFunc)(const iocshArgBuf *argBuf);
 
@@ -73,48 +71,48 @@ typedef struct iocshCmdDef {
     iocshCallFunc         func;
 }iocshCmdDef;
 
-LIBCOM_API void epicsStdCall iocshRegister(
+epicsShareFunc void epicsShareAPI iocshRegister(
     const iocshFuncDef *piocshFuncDef, iocshCallFunc func);
-LIBCOM_API void epicsStdCall iocshRegisterVariable (
+epicsShareFunc void epicsShareAPI iocshRegisterVariable (
     const iocshVarDef *piocshVarDef);
-LIBCOM_API const iocshCmdDef * epicsStdCall iocshFindCommand(
+epicsShareFunc const iocshCmdDef * epicsShareAPI iocshFindCommand(
     const char* name) EPICS_DEPRECATED;
-LIBCOM_API const iocshVarDef * epicsStdCall iocshFindVariable(
+epicsShareFunc const iocshVarDef * epicsShareAPI iocshFindVariable(
     const char* name);
 
 /* iocshFree frees storage used by iocshRegister*/
 /* This should only be called when iocsh is no longer needed*/
-LIBCOM_API void epicsStdCall iocshFree(void);
+epicsShareFunc void epicsShareAPI iocshFree(void);
 
-/** shorthand for \code iocshLoad(pathname, NULL) \endcode */
-LIBCOM_API int epicsStdCall iocsh(const char *pathname);
-/** shorthand for \code iocshRun(cmd, NULL) \endcode */
-LIBCOM_API int epicsStdCall iocshCmd(const char *cmd);
+/** shorthand for @code iocshLoad(pathname, NULL) @endcode */
+epicsShareFunc int epicsShareAPI iocsh(const char *pathname);
+/** shorthand for @code iocshRun(cmd, NULL) @endcode */
+epicsShareFunc int epicsShareAPI iocshCmd(const char *cmd);
 /** Read and evaluate IOC shell commands from the given file.
- * \param pathname Path to script file
- * \param macros NULL or a comma seperated list of macro definitions.  eg. "VAR1=x,VAR2=y"
- * \return 0 on success, non-zero on error
+ * @param pathname Path to script file
+ * @param macros NULL or a comma seperated list of macro definitions.  eg. "VAR1=x,VAR2=y"
+ * @return 0 on success, non-zero on error
  */
-LIBCOM_API int epicsStdCall iocshLoad(const char *pathname, const char* macros);
+epicsShareFunc int epicsShareAPI iocshLoad(const char *pathname, const char* macros);
 /** Evaluate a single IOC shell command
- * \param cmd Command string.  eg. "echo \"something or other\""
- * \param macros NULL or a comma seperated list of macro definitions.  eg. "VAR1=x,VAR2=y"
- * \return 0 on success, non-zero on error
+ * @param cmd Command string.  eg. "echo \"something or other\""
+ * @param macros NULL or a comma seperated list of macro definitions.  eg. "VAR1=x,VAR2=y"
+ * @return 0 on success, non-zero on error
  */
-LIBCOM_API int epicsStdCall iocshRun(const char *cmd, const char* macros);
+epicsShareFunc int epicsShareAPI iocshRun(const char *cmd, const char* macros);
 
-/** \brief Signal error from an IOC shell function.
+/** @brief Signal error from an IOC shell function.
  *
- * \param err 0 - success (no op), !=0 - error
- * \return The err argument value.
+ * @param err 0 - success (no op), !=0 - error
+ * @return The err argument value.
  */
-LIBCOM_API int iocshSetError(int err);
+epicsShareFunc int iocshSetError(int err);
 
 /* Makes macros that shadow environment variables work correctly with epicsEnvSet */
-LIBCOM_API void epicsStdCall iocshEnvClear(const char *name);
+epicsShareFunc void epicsShareAPI iocshEnvClear(const char *name);
 
 /* 'weak' link to pdbbase */
-LIBCOM_API extern struct dbBase **iocshPpdbbase;
+epicsShareExtern struct dbBase **iocshPpdbbase;
 
 #ifdef __cplusplus
 }

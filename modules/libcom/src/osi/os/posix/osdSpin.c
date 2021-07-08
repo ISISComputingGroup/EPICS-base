@@ -2,7 +2,6 @@
 * Copyright (c) 2012 Helmholtz-Zentrum Berlin
 *     fuer Materialien und Energie GmbH.
 * Copyright (c) 2012 ITER Organization.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -17,6 +16,7 @@
 #include <string.h>
 #include <pthread.h>
 
+#define epicsExportSharedSymbols
 #include "errlog.h"
 #include "cantProceed.h"
 #include "epicsSpin.h"
@@ -109,8 +109,6 @@ void epicsSpinUnlock(epicsSpinId spin) {
  *  POSIX MUTEX IMPLEMENTATION
  */
 
-#include <osdPosixMutexPriv.h>
-
 typedef struct epicsSpin {
     pthread_mutex_t lock;
 } epicsSpin;
@@ -123,8 +121,8 @@ epicsSpinId epicsSpinCreate(void) {
     if (!spin)
         goto fail;
 
-    status = osdPosixMutexInit(&spin->lock, PTHREAD_MUTEX_DEFAULT);
-    checkStatus(status, "osdPosixMutexInit");
+    status = pthread_mutex_init(&spin->lock, NULL);
+    checkStatus(status, "pthread_mutex_init");
     if (status)
         goto fail;
 

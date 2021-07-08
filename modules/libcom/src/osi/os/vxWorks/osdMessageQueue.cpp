@@ -3,9 +3,9 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
  *      Author  W. Eric Norum
@@ -13,12 +13,13 @@
  *              630 252 4793
  */
 
+#define epicsExportSharedSymbols
 #include <limits.h>
 #include "epicsMessageQueue.h"
 
 extern "C" int sysClkRateGet(void);
 
-LIBCOM_API int epicsStdCall epicsMessageQueueSendWithTimeout(
+epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
     epicsMessageQueueId id,
     void *message,
     unsigned int messageSize,
@@ -35,7 +36,7 @@ LIBCOM_API int epicsStdCall epicsMessageQueueSendWithTimeout(
     return msgQSend((MSG_Q_ID)id, (char *)message, messageSize, ticks, MSG_PRI_NORMAL);
 }
 
-LIBCOM_API int epicsStdCall epicsMessageQueueReceiveWithTimeout(
+epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
     epicsMessageQueueId id,
     void *message,
     unsigned int size,

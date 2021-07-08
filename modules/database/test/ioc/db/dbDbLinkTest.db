@@ -1,6 +1,0 @@
-record(x, "target") {
-}
-
-record(x, "src") {
-    field(INP, "target.VAL")
-}

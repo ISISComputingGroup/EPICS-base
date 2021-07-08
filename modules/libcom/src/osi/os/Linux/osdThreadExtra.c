@@ -4,7 +4,6 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2012 ITER Organization
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -23,6 +22,7 @@
 #include <sys/types.h>
 #include <sys/prctl.h>
 
+#define epicsExportSharedSymbols
 #include "epicsStdio.h"
 #include "ellLib.h"
 #include "epicsEvent.h"
@@ -65,5 +65,5 @@ static void thread_hook(epicsThreadId pthreadInfo)
     pthreadInfo->lwpId = syscall(SYS_gettid);
 }
 
-EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault = thread_hook;
-EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain = thread_hook;
+epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault = thread_hook;
+epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain = thread_hook;

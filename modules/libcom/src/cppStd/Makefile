@@ -9,4 +9,5 @@
 
 SRC_DIRS += $(LIBCOM)/cppStd
 INC += epicsAlgorithm.h
+INC += epicsExcept.h
 

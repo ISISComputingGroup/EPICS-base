@@ -3,9 +3,9 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* epicsTimer.h */
 
@@ -16,7 +16,7 @@
 
 #include <float.h>
 
-#include "libComAPI.h"
+#include "shareLib.h"
 #include "epicsTime.h"
 #include "epicsThread.h"
 
@@ -28,15 +28,15 @@
  */
 
 /* code using a timer must implement epicsTimerNotify */
-class LIBCOM_API epicsTimerNotify {
+class epicsShareClass epicsTimerNotify {
 public:
     enum restart_t { noRestart, restart };
     class expireStatus {
     public:
-        LIBCOM_API expireStatus ( restart_t );
-        LIBCOM_API expireStatus ( restart_t, const double & expireDelaySec );
-        LIBCOM_API bool restart () const;
-        LIBCOM_API double expirationDelay () const;
+        epicsShareFunc expireStatus ( restart_t );
+        epicsShareFunc expireStatus ( restart_t, const double & expireDelaySec );
+        epicsShareFunc bool restart () const;
+        epicsShareFunc double expirationDelay () const;
     private:
         double delay;
     };
@@ -47,14 +47,14 @@ public:
     virtual void show ( unsigned int level ) const;
 };
 
-class LIBCOM_API epicsTimer {
+class epicsShareClass epicsTimer {
 public:
     /* calls cancel (see warning below) and then destroys the timer */
     virtual void destroy () = 0;
     virtual void start ( epicsTimerNotify &, const epicsTime & ) = 0;
     virtual void start ( epicsTimerNotify &, double delaySeconds ) = 0;
     /* WARNING: A deadlock will occur if you hold a lock while
-     * calling this function that you also take within the timer
+     * calling this function that you also take within the timer 
      * expiration callback.
      */
     virtual void cancel () = 0;
@@ -75,17 +75,17 @@ public:
     virtual epicsTimer & createTimer () = 0;
     virtual void show ( unsigned int level ) const = 0;
 protected:
-    LIBCOM_API virtual ~epicsTimerQueue () = 0;
+    epicsShareFunc virtual ~epicsTimerQueue () = 0;
 };
 
 class epicsTimerQueueActive
     : public epicsTimerQueue {
 public:
-    static LIBCOM_API epicsTimerQueueActive & allocate (
+    static epicsShareFunc epicsTimerQueueActive & allocate (
         bool okToShare, unsigned threadPriority = epicsThreadPriorityMin + 10 );
-    virtual void release () = 0;
+    virtual void release () = 0; 
 protected:
-    LIBCOM_API virtual ~epicsTimerQueueActive () = 0;
+    epicsShareFunc virtual ~epicsTimerQueueActive () = 0;
 };
 
 class epicsTimerQueueNotify {
@@ -97,20 +97,20 @@ public:
     /* return this quantum in seconds. If unknown then return zero. */
     virtual double quantum () = 0;
 protected:
-    LIBCOM_API virtual ~epicsTimerQueueNotify () = 0;
+    epicsShareFunc virtual ~epicsTimerQueueNotify () = 0;
 };
 
 class epicsTimerQueuePassive
     : public epicsTimerQueue {
 public:
-    static LIBCOM_API epicsTimerQueuePassive & create ( epicsTimerQueueNotify & );
-    LIBCOM_API virtual ~epicsTimerQueuePassive () = 0; /* ok to call delete */
+    static epicsShareFunc epicsTimerQueuePassive & create ( epicsTimerQueueNotify & );
+    epicsShareFunc virtual ~epicsTimerQueuePassive () = 0; /* ok to call delete */
     virtual double process ( const epicsTime & currentTime ) = 0; /* returns delay to next expire */
 };
 
-inline epicsTimer::expireInfo::expireInfo ( bool activeIn,
+inline epicsTimer::expireInfo::expireInfo ( bool activeIn, 
     const epicsTime & expireTimeIn ) :
-        active ( activeIn ), expireTime ( expireTimeIn )
+        active ( activeIn ), expireTime ( expireTimeIn ) 
 {
 }
 
@@ -118,7 +118,7 @@ inline double epicsTimer::getExpireDelay ()
 {
     epicsTimer::expireInfo info = this->getExpireInfo ();
     if ( info.active ) {
-        double delay = info.expireTime - epicsTime::getCurrent ();
+        double delay = info.expireTime - epicsTime::getMonotonic ();
         if ( delay < 0.0 ) {
             delay = 0.0;
         }
@@ -135,47 +135,47 @@ typedef void ( *epicsTimerCallback ) ( void *pPrivate );
 
 /* thread managed timer queue */
 typedef struct epicsTimerQueueActiveForC * epicsTimerQueueId;
-LIBCOM_API epicsTimerQueueId epicsStdCall
+epicsShareFunc epicsTimerQueueId epicsShareAPI
     epicsTimerQueueAllocate ( int okToShare, unsigned int threadPriority );
-LIBCOM_API void epicsStdCall 
+epicsShareFunc void epicsShareAPI 
     epicsTimerQueueRelease ( epicsTimerQueueId );
-LIBCOM_API epicsTimerId epicsStdCall 
-    epicsTimerQueueCreateTimer ( epicsTimerQueueId queueid,
+epicsShareFunc epicsTimerId epicsShareAPI 
+    epicsTimerQueueCreateTimer ( epicsTimerQueueId queueid, 
         epicsTimerCallback callback, void *arg );
-LIBCOM_API void epicsStdCall 
+epicsShareFunc void epicsShareAPI 
     epicsTimerQueueDestroyTimer ( epicsTimerQueueId queueid, epicsTimerId id );
-LIBCOM_API void  epicsStdCall 
+epicsShareFunc void  epicsShareAPI 
     epicsTimerQueueShow ( epicsTimerQueueId id, unsigned int level );
 
 /* passive timer queue */
 typedef struct epicsTimerQueuePassiveForC * epicsTimerQueuePassiveId;
 typedef void ( * epicsTimerQueueNotifyReschedule ) ( void * pPrivate );
 typedef double ( * epicsTimerQueueNotifyQuantum ) ( void * pPrivate );
-LIBCOM_API epicsTimerQueuePassiveId epicsStdCall
-    epicsTimerQueuePassiveCreate ( epicsTimerQueueNotifyReschedule,
+epicsShareFunc epicsTimerQueuePassiveId epicsShareAPI
+    epicsTimerQueuePassiveCreate ( epicsTimerQueueNotifyReschedule, 
         epicsTimerQueueNotifyQuantum, void *pPrivate );
-LIBCOM_API void epicsStdCall 
+epicsShareFunc void epicsShareAPI 
     epicsTimerQueuePassiveDestroy ( epicsTimerQueuePassiveId );
-LIBCOM_API epicsTimerId epicsStdCall 
+epicsShareFunc epicsTimerId epicsShareAPI 
     epicsTimerQueuePassiveCreateTimer (
         epicsTimerQueuePassiveId queueid, epicsTimerCallback pCallback, void *pArg );
-LIBCOM_API void epicsStdCall 
+epicsShareFunc void epicsShareAPI 
     epicsTimerQueuePassiveDestroyTimer ( epicsTimerQueuePassiveId queueid, epicsTimerId id );
-LIBCOM_API double epicsStdCall 
+epicsShareFunc double epicsShareAPI 
     epicsTimerQueuePassiveProcess ( epicsTimerQueuePassiveId );
-LIBCOM_API void  epicsStdCall 
+epicsShareFunc void  epicsShareAPI 
     epicsTimerQueuePassiveShow ( epicsTimerQueuePassiveId id, unsigned int level );
 
 /* timer */
-LIBCOM_API void epicsStdCall 
+epicsShareFunc void epicsShareAPI 
     epicsTimerStartTime ( epicsTimerId id, const epicsTimeStamp *pTime );
-LIBCOM_API void epicsStdCall 
+epicsShareFunc void epicsShareAPI 
     epicsTimerStartDelay ( epicsTimerId id, double delaySeconds );
-LIBCOM_API void epicsStdCall 
+epicsShareFunc void epicsShareAPI 
     epicsTimerCancel ( epicsTimerId id );
-LIBCOM_API double epicsStdCall 
+epicsShareFunc double epicsShareAPI 
     epicsTimerGetExpireDelay ( epicsTimerId id );
-LIBCOM_API void  epicsStdCall 
+epicsShareFunc void  epicsShareAPI 
     epicsTimerShow ( epicsTimerId id, unsigned int level );
 
 #ifdef __cplusplus

@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* osi/default/osdInterrupt.c */
 
@@ -17,6 +16,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#define epicsExportSharedSymbols
 #include "epicsMutex.h"
 #include "epicsThread.h"
 #include "cantProceed.h"
@@ -32,26 +32,26 @@ static void initOnce(void *junk)
     globalLock = epicsMutexMustCreate();
 }
 
-LIBCOM_API int epicsInterruptLock()
+epicsShareFunc int epicsInterruptLock()
 {
     epicsThreadOnce(&onceId, initOnce, NULL);
     epicsMutexMustLock(globalLock);
     return 0;
 }
 
-LIBCOM_API void epicsInterruptUnlock(int key)
+epicsShareFunc void epicsInterruptUnlock(int key)
 {
     if (!globalLock)
         cantProceed("epicsInterruptUnlock called before epicsInterruptLock\n");
     epicsMutexUnlock(globalLock);
 }
 
-LIBCOM_API int epicsInterruptIsInterruptContext()
+epicsShareFunc int epicsInterruptIsInterruptContext()
 {
     return 0;
 }
 
-LIBCOM_API void epicsInterruptContextMessage(const char *message)
+epicsShareFunc void epicsInterruptContextMessage(const char *message)
 {
     errlogPrintf("%s", message);
 }

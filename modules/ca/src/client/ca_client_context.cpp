@@ -3,7 +3,6 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -18,9 +17,9 @@
  *  Copyright, 1986, The Regents of the University of California.
  *
  *
- *  Author Jeffrey O. Hill
- *  johill@lanl.gov
- *  505 665 1831
+ *	Author Jeffrey O. Hill
+ *	johill@lanl.gov
+ *	505 665 1831
  */
 
 #ifdef _MSC_VER
@@ -35,11 +34,12 @@
 #include "errlog.h"
 #include "locationException.h"
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "cac.h"
 
-epicsThreadPrivateId caClientCallbackThreadId;
+epicsShareDef epicsThreadPrivateId caClientCallbackThreadId;
 
 static epicsThreadOnceId cacOnce = EPICS_THREAD_ONCE_INIT;
 
@@ -153,13 +153,13 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         this->localPort = htons ( tmpAddr.ia.sin_port );
     }
 
-    ca::auto_ptr < CallbackGuard > pCBGuard;
+    std::auto_ptr < CallbackGuard > pCBGuard;
     if ( ! enablePreemptiveCallback ) {
         pCBGuard.reset ( new CallbackGuard ( this->cbMutex ) );
     }
 
     // multiple steps ensure exception safety
-    this->pCallbackGuard = PTRMOVE(pCBGuard);
+    this->pCallbackGuard = pCBGuard;
 }
 
 ca_client_context::~ca_client_context ()
@@ -475,7 +475,7 @@ int ca_client_context::pendIO ( const double & timeout )
     }
 
     int status = ECA_NORMAL;
-    epicsTime beg_time = epicsTime::getCurrent ();
+    epicsTime beg_time = epicsTime::getMonotonic ();
     double remaining = timeout;
 
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -493,7 +493,7 @@ int ca_client_context::pendIO ( const double & timeout )
             this->blockForEventAndEnableCallbacks ( this->ioDone, remaining );
         }
 
-        double delay = epicsTime::getCurrent () - beg_time;
+        double delay = epicsTime::getMonotonic () - beg_time;
         if ( delay < timeout ) {
             remaining = timeout - delay;
         }
@@ -522,7 +522,7 @@ int ca_client_context::pendEvent ( const double & timeout )
         return ECA_EVDISALLOW;
     }
 
-    epicsTime current = epicsTime::getCurrent ();
+    epicsTime current = epicsTime::getMonotonic ();
 
     {
         epicsGuard < epicsMutex > guard ( this->mutex );
@@ -563,7 +563,7 @@ int ca_client_context::pendEvent ( const double & timeout )
         this->noWakeupSincePend = true;
     }
 
-    double elapsed = epicsTime::getCurrent() - current;
+    double elapsed = epicsTime::getMonotonic() - current;
     double delay;
 
     if ( timeout > elapsed ) {
@@ -736,12 +736,12 @@ void ca_client_context::installDefaultService ( cacService & service )
     ca_client_context::pDefaultService = & service;
 }
 
-void epicsStdCall caInstallDefaultService ( cacService & service )
+void epicsShareAPI caInstallDefaultService ( cacService & service )
 {
     ca_client_context::installDefaultService ( service );
 }
 
-LIBCA_API int epicsStdCall ca_clear_subscription ( evid pMon )
+epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
 {
     oldChannelNotify & chan = pMon->channel ();
     ca_client_context & cac = chan.getClientCtx ();

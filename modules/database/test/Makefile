@@ -19,4 +19,4 @@ DIRS += std/filters
 
 DIRS += tools
 
-include $(TOP)/configure/RULES_DIRS
+include $(TOP)/configure/RULES_TOP

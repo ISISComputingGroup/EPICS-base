@@ -3,12 +3,11 @@
 *     National Laboratory.
 * Copyright (c) 2003 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to the Software License Agreement
 * found in the file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* Author: Andrew Johnson   Date: 2003-04-08 */
+/* Author: Andrew Johnson	Date: 2003-04-08 */
 
 #include <iostream>
 #include <string>
@@ -38,16 +37,14 @@ extern "C" int softIoc_registerRecordDeviceDriver(struct dbBase *pdbbase);
 #  error -DEPICS_BASE required
 #endif
 
-#define DBD_BASE "dbd" OSI_PATH_SEPARATOR "softIoc.dbd"
-#define EXIT_BASE "db" OSI_PATH_SEPARATOR "softIocExit.db"
-#define DBD_FILE_REL ".." OSI_PATH_SEPARATOR ".." OSI_PATH_SEPARATOR DBD_BASE
-#define EXIT_FILE_REL ".." OSI_PATH_SEPARATOR ".." OSI_PATH_SEPARATOR EXIT_BASE
-#define DBD_FILE EPICS_BASE OSI_PATH_SEPARATOR DBD_BASE
-#define EXIT_FILE EPICS_BASE OSI_PATH_SEPARATOR EXIT_BASE
+#define DBD_BASE "dbd/softIoc.dbd"
+#define EXIT_BASE "db/softIocExit.db"
+#define DBD_FILE_REL "../../" DBD_BASE
+#define EXIT_FILE_REL "../../" EXIT_BASE
+#define DBD_FILE EPICS_BASE "/" DBD_BASE
+#define EXIT_FILE EPICS_BASE "/" EXIT_BASE
 
 namespace {
-
-bool verbose = false;
 
 static void exitSubroutine(subRecord *precord) {
     epicsExitLater((precord->a == 0.0) ? EXIT_SUCCESS : EXIT_FAILURE);
@@ -55,7 +52,7 @@ static void exitSubroutine(subRecord *precord) {
 
 void usage(const char *arg0, const std::string& base_dbd) {
     std::cout<<"Usage: "<<arg0<<
-               " [-D softIoc.dbd] [-h] [-S] [-s] [-v] [-a ascf]\n"
+               " [-D softIoc.dbd] [-h] [-S] [-s] [-a ascf]\n"
                "[-m macro=value,macro2=value2] [-d file.db]\n"
                "[-x prefix] [st.cmd]\n"
                "\n"
@@ -67,8 +64,6 @@ void usage(const char *arg0, const std::string& base_dbd) {
                "    -S  Prevents an interactive shell being started.\n"
                "\n"
                "    -s  Previously caused a shell to be started.  Now accepted and ignored.\n"
-               "\n"
-               "    -v  Verbose, display steps taken during startup.\n"
                "\n"
                "    -a <acf>  Access Security configuration file.  Macro substitution is\n"
                "        performed.\n"
@@ -101,20 +96,17 @@ void errIf(int ret, const std::string& msg)
         throw std::runtime_error(msg);
 }
 
-bool lazy_dbd_loaded;
-
 void lazy_dbd(const std::string& dbd_file) {
-    if(lazy_dbd_loaded) return;
-    lazy_dbd_loaded = true;
+    static bool loaded;
+    if(loaded) return;
+    loaded = true;
 
-    if (verbose)
-        std::cout<<"dbLoadDatabase(\""<<dbd_file<<"\")\n";
     errIf(dbLoadDatabase(dbd_file.c_str(), NULL, NULL),
           std::string("Failed to load DBD file: ")+dbd_file);
+    std::cout<<"dbLoadDatabase(\""<<dbd_file<<"\")\n";
 
-    if (verbose)
-        std::cout<<"softIoc_registerRecordDeviceDriver(pdbbase)\n";
     softIoc_registerRecordDeviceDriver(pdbbase);
+    std::cout<<"softIoc_registerRecordDeviceDriver(pdbbase)\n";
     registryFunctionAdd("exit", (REGISTRYFUNCTION) exitSubroutine);
 }
 
@@ -129,7 +121,6 @@ int main(int argc, char *argv[])
                     xmacro;
         bool interactive = true;
         bool loadedDb = false;
-        bool ranScript = false;
 
         // attempt to compute relative paths
         {
@@ -151,7 +142,7 @@ int main(int argc, char *argv[])
 
         int opt;
 
-        while ((opt = getopt(argc, argv, "ha:D:d:m:Ssx:v")) != -1) {
+        while ((opt = getopt(argc, argv, "ha:d:m:Ssx:")) != -1) {
             switch (opt) {
             case 'h':               /* Print usage */
                 usage(argv[0], dbd_file);
@@ -165,32 +156,22 @@ int main(int argc, char *argv[])
             case 'a':
                 lazy_dbd(dbd_file);
                 if (!macros.empty()) {
-                    if (verbose)
-                        std::cout<<"asSetSubstitutions(\""<<macros<<"\")\n";
                     if(asSetSubstitutions(macros.c_str()))
                         throw std::bad_alloc();
+                    std::cout<<"asSetSubstitutions(\""<<macros<<"\")\n";
                 }
-                if (verbose)
-                    std::cout<<"asSetFilename(\""<<optarg<<"\")\n";
                 if(asSetFilename(optarg))
                     throw std::bad_alloc();
-                break;
-            case 'D':
-                if(lazy_dbd_loaded) {
-                    throw std::runtime_error("-D specified too late.  softIoc.dbd already loaded.\n");
-                }
-                dbd_file = optarg;
+                std::cout<<"asSetFilename(\""<<optarg<<"\")\n";
                 break;
             case 'd':
                 lazy_dbd(dbd_file);
-                if (verbose) {
-                    std::cout<<"dbLoadRecords(\""<<optarg<<"\"";
-                    if(!macros.empty())
-                        std::cout<<", \""<<macros<<"\"";
-                    std::cout<<")\n";
-                }
                 errIf(dbLoadRecords(optarg, macros.c_str()),
                       std::string("Failed to load: ")+optarg);
+                std::cout<<"dbLoadRecords(\""<<optarg<<"\"";
+                if(!macros.empty())
+                    std::cout<<", \""<<macros<<"\"";
+                std::cout<<")\n";
                 loadedDb = true;
                 break;
             case 'm':
@@ -201,9 +182,6 @@ int main(int argc, char *argv[])
                 break;
             case 's':
                 break; // historical
-            case 'v':
-                verbose = true;
-                break;
             case 'x':
                 lazy_dbd(dbd_file);
                 xmacro  = "IOC=";
@@ -221,20 +199,17 @@ int main(int argc, char *argv[])
             // run script
             // ignore any extra positional args (historical)
 
-            if (verbose)
-                std::cout<<"# Begin "<<argv[optind]<<"\n";
+            std::cout<<"# Begin "<<argv[optind]<<"\n";
             errIf(iocsh(argv[optind]),
                         std::string("Error in ")+argv[optind]);
-            if (verbose)
-                std::cout<<"# End "<<argv[optind]<<"\n";
+            std::cout<<"# End "<<argv[optind]<<"\n";
 
             epicsThreadSleep(0.2);
-            ranScript = true;    /* Assume the script has done any necessary initialization */
+            loadedDb = true;	/* Give it the benefit of the doubt... */
         }
 
         if (loadedDb) {
-            if (verbose)
-                std::cout<<"iocInit()\n";
+            std::cout<<"iocInit()\n";
             iocInit();
             epicsThreadSleep(0.2);
         }
@@ -248,11 +223,8 @@ int main(int argc, char *argv[])
             }
 
         } else {
-            if (loadedDb || ranScript) {
-                // non-interactive IOC.  spin forever
-                while(true) {
-                    epicsThreadSleep(1000.0);
-                }
+            if (loadedDb) {
+                epicsThreadExitMain();
 
             } else {
                 usage(argv[0], dbd_file);

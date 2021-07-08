@@ -15,4 +15,4 @@ DIRS += src
 DIRS += test
 test_DEPEND_DIRS = src
 
-include $(TOP)/configure/RULES_DIRS
+include $(TOP)/configure/RULES_TOP

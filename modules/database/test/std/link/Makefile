@@ -47,8 +47,6 @@ testHarness_SRCS += epicsRunLinkTests.c
 linkTestHarness_SRCS += $(testHarness_SRCS)
 linkTestHarness_SRCS_RTEMS += rtemsTestHarness.c
 
-PROD_SRCS_RTEMS += rtemsTestData.c
-
 PROD_vxWorks = linkTestHarness
 PROD_RTEMS = linkTestHarness
 
@@ -56,16 +54,9 @@ TESTSPEC_vxWorks = linkTestHarness.munch; epicsRunLinkTests
 TESTSPEC_RTEMS = linkTestHarness.boot; epicsRunLinkTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
-ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
-  TESTPROD = $(TESTPROD_HOST)
-  TESTSCRIPTS_RTEMS += $(TESTS:%=%.t)
-endif
 
 include $(TOP)/configure/RULES
 
 ioRecord$(DEP): $(COMMON_DIR)/ioRecord.h
 lnkStateTest$(DEP): $(COMMON_DIR)/ioRecord.h
 lnkCalcTest$(DEP): $(COMMON_DIR)/ioRecord.h
-
-rtemsTestData.c : $(TESTFILES) $(TOOLS)/epicsMakeMemFs.pl
-	$(PERL) $(TOOLS)/epicsMakeMemFs.pl $@ epicsRtemsFSImage $(TESTFILES)

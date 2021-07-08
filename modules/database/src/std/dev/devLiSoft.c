@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 /*
@@ -26,19 +25,28 @@
 #include "epicsExport.h"
 
 /* Create the dset for devLiSoft */
-static long init_record(dbCommon *pcommon);
+static long init_record(longinRecord *prec);
 static long read_longin(longinRecord *prec);
 
-longindset devLiSoft = {
-    {5, NULL, NULL, init_record, NULL},
+struct {
+    long      number;
+    DEVSUPFUN report;
+    DEVSUPFUN init;
+    DEVSUPFUN init_record;
+    DEVSUPFUN get_ioint_info;
+    DEVSUPFUN read_longin;
+} devLiSoft = {
+    5,
+    NULL,
+    NULL,
+    init_record,
+    NULL,
     read_longin
 };
 epicsExportAddress(dset, devLiSoft);
 
-static long init_record(dbCommon *pcommon)
+static long init_record(longinRecord *prec)
 {
-    longinRecord *prec = (longinRecord *)pcommon;
-
     if (recGblInitConstantLink(&prec->inp, DBF_LONG, &prec->val))
         prec->udf = FALSE;
 

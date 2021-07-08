@@ -3,9 +3,9 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* Author:  Marty Kraimer Date:    04-19-94 */
 
@@ -22,28 +22,29 @@
 #define REDZONE 0
 #endif
 
+#define epicsExportSharedSymbols
 #include "cantProceed.h"
 #include "epicsMutex.h"
 #include "freeList.h"
 #include "adjustment.h"
 
 typedef struct allocMem {
-    struct allocMem     *next;
-    void                *memory;
+    struct allocMem	*next;
+    void		*memory;
 }allocMem;
 typedef struct {
-    int         size;
-    int         nmalloc;
-    void        *head;
-    allocMem    *mallochead;
-    size_t      nBlocksAvailable;
+    int		size;
+    int		nmalloc;
+    void	*head;
+    allocMem	*mallochead;
+    size_t	nBlocksAvailable;
     epicsMutexId lock;
 }FREELISTPVT;
 
-LIBCOM_API void epicsStdCall 
-    freeListInitPvt(void **ppvt,int size,int nmalloc)
+epicsShareFunc void epicsShareAPI 
+	freeListInitPvt(void **ppvt,int size,int nmalloc)
 {
-    FREELISTPVT *pfl;
+    FREELISTPVT	*pfl;
 
     pfl = callocMustSucceed(1,sizeof(FREELISTPVT), "freeListInitPvt");
     pfl->size = adjustToWorstCaseAlignment(size);
@@ -57,13 +58,13 @@ LIBCOM_API void epicsStdCall
     return;
 }
 
-LIBCOM_API void * epicsStdCall freeListCalloc(void *pvt)
+epicsShareFunc void * epicsShareAPI freeListCalloc(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
 #   ifdef EPICS_FREELIST_DEBUG
     return callocMustSucceed(1,pfl->size,"freeList Debug Calloc");
 #   else
-    void        *ptemp;
+    void	*ptemp;
 
     ptemp = freeListMalloc(pvt);
     if(ptemp) memset((char *)ptemp,0,pfl->size);
@@ -71,16 +72,16 @@ LIBCOM_API void * epicsStdCall freeListCalloc(void *pvt)
 #   endif
 }
 
-LIBCOM_API void * epicsStdCall freeListMalloc(void *pvt)
+epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
 #   ifdef EPICS_FREELIST_DEBUG
     return callocMustSucceed(1,pfl->size,"freeList Debug Malloc");
 #   else
-    void        *ptemp;
-    void        **ppnext;
-    allocMem    *pallocmem;
-    int         i;
+    void	*ptemp;
+    void	**ppnext;
+    allocMem	*pallocmem;
+    int		i;
 
     epicsMutexMustLock(pfl->lock);
     ptemp = pfl->head;
@@ -128,14 +129,14 @@ LIBCOM_API void * epicsStdCall freeListMalloc(void *pvt)
 #   endif
 }
 
-LIBCOM_API void epicsStdCall freeListFree(void *pvt,void*pmem)
+epicsShareFunc void epicsShareAPI freeListFree(void *pvt,void*pmem)
 {
-    FREELISTPVT *pfl = pvt;
+    FREELISTPVT	*pfl = pvt;
 #   ifdef EPICS_FREELIST_DEBUG
     memset ( pmem, 0xdd, pfl->size );
     free(pmem);
 #   else
-    void        **ppnext;
+    void	**ppnext;
 
     VALGRIND_MEMPOOL_FREE(pvt, pmem);
     VALGRIND_MEMPOOL_ALLOC(pvt, pmem, sizeof(void*));
@@ -149,11 +150,11 @@ LIBCOM_API void epicsStdCall freeListFree(void *pvt,void*pmem)
 #   endif
 }
 
-LIBCOM_API void epicsStdCall freeListCleanup(void *pvt)
+epicsShareFunc void epicsShareAPI freeListCleanup(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
-    allocMem    *phead;
-    allocMem    *pnext;
+    allocMem	*phead;
+    allocMem	*pnext;
 
     VALGRIND_DESTROY_MEMPOOL(pvt);
 
@@ -168,7 +169,7 @@ LIBCOM_API void epicsStdCall freeListCleanup(void *pvt)
     free(pvt);
 }
 
-LIBCOM_API size_t epicsStdCall freeListItemsAvail(void *pvt)
+epicsShareFunc size_t epicsShareAPI freeListItemsAvail(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
     size_t nBlocksAvailable;

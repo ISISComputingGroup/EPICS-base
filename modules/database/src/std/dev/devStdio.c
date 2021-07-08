@@ -1,9 +1,8 @@
 /*************************************************************************\
 * Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 #include <stdio.h>
@@ -104,7 +103,7 @@ static long write_lso(lsoRecord *prec)
 }
 
 lsodset devLsoStdio = {
-    { 5, NULL, init_lso, NULL, NULL }, write_lso
+    5, NULL, init_lso, NULL, NULL, write_lso
 };
 epicsExportAddress(dset, devLsoStdio);
 
@@ -154,7 +153,7 @@ static long write_printf(printfRecord *prec)
 }
 
 printfdset devPrintfStdio = {
-    {5, NULL, init_printf, NULL, NULL }, write_printf
+    5, NULL, init_printf, NULL, NULL, write_printf
 };
 epicsExportAddress(dset, devPrintfStdio);
 
@@ -203,8 +202,10 @@ static long write_stringout(stringoutRecord *prec)
     return 0;
 }
 
-stringoutdset devSoStdio = {
-    {5, NULL, init_stringout, NULL, NULL},
-    write_stringout
+static struct {
+    dset common;
+    DEVSUPFUN write;
+} devSoStdio = {
+    {5, NULL, init_stringout, NULL, NULL}, write_stringout
 };
 epicsExportAddress(dset, devSoStdio);

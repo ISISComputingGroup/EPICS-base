@@ -39,12 +39,3 @@ record(x, "lnktarget") {}
 record(x, "lnktest") {
     field(INP, "lnktarget NPP NMS")
 }
-
-record(arr, "arr") {
-    field(FTVL, "ULONG")
-    field(NELM, "10")
-}
-
-record(x, "recmeta") {}
-
-record(x, "special") {}

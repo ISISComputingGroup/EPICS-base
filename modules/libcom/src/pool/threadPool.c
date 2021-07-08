@@ -1,7 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2014 Brookhaven Science Associates, as Operator of
 *     Brookhaven National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -10,6 +9,7 @@
 #include <string.h>
 #include <errno.h>
 
+#define epicsExportSharedSymbols
 
 #include "dbDefs.h"
 #include "errlog.h"
@@ -326,7 +326,7 @@ void sharedPoolsInit(void* unused)
     sharedPoolsGuard = epicsMutexMustCreate();
 }
 
-LIBCOM_API epicsThreadPool* epicsThreadPoolGetShared(epicsThreadPoolConfig *opts)
+epicsShareFunc epicsThreadPool* epicsThreadPoolGetShared(epicsThreadPoolConfig *opts)
 {
     ELLNODE *node;
     epicsThreadPool *cur;
@@ -383,7 +383,7 @@ LIBCOM_API epicsThreadPool* epicsThreadPoolGetShared(epicsThreadPoolConfig *opts
     return cur;
 }
 
-LIBCOM_API void epicsThreadPoolReleaseShared(epicsThreadPool *pool)
+epicsShareFunc void epicsThreadPoolReleaseShared(epicsThreadPool *pool)
 {
     if (!pool)
         return;

@@ -3,16 +3,14 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/**
- * \file   compilerDependencies.h
- * \author Jeffrey O. Hill johill@lanl.gov
- * \brief  Compiler specific declarations
- *
+/*
+ * Author: 
+ * Jeffrey O. Hill
+ * johill@lanl.gov
  */
 
 #ifndef compilerDependencies_h
@@ -21,6 +19,18 @@
 #include "compilerSpecific.h"
 
 #ifdef __cplusplus
+
+/*
+ * usage: void func () epicsThrows (( std::bad_alloc, std::logic_error ))
+ *
+ * Note: now a widely accepted concensus (ref Meyers and C++ faq) is that 
+ * one should avoid using throw specifications in C++ code
+ */
+#if defined ( CXX_THROW_SPECIFICATION )
+#   define epicsThrows(X) throw X
+#else
+#   define epicsThrows(X)
+#endif
 
 /*
  * usage: epicsPlacementDeleteOperator (( void *, myMemoryManager & ))

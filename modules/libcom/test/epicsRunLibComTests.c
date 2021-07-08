@@ -1,7 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -50,7 +49,6 @@ int epicsTimeZoneTest(void);
 #endif
 int epicsTypesTest(void);
 int epicsInlineTest(void);
-int initHookTest(void);
 int ipAddrToAsciiTest(void);
 int macDefExpandTest(void);
 int macLibTest(void);
@@ -106,7 +104,6 @@ void epicsRunLibComTests(void)
     runTest(epicsTimeZoneTest);
 #endif
     runTest(epicsTypesTest);
-    runTest(initHookTest);
     runTest(ipAddrToAsciiTest);
     runTest(macDefExpandTest);
     runTest(macLibTest);

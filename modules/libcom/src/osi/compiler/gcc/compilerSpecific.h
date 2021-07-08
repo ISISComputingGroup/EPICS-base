@@ -3,13 +3,12 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 /*
- * Author:
+ * Author: 
  * Jeffrey O. Hill
  * johill@lanl.gov
  */
@@ -25,24 +24,36 @@
 #   error compiler/gcc/compilerSpecific.h is not for use with the clang compiler
 #endif
 
-#define EPICS_ALWAYS_INLINE __inline__ __attribute__((always_inline))
+#if __GNUC__ > 2
+#  define EPICS_ALWAYS_INLINE __inline__ __attribute__((always_inline))
+#else
+#  define EPICS_ALWAYS_INLINE __inline__
+#endif
 
 /* Expands to a 'const char*' which describes the name of the current function scope */
 #define EPICS_FUNCTION __PRETTY_FUNCTION__
-
+ 
 #ifdef __cplusplus
 
 /*
  * in general we dont like ifdefs but they do allow us to check the
- * compiler version and make the optimistic assumption that
- * standards incompliance issues will be fixed by future compiler
+ * compiler version and make the optimistic assumption that 
+ * standards incompliance issues will be fixed by future compiler 
  * releases
  */
 
 /*
  * CXX_PLACEMENT_DELETE - defined if compiler supports placement delete
+ * CXX_THROW_SPECIFICATION - defined if compiler supports throw specification
  */
-#define CXX_PLACEMENT_DELETE
+
+#if __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 95 )
+#   define CXX_THROW_SPECIFICATION
+#endif
+
+#if __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 96 )
+#   define CXX_PLACEMENT_DELETE
+#endif
 
 #endif /* __cplusplus */
 
@@ -52,9 +63,11 @@
 #define EPICS_PRINTF_STYLE(f,a) __attribute__((format(__printf__,f,a)))
 
 /*
- * Deprecation marker
+ * Deprecation marker if possible
  */
-#define EPICS_DEPRECATED __attribute__((deprecated))
+#if  (__GNUC__ > 2)
+#   define EPICS_DEPRECATED __attribute__((deprecated))
+#endif
 
 /*
  * Unused marker

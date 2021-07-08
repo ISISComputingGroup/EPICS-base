@@ -3,7 +3,6 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -12,13 +11,14 @@
 
 /* This is part of the posix implementation of epicsThread */
 
+#define epicsExportSharedSymbols
 #include "epicsStdio.h"
 #include "ellLib.h"
 #include "epicsEvent.h"
 #include "epicsThread.h"
 
-EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
-EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
+epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
+epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
 
 void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level)
 {

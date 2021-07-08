@@ -1,7 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2016 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -362,9 +361,6 @@ static long lnkConst_loadScalar(struct link *plink, short dbrType, void *pbuffer
     const_link *clink = CONTAINER(plink->value.json.jlink, const_link, jlink);
     long status;
 
-    if(INVALID_DB_REQ(dbrType))
-        return S_db_badDbrtype;
-
     switch (clink->type) {
     case si64:
         if (clink->jlink.debug)
@@ -455,16 +451,11 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
         long *pnReq)
 {
     const_link *clink = CONTAINER(plink->value.json.jlink, const_link, jlink);
-    short dbrSize;
+    short dbrSize = dbValueSize(dbrType);
     char *pdest = pbuffer;
     int nElems = clink->nElems;
     FASTCONVERT conv;
     long status;
-
-    if(INVALID_DB_REQ(dbrType))
-        return S_db_badDbrtype;
-
-    dbrSize = dbValueSize(dbrType);
 
     if (nElems > *pnReq)
         nElems = *pnReq;
@@ -489,17 +480,8 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
     case sc40:
         if (clink->jlink.debug)
             printf("   sc40 '%s'\n", clink->value.scalar_string);
-        if (dbrType != DBF_CHAR) {
-            status = dbFastPutConvertRoutine[DBF_STRING][dbrType]
-                (clink->value.scalar_string, pbuffer, NULL);
-        }
-        else {
-            /* Long string conversion */
-            strncpy(pbuffer, clink->value.scalar_string, *pnReq);
-            ((char *)pbuffer)[*pnReq] = 0;
-            nElems = strlen(pbuffer) + 1;
-            status = 0;
-        }
+        status = dbFastPutConvertRoutine[DBF_STRING][dbrType]
+            (clink->value.scalar_string, pbuffer, NULL);
         break;
 
     case ai64:

@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define epicsExportSharedSymbols
 #include "yajl_buf.h"
 
 #define YAJL_BUF_INIT_SIZE 2048
@@ -33,7 +34,7 @@ static
 void yajl_buf_ensure_available(yajl_buf buf, size_t want)
 {
     size_t need;
-
+    
     assert(buf != NULL);
 
     /* first call */

@@ -3,9 +3,9 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*dbStaticLibRun.c*/
 
@@ -23,16 +23,15 @@
 #include "epicsTypes.h"
 #include "errMdef.h"
 
+#include "epicsExport.h" /* #define epicsExportSharedSymbols */
 #include "dbBase.h"
 #include "dbCommonPvt.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
-#include "dbAccess.h"
 #include "devSup.h"
 #include "special.h"
-#include "epicsExport.h"
 
-int dbConvertStrict = 0;
+epicsShareDef int dbConvertStrict = 0;
 epicsExportAddress(int, dbConvertStrict);
 
 static long do_nothing(struct dbCommon *precord) { return 0; }
@@ -69,14 +68,14 @@ void devExtend(dsxt *pdsxt)
 
 long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
 {
-    dbRecordType    *pdbRecordType = pdbentry->precordType;
-    dbRecordNode    *precnode = pdbentry->precnode;
-    dbFldDes        *pflddes;
-    int             i;
-    dbCommonPvt     *ppvt;
-    dbCommon        *precord;
-    char            *pfield;
-
+    dbRecordType	*pdbRecordType = pdbentry->precordType;
+    dbRecordNode	*precnode = pdbentry->precnode;
+    dbFldDes		*pflddes;
+    int			i;
+    dbCommonPvt *ppvt;
+    dbCommon		*precord;
+    char		*pfield;
+    
     if(!pdbRecordType) return(S_dbLib_recordTypeNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
     if(pdbRecordType->rec_size == 0) {
@@ -132,8 +131,8 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
         case DBF_USHORT:
         case DBF_LONG:
         case DBF_ULONG:
-        case DBF_INT64:
-        case DBF_UINT64:
+	case DBF_INT64:
+	case DBF_UINT64:
         case DBF_FLOAT:
         case DBF_DOUBLE:
         case DBF_ENUM:
@@ -189,7 +188,7 @@ long dbGetFieldAddress(DBENTRY *pdbentry)
 {
     dbRecordType *pdbRecordType = pdbentry->precordType;
     dbRecordNode *precnode = pdbentry->precnode;
-    dbFldDes    *pflddes = pdbentry->pflddes;
+    dbFldDes	*pflddes = pdbentry->pflddes;
 
     if(!pdbRecordType) return(S_dbLib_recordTypeNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
@@ -203,8 +202,8 @@ char *dbRecordName(DBENTRY *pdbentry)
 {
     dbRecordType *pdbRecordType = pdbentry->precordType;
     dbRecordNode *precnode = pdbentry->precnode;
-    dbFldDes    *pflddes;
-    char        *precord;
+    dbFldDes	*pflddes;
+    char	*precord;
 
     if(!pdbRecordType) return(0);
     if(!precnode) return(0);
@@ -217,7 +216,7 @@ char *dbRecordName(DBENTRY *pdbentry)
 
 int dbIsMacroOk(DBENTRY *pdbentry) { return(FALSE); }
 
-DBCORE_API int dbIsDefaultValue(DBENTRY *pdbentry)
+epicsShareFunc int dbIsDefaultValue(DBENTRY *pdbentry)
 {
     dbFldDes *pflddes = pdbentry->pflddes;
     void *pfield = pdbentry->pfield;
@@ -480,17 +479,8 @@ long dbPutStringNum(DBENTRY *pdbentry, const char *pstring)
                 epicsEnum16 value;
                 long status = epicsParseUInt16(pstring, &value, 0, NULL);
 
-                if (status) {
-                    status = S_db_badChoice;
-                    if(pflddes->field_type==DBF_MENU) {
-                        dbMenu  *pdbMenu = (dbMenu *)pflddes->ftPvt;
-                        dbMsgPrint(pdbentry, "using menu %s", pdbMenu->name);
-
-                    } else if(pflddes->field_type==DBF_DEVICE) {
-                        dbMsgPrint(pdbentry, "no such device support for '%s' record type", pdbentry->precordType->name);
-                    }
+                if (status)
                     return status;
-                }
 
                 index = dbGetNMenuChoices(pdbentry);
                 if (value > index && index > 0 && value < USHRT_MAX)
@@ -508,7 +498,7 @@ long dbPutStringNum(DBENTRY *pdbentry, const char *pstring)
     }
 }
 
-DBCORE_API int dbGetMenuIndex(DBENTRY *pdbentry)
+epicsShareFunc int dbGetMenuIndex(DBENTRY *pdbentry)
 {
     dbFldDes *pflddes = pdbentry->pflddes;
     void *pfield = pdbentry->pfield;
@@ -527,7 +517,7 @@ DBCORE_API int dbGetMenuIndex(DBENTRY *pdbentry)
     return -1;
 }
 
-DBCORE_API long dbPutMenuIndex(DBENTRY *pdbentry, int index)
+epicsShareFunc long dbPutMenuIndex(DBENTRY *pdbentry, int index)
 {
     dbFldDes *pflddes = pdbentry->pflddes;
     epicsEnum16 *pfield = pdbentry->pfield;

@@ -1,9 +1,4 @@
 #!/usr/bin/env python
-#*************************************************************************
-# SPDX-License-Identifier: EPICS
-# EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution.
-#*************************************************************************
 
 from __future__ import print_function
 
@@ -59,8 +54,7 @@ for root in roots:
 
 if froot is None:
     sys.stderr.write("makeRPath: Final location %s\nNot under any of: %s\n"%(fdir, roots))
-    # skip $ORIGIN handling below...
-    roots = []
+    sys.exit(1)
 
 output = OrderedDict()
 for path in args.path:

@@ -2,7 +2,6 @@
 * Copyright (c) 2010 Brookhaven National Laboratory.
 * Copyright (c) 2010 Helmholtz-Zentrum Berlin
 *     fuer Materialien und Energie GmbH.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -14,7 +13,7 @@
 #ifndef INCdbStateH
 #define INCdbStateH
 
-#include "dbCoreAPI.h"
+#include "shareLib.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,14 +44,14 @@ typedef struct dbState *dbStateId;
  * @param name Db state name.
  * @return Id of db state, NULL for failure.
  */
-DBCORE_API dbStateId dbStateCreate(const char *name);
+epicsShareFunc dbStateId dbStateCreate(const char *name);
 
 /** @brief Find db state.
  *
  * @param name Db state name.
  * @return Id of db state, NULL if not found.
  */
-DBCORE_API dbStateId dbStateFind(const char *name);
+epicsShareFunc dbStateId dbStateFind(const char *name);
 
 /** @brief Set db state to TRUE.
  *
@@ -60,7 +59,7 @@ DBCORE_API dbStateId dbStateFind(const char *name);
  *
  * @param id Db state id.
  */
-DBCORE_API void dbStateSet(dbStateId id);
+epicsShareFunc void dbStateSet(dbStateId id);
 
 /** @brief Set db state to FALSE.
  *
@@ -68,14 +67,14 @@ DBCORE_API void dbStateSet(dbStateId id);
  *
  * @param id Db state id.
  */
-DBCORE_API void dbStateClear(dbStateId id);
+epicsShareFunc void dbStateClear(dbStateId id);
 
 /** @brief Get db state.
  *
  * @param id Db state id.
  * @return Current db state (0|1).
  */
-DBCORE_API int dbStateGet(dbStateId id);
+epicsShareFunc int dbStateGet(dbStateId id);
 
 /** @brief Print info about db state.
  *
@@ -84,7 +83,7 @@ DBCORE_API int dbStateGet(dbStateId id);
  * @param id Db state id.
  * @param level Interest level.
  */
-DBCORE_API void dbStateShow(dbStateId id, unsigned int level);
+epicsShareFunc void dbStateShow(dbStateId id, unsigned int level);
 
 /** @brief Print info about all db states.
  *
@@ -92,7 +91,7 @@ DBCORE_API void dbStateShow(dbStateId id, unsigned int level);
  *
  * @param level Interest level.
  */
-DBCORE_API void dbStateShowAll(unsigned int level);
+epicsShareFunc void dbStateShowAll(unsigned int level);
 
 
 #ifdef __cplusplus

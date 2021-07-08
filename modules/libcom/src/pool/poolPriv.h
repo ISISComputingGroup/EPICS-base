@@ -1,7 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2014 Brookhaven Science Associates, as Operator of
 *     Brookhaven National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -95,14 +94,6 @@ struct epicsJob {
     unsigned int dead:1; /* flag to catch use of freed objects */
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int createPoolThread(epicsThreadPool *pool);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // POOLPRIV_H

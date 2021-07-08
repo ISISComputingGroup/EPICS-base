@@ -3,8 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS BASE is distributed subject to a Software License Agreement found
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
@@ -29,6 +29,7 @@
 
 #include "errlog.h"
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "cac.h"
 #include "osiWireFormat.h"
@@ -50,7 +51,7 @@ nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn,
     typeCode ( USHRT_MAX ),
     priority ( static_cast <ca_uint8_t> ( pri ) )
 {
-    size_t nameLengthTmp = strlen ( pNameIn ) + 1;
+	size_t nameLengthTmp = strlen ( pNameIn ) + 1;
 
     // second constraint is imposed by size field in protocol header
     if ( nameLengthTmp > MAX_UDP_SEND - sizeof ( caHdr ) || nameLengthTmp > USHRT_MAX ) {
@@ -61,7 +62,7 @@ nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn,
         throw cacChannel::badPriority ();
     }
 
-    this->nameLength = static_cast <unsigned short> ( nameLengthTmp );
+	this->nameLength = static_cast <unsigned short> ( nameLengthTmp );
 
     this->pNameStr = new char [ this->nameLength ];
     strcpy ( this->pNameStr, pNameIn );
@@ -113,7 +114,7 @@ void nciu::initiateConnect (
 }
 
 void nciu::connect ( unsigned nativeType,
-    unsigned nativeCount, unsigned sidIn,
+	unsigned nativeCount, unsigned sidIn,
     epicsGuard < epicsMutex > & /* cbGuard */,
     epicsGuard < epicsMutex > & guard )
 {
@@ -329,7 +330,7 @@ void nciu::write (
     if ( ! this->accessRightState.writePermit() ) {
         throw cacChannel::noWriteAccess();
     }
-    if ( countIn > this->count) {
+    if ( countIn > this->count || countIn == 0 ) {
         throw cacChannel::outOfBounds();
     }
     if ( type == DBR_STRING ) {
@@ -350,7 +351,7 @@ cacChannel::ioStatus nciu::write (
     if ( ! this->accessRightState.writePermit() ) {
         throw cacChannel::noWriteAccess();
     }
-    if ( countIn > this->count) {
+    if ( countIn > this->count || countIn == 0 ) {
         throw cacChannel::outOfBounds();
     }
     if ( type == DBR_STRING ) {

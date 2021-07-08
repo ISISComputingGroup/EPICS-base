@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 /*
@@ -26,19 +25,28 @@
 #include "epicsExport.h"
 
 /* Create the dset for devMbbiDirectSoftRaw */
-static long init_record(dbCommon *pcommon);
+static long init_record(mbbiDirectRecord *prec);
 static long read_mbbi(mbbiDirectRecord *prec);
 
-mbbidirectdset devMbbiDirectSoftRaw = {
-    {5, NULL, NULL, init_record, NULL},
+struct {
+    long      number;
+    DEVSUPFUN report;
+    DEVSUPFUN init;
+    DEVSUPFUN init_record;
+    DEVSUPFUN get_ioint_info;
+    DEVSUPFUN read_mbbi;
+} devMbbiDirectSoftRaw = {
+    5,
+    NULL,
+    NULL,
+    init_record,
+    NULL,
     read_mbbi
 };
 epicsExportAddress(dset, devMbbiDirectSoftRaw);
 
-static long init_record(dbCommon *pcommon)
+static long init_record(mbbiDirectRecord *prec)
 {
-	mbbiDirectRecord *prec = (mbbiDirectRecord *)pcommon;
-
     recGblInitConstantLink(&prec->inp, DBF_ULONG, &prec->rval);
 
     /* Preserve old functionality */

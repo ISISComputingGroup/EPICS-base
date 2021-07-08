@@ -3,21 +3,15 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/**
- * \file cvtFast.h
- * \author Bob Dalesio, Mark Anderson, Marty Kraimer
+/*
+ * Fast numeric to string conversions
  *
- * \brief Fast numeric to string conversions
- *
- * \details
- * Provides routines for converting various numeric types into an ascii string.
- * They off a combination of speed and convenience not available with sprintf().
- *
- * All functions return the number of characters in the output 
+ * Original Authors:
+ *    Bob Dalesio, Mark Anderson and Marty Kraimer
+ *    Date:            12 January 1993
  */
 
 #ifndef INCcvtFasth
@@ -26,44 +20,47 @@
 #include <stddef.h>
 
 #include "epicsTypes.h"
-#include "libComAPI.h"
+#include "shareLib.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-LIBCOM_API int
+/*
+ * All functions return the number of characters in the output
+ */
+epicsShareFunc int
     cvtFloatToString(float val, char *pdest, epicsUInt16 prec);
-LIBCOM_API int
+epicsShareFunc int
     cvtDoubleToString(double val, char *pdest, epicsUInt16 prec);
 
-LIBCOM_API int
+epicsShareFunc int
     cvtFloatToExpString(float val, char *pdest, epicsUInt16 prec);
-LIBCOM_API int
+epicsShareFunc int
     cvtDoubleToExpString(double val, char *pdest, epicsUInt16 prec);
-LIBCOM_API int
+epicsShareFunc int
     cvtFloatToCompactString(float val, char *pdest, epicsUInt16 prec);
-LIBCOM_API int
+epicsShareFunc int
     cvtDoubleToCompactString(double val, char *pdest, epicsUInt16 prec);
 
-LIBCOM_API size_t
+epicsShareFunc size_t
     cvtInt32ToString(epicsInt32 val, char *pdest);
-LIBCOM_API size_t
+epicsShareFunc size_t
     cvtUInt32ToString(epicsUInt32 val, char *pdest);
-LIBCOM_API size_t
+epicsShareFunc size_t
     cvtInt64ToString(epicsInt64 val, char *pdest);
-LIBCOM_API size_t
+epicsShareFunc size_t
     cvtUInt64ToString(epicsUInt64 val, char *pdest);
 
-LIBCOM_API size_t
+epicsShareFunc size_t
     cvtInt32ToHexString(epicsInt32 val, char *pdest);
-LIBCOM_API size_t
+epicsShareFunc size_t
     cvtUInt32ToHexString(epicsUInt32 val, char *pdest);
-LIBCOM_API size_t
+epicsShareFunc size_t
     cvtInt32ToOctalString(epicsInt32 val, char *pdest);
-LIBCOM_API size_t
+epicsShareFunc size_t
     cvtInt64ToHexString(epicsInt64 val, char *pdest);
-LIBCOM_API size_t
+epicsShareFunc size_t
     cvtUInt64ToHexString(epicsUInt64 val, char *pdest);
 
 /* Support the original names */

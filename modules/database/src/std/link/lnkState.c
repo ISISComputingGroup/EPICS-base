@@ -1,7 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2017 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -143,12 +142,7 @@ static long lnkState_getValue(struct link *plink, short dbrType, void *pbuffer,
 {
     state_link *slink = CONTAINER(plink->value.json.jlink,
         struct state_link, jlink);
-    FASTCONVERT conv;
-
-    if(INVALID_DB_REQ(dbrType))
-        return S_db_badDbrtype;
-
-    conv = dbFastPutConvertRoutine[DBR_SHORT][dbrType];
+    FASTCONVERT conv = dbFastPutConvertRoutine[DBR_SHORT][dbrType];
 
     slink->val = slink->invert ^ dbStateGet(slink->state);
     return conv(&slink->val, pbuffer, NULL);

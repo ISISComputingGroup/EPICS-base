@@ -3,12 +3,11 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/*
+/* 
  * Operating System Dependent Implementation of osiProcess.h
  *
  * Author: Jeff Hill
@@ -23,16 +22,17 @@
 
 #include <remLib.h>
 
+#define epicsExportSharedSymbols
 #include "osiProcess.h"
 #include "errlog.h"
 
-LIBCOM_API osiGetUserNameReturn epicsStdCall osiGetUserName (char *pBuf, unsigned bufSizeIn)
+epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, unsigned bufSizeIn)
 {
-    char pName[MAX_IDENTITY_LEN];
+	char pName[MAX_IDENTITY_LEN];
     unsigned uiLength;
     size_t len;
 
-    remCurIdGet ( pName, NULL );
+	remCurIdGet ( pName, NULL );
     len = strlen ( pName );
 
     if (len>UINT_MAX || len<=0) {
@@ -49,7 +49,7 @@ LIBCOM_API osiGetUserNameReturn epicsStdCall osiGetUserName (char *pBuf, unsigne
     return osiGetUserNameSuccess;
 }
 
-LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess
+epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProcess
     (const char *pProcessName, const char *pBaseExecutableName)
 {
     return osiSpawnDetachedProcessNoSupport;

@@ -3,9 +3,9 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 #include <stddef.h>
@@ -25,6 +25,7 @@
 #include "epicsThread.h"
 #include "errMdef.h"
 
+#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbBase.h"
@@ -742,14 +743,14 @@ void dbLockSetSplit(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
             for(i=0; i<rtype->no_links; i++) {
                 dbFldDes *pdesc = rtype->papFldDes[rtype->link_ind[i]];
                 DBLINK *plink = (DBLINK*)((char*)prec + pdesc->offset);
-                dbChannel *chan;
+                DBADDR *ptarget;
                 lockRecord *lr;
 
                 if(plink->type!=DB_LINK)
                     continue;
 
-                chan = plink->value.pv_link.pvt;
-                lr = dbChannelRecord(chan)->lset;
+                ptarget = plink->value.pv_link.pvt;
+                lr = ptarget->precord->lset;
                 assert(lr);
 
                 if(lr->precord==pfirst) {
@@ -881,16 +882,16 @@ static char *msstring[4]={"NMS","MS","MSI","MSS"};
 
 long dblsr(char *recordname,int level)
 {
-    int                 link;
-    DBENTRY             dbentry;
-    DBENTRY             *pdbentry=&dbentry;
-    long                status;
-    dbCommon            *precord;
-    lockSet             *plockSet;
-    lockRecord          *plockRecord;
-    dbRecordType        *pdbRecordType;
-    dbFldDes            *pdbFldDes;
-    DBLINK              *plink;
+    int			link;
+    DBENTRY		dbentry;
+    DBENTRY		*pdbentry=&dbentry;
+    long		status;
+    dbCommon		*precord;
+    lockSet		*plockSet;
+    lockRecord		*plockRecord;
+    dbRecordType	*pdbRecordType;
+    dbFldDes		*pdbFldDes;
+    DBLINK		*plink;
 
     if (recordname && ((*recordname == '\0') || !strcmp(recordname,"*")))
         recordname = NULL;
@@ -922,7 +923,7 @@ long dblsr(char *recordname,int level)
             printf("%s\n",precord->name);
             if(level<=1) continue;
             for(link=0; (link<pdbRecordType->no_links) ; link++) {
-                DBADDR  *pdbAddr;
+                DBADDR	*pdbAddr;
                 pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[link]];
                 plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
                 if(plink->type != DB_LINK) continue;
@@ -982,8 +983,8 @@ long dbLockShowLocked(int level)
 
 int * dbLockSetAddrTrace(dbCommon *precord)
 {
-    lockRecord  *plockRecord = precord->lset;
-    lockSet     *plockSet = plockRecord->plockSet;
+    lockRecord	*plockRecord = precord->lset;
+    lockSet	*plockSet = plockRecord->plockSet;
 
     return(&plockSet->trace);
 }

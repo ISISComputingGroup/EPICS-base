@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* osi/os/vxWorks/osdFindSymbol */
 
@@ -21,7 +20,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <loadLib.h>
-#include <ioLib.h>
 
 #include "dbmf.h"
 #include "epicsString.h"
@@ -30,7 +28,7 @@
 static char *errmsg = NULL;
 static char *oldmsg = NULL;
 
-LIBCOM_API void * epicsLoadLibrary(const char *name)
+epicsShareFunc void * epicsLoadLibrary(const char *name)
 {
     MODULE_ID m = 0;
     int fd;
@@ -56,7 +54,7 @@ LIBCOM_API void * epicsLoadLibrary(const char *name)
     return m;
 }
 
-LIBCOM_API const char *epicsLoadError(void)
+epicsShareFunc const char *epicsLoadError(void)
 {
     if (oldmsg)
         free(oldmsg);

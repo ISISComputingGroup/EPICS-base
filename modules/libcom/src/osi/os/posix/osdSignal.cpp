@@ -3,9 +3,8 @@
  *     National Laboratory.
  * Copyright (c) 2002 The Regents of the University of California, as
  *     Operator of Los Alamos National Laboratory.
- * SPDX-License-Identifier: EPICS
  * EPICS BASE is distributed subject to a Software License Agreement found
- * in file LICENSE that is included with this distribution.
+ * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 /*
@@ -17,6 +16,7 @@
 #include <errno.h>
 #include <string.h>
 
+#define epicsExportSharedSymbols
 #include "epicsSignal.h"
 
 static void ignoreIfDefault(int signum, const char *name)
@@ -38,7 +38,7 @@ static void ignoreIfDefault(int signum, const char *name)
 /*
  * epicsSignalInstallSigHupIgnore ()
  */
-LIBCOM_API void epicsStdCall epicsSignalInstallSigHupIgnore (void)
+epicsShareFunc void epicsShareAPI epicsSignalInstallSigHupIgnore (void)
 {
     ignoreIfDefault(SIGHUP, "SIGHUP");
 }
@@ -46,12 +46,12 @@ LIBCOM_API void epicsStdCall epicsSignalInstallSigHupIgnore (void)
 /*
  * epicsSignalInstallSigPipeIgnore ()
  */
-LIBCOM_API void epicsStdCall epicsSignalInstallSigPipeIgnore (void)
+epicsShareFunc void epicsShareAPI epicsSignalInstallSigPipeIgnore (void)
 {
     ignoreIfDefault(SIGPIPE, "SIGPIPE");
 }
 
 /* Disabled */
-LIBCOM_API void epicsStdCall epicsSignalInstallSigAlarmIgnore ( void ) {}
-LIBCOM_API void epicsStdCall epicsSignalRaiseSigAlarm 
+epicsShareFunc void epicsShareAPI epicsSignalInstallSigAlarmIgnore ( void ) {}
+epicsShareFunc void epicsShareAPI epicsSignalRaiseSigAlarm 
                                   ( struct epicsThreadOSD * /* threadId */ ) {}

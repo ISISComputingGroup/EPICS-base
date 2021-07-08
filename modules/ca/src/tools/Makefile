@@ -13,7 +13,10 @@ TOP = ../../../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_CMD = caget camonitor cainfo caput
+PROD_DEFAULT += caget camonitor cainfo caput
+PROD_vxWorks = -nil-
+PROD_RTEMS = -nil-
+PROD_iOS = -nil-
 
 PROD_SRCS = tool_lib.c
 

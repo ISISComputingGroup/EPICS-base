@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* osdEvent.c */
 /*
@@ -23,10 +22,9 @@
 #define STRICT
 #include <windows.h>
 
-#include "libComAPI.h"
+#define epicsExportSharedSymbols
+#include "shareLib.h"
 #include "epicsEvent.h"
-
-#include "osdThreadPvt.h"
 
 typedef struct epicsEventOSD {
     HANDLE handle;
@@ -35,8 +33,8 @@ typedef struct epicsEventOSD {
 /*
  * epicsEventCreate ()
  */
-LIBCOM_API epicsEventId epicsEventCreate (
-    epicsEventInitialState initialState )
+epicsShareFunc epicsEventId epicsEventCreate (
+    epicsEventInitialState initialState ) 
 {
     epicsEventOSD *pSem;
 
@@ -55,7 +53,7 @@ LIBCOM_API epicsEventId epicsEventCreate (
 /*
  * epicsEventDestroy ()
  */
-LIBCOM_API void epicsEventDestroy ( epicsEventId pSem ) 
+epicsShareFunc void epicsEventDestroy ( epicsEventId pSem ) 
 {
     CloseHandle ( pSem->handle );
     free ( pSem );
@@ -64,7 +62,7 @@ LIBCOM_API void epicsEventDestroy ( epicsEventId pSem )
 /*
  * epicsEventTrigger ()
  */
-LIBCOM_API epicsEventStatus epicsEventTrigger ( epicsEventId pSem ) 
+epicsShareFunc epicsEventStatus epicsEventTrigger ( epicsEventId pSem ) 
 {
     BOOL status;
     status = SetEvent ( pSem->handle );
@@ -74,8 +72,8 @@ LIBCOM_API epicsEventStatus epicsEventTrigger ( epicsEventId pSem )
 /*
  * epicsEventWait ()
  */
-LIBCOM_API epicsEventStatus epicsEventWait ( epicsEventId pSem ) 
-{
+epicsShareFunc epicsEventStatus epicsEventWait ( epicsEventId pSem ) 
+{ 
     DWORD status;
     status = WaitForSingleObject (pSem->handle, INFINITE);
     if ( status == WAIT_OBJECT_0 ) {
@@ -89,50 +87,30 @@ LIBCOM_API epicsEventStatus epicsEventWait ( epicsEventId pSem )
 /*
  * epicsEventWaitWithTimeout ()
  */
-LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
+epicsShareFunc epicsEventStatus epicsEventWaitWithTimeout (
     epicsEventId pSem, double timeOut )
-{
-    /* waitable timers use 100 nanosecond intervals, like FILETIME */
-    static const unsigned ivalPerSec = 10000000u; /* number of 100ns intervals per second */
-    static const unsigned mSecPerSec = 1000u;     /* milliseconds per second */
-    HANDLE handles[2];
+{ 
+    static const unsigned mSecPerSec = 1000;
     DWORD status;
-    LARGE_INTEGER tmo;
-    HANDLE timer;
-    LONGLONG nIvals;  /* number of intervals */
+    DWORD tmo;
 
     if ( timeOut <= 0.0 ) {
-        tmo.QuadPart = 0u;
+        tmo = 0u;
     }
-    else if ( timeOut >= INFINITE / mSecPerSec  ) {
-        /* we need to apply a maximum wait time to stop an overflow. We choose (INFINITE - 1) milliseconds,
-           to be compatible with previous WaitForSingleObject() implementation */    
-        nIvals = (LONGLONG)(INFINITE - 1) * (ivalPerSec / mSecPerSec);
-        tmo.QuadPart = -nIvals;  /* negative value means a relative time offset for timer */
+    else if ( timeOut >= INFINITE / mSecPerSec ) {
+        tmo = INFINITE - 1;
     }
     else {
-        nIvals = (LONGLONG)(timeOut * ivalPerSec + 0.999999);
-        tmo.QuadPart = -nIvals;
-    }
-
-    if (tmo.QuadPart < 0) {
-        timer = osdThreadGetTimer();
-        if (!SetWaitableTimer(timer, &tmo, 0, NULL, NULL, 0)) {
-            return epicsEventError;
+        tmo = ( DWORD ) ( ( timeOut * mSecPerSec ) + 0.5 );
+        if ( tmo == 0 ) {
+            tmo = 1;
         }
-        handles[0] = pSem->handle;
-        handles[1] = timer;
-        status = WaitForMultipleObjects (2, handles, FALSE, INFINITE);
     }
-    else {
-        status = WaitForSingleObject(pSem->handle, 0);
-    }
+    status = WaitForSingleObject ( pSem->handle, tmo );
     if ( status == WAIT_OBJECT_0 ) {
         return epicsEventOK;
     }
-    else if ( status == WAIT_OBJECT_0 + 1 || status == WAIT_TIMEOUT ) {
-        /* WaitForMultipleObjects will trigger WAIT_OBJECT_0 + 1,
-           WaitForSingleObject will trigger WAIT_TIMEOUT */
+    else if ( status == WAIT_TIMEOUT ) {
         return epicsEventWaitTimeout;
     }
     else {
@@ -143,8 +121,8 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
 /*
  * epicsEventTryWait ()
  */
-LIBCOM_API epicsEventStatus epicsEventTryWait ( epicsEventId pSem ) 
-{
+epicsShareFunc epicsEventStatus epicsEventTryWait ( epicsEventId pSem ) 
+{ 
     DWORD status;
 
     status = WaitForSingleObject ( pSem->handle, 0 );
@@ -162,6 +140,6 @@ LIBCOM_API epicsEventStatus epicsEventTryWait ( epicsEventId pSem )
 /*
  * epicsEventShow ()
  */
-LIBCOM_API void epicsEventShow ( epicsEventId id, unsigned level ) 
-{
+epicsShareFunc void epicsEventShow ( epicsEventId id, unsigned level ) 
+{ 
 }

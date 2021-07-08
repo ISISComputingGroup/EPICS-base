@@ -3,7 +3,6 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -35,6 +34,7 @@
 /*
  * EPICS
  */
+#define epicsExportSharedSymbols
 #include "osiSock.h"
 #include "errlog.h"
 #include "epicsThread.h"
@@ -122,7 +122,7 @@ fail:
     free ( pIfinfoList );
 }
 
-LIBCOM_API osiSockAddr epicsStdCall osiLocalAddr (SOCKET socket)
+epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
 {
     epicsThreadOnce(&osiLocalAddrId, osiLocalAddrOnce, (void*)&socket);
     return osiLocalAddrResult;
@@ -133,7 +133,7 @@ LIBCOM_API osiSockAddr epicsStdCall osiLocalAddr (SOCKET socket)
 /*
  * osiSockDiscoverBroadcastAddresses ()
  */
-LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
+epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
 {
     int                 status;

@@ -3,7 +3,6 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -21,10 +20,8 @@
 #include "mbboDirectRecord.h"
 #include "epicsExport.h"
 
-static long init_record(dbCommon *pcommon)
+static long init_record(mbboDirectRecord *prec)
 {
-	mbboDirectRecord *prec = (mbboDirectRecord *)pcommon;
-
     if (prec->nobt == 0)
         prec->mask = 0xffffffff;
 
@@ -33,7 +30,7 @@ static long init_record(dbCommon *pcommon)
     return 2; /* Don't convert */
 }
 
-static long write_mbbo(mbboDirectRecord *prec)
+static long write_mbbo(mbboDirectRecord	*prec)
 {
     epicsUInt32 data;
 
@@ -43,7 +40,10 @@ static long write_mbbo(mbboDirectRecord *prec)
 }
 
 /* Create the dset for devMbboDirectSoftRaw */
-mbbodirectdset devMbboDirectSoftRaw = {
+struct {
+    dset common;
+    DEVSUPFUN write;
+} devMbboDirectSoftRaw = {
     {5, NULL, NULL, init_record, NULL},
     write_mbbo
 };

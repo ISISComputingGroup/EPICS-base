@@ -3,18 +3,14 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/**
- * \file alarmString.h
- * \brief Deprecated, use alarm.h instead
+/*
+ * This file is deprecated, use alarm.h instead.
  *
- * How to convert alarm status and severity values into a string for printing.
- *
- * \note This file is deprecated, use alarm.h instead.
+ * Old string names for alarm status and severity values
  */
 
 #ifndef INC_alarmString_H
@@ -26,13 +22,9 @@
 extern "C" {
 #endif
 
-/**
- * \brief An alias for epicsAlarmSeverityStrings
- */
+/* Old versions of alarmString.h defined these names: */
+
 #define alarmSeverityString epicsAlarmSeverityStrings
-/**
- * \brief An alias for epicsAlarmConditionStrings
- */
 #define alarmStatusString epicsAlarmConditionStrings
 
 

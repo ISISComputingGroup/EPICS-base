@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /** @file devSup.h
  *
@@ -21,7 +20,7 @@
 #define INCdevSuph 1
 
 #include "errMdef.h"
-#include "dbCoreAPI.h"
+#include "shareLib.h"
 
 /* structures defined elsewhere */
 struct dbCommon;
@@ -35,7 +34,7 @@ struct link; /* aka DBLINK */
  *
  * In Makefile:
  @code
- USR_CPPFLAGS += -DUSE_TYPED_RSET -DUSE_TYPED_DSET
+ USR_CFLAGS += -DUSE_TYPED_RSET -DUSE_TYPED_DSET
  @endcode
  *
  * In C source file:
@@ -49,7 +48,10 @@ struct link; /* aka DBLINK */
  static long get_iointr_info(int detach, dbCommon *prec, IOCSCANPVT* pscan);
  static long longin_read(longinRecord *prec);
 
- longindset devLiDevName = {
+ const struct {
+     dset common;
+     long (*read)(longinRecord *prec);
+ } devLiDevName = {
      {
       5, // 4 from dset + 1 from longinRecord
          NULL,
@@ -131,19 +133,19 @@ typedef struct dsxt {
 
 #ifdef __cplusplus
 extern "C" {
-    typedef long (*DEVSUPFUN)(void *);  /* ptr to device support function*/
+    typedef long (*DEVSUPFUN)(void *);	/* ptr to device support function*/
 #else
-    typedef long (*DEVSUPFUN)();        /* ptr to device support function*/
+    typedef long (*DEVSUPFUN)();	/* ptr to device support function*/
 #endif
 
 #ifndef USE_TYPED_DSET
 
 typedef struct dset {   /* device support entry table */
-    long        number;         /*number of support routines*/
-    DEVSUPFUN   report;         /*print report*/
-    DEVSUPFUN   init;           /*init support layer*/
-    DEVSUPFUN   init_record;    /*init device for particular record*/
-    DEVSUPFUN   get_ioint_info; /* get io interrupt information*/
+    long	number;		/*number of support routines*/
+    DEVSUPFUN	report;		/*print report*/
+    DEVSUPFUN	init;		/*init support layer*/
+    DEVSUPFUN	init_record;	/*init device for particular record*/
+    DEVSUPFUN	get_ioint_info;	/* get io interrupt information*/
     /*other functions are record dependent*/
 } dset;
 
@@ -151,19 +153,16 @@ typedef struct dset {   /* device support entry table */
 typedef typed_dset dset;
 #endif /* USE_TYPED_DSET */
 
-/* exists only to disambiguate  dset dbCommon::dset */
-typedef dset unambiguous_dset;
-
 /** Fetch INP or OUT link (or NULL if record type has neither).
  *
  * Recommended for use in device support init_record()
  */
-DBCORE_API struct link* dbGetDevLink(struct dbCommon* prec);
+epicsShareFunc struct link* dbGetDevLink(struct dbCommon* prec);
 
-DBCORE_API extern dsxt devSoft_DSXT;  /* Allow anything table */
+epicsShareExtern dsxt devSoft_DSXT;  /* Allow anything table */
 
-DBCORE_API void devExtend(dsxt *pdsxt);
-DBCORE_API void dbInitDevSup(struct devSup *pdevSup, dset *pdset);
+epicsShareFunc void devExtend(dsxt *pdsxt);
+epicsShareFunc void dbInitDevSup(struct devSup *pdevSup, dset *pdset);
 
 
 #define S_dev_noDevSup      (M_devSup| 1) /*SDR_DEVSUP: Device support missing*/

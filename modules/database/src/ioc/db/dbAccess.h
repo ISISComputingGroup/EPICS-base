@@ -3,11 +3,10 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* dbAccess.h   */
+/* dbAccess.h	*/
 
 #ifndef INCdbAccessh
 #define INCdbAccessh
@@ -18,7 +17,7 @@
 #include "dbFldTypes.h"
 #include "link.h"
 #include "dbBase.h"
-#include "dbCoreAPI.h"
+#include "shareLib.h"
 #include "dbAddr.h"
 #include "dbLock.h"
 #include "dbAccessDefs.h"

@@ -3,8 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* Author:  Marty Kraimer Date:    04-07-94 */
@@ -14,15 +14,15 @@
 #ifndef INC_gpHash_H
 #define INC_gpHash_H
 
-#include "libComAPI.h"
+#include "shareLib.h"
 
 #include "ellLib.h"
 
 typedef struct{
-    ELLNODE     node;
-    const char  *name;          /*address of name placed in directory*/
-    void        *pvtid;         /*private name for subsystem user*/
-    void        *userPvt;       /*private for user*/
+    ELLNODE	node;
+    const char	*name;		/*address of name placed in directory*/
+    void	*pvtid;		/*private name for subsystem user*/
+    void	*userPvt;	/*private for user*/
 } GPHENTRY;
 
 struct gphPvt;
@@ -32,19 +32,19 @@ extern "C" {
 #endif
 
 /*tableSize must be power of 2 in range 256 to 65536*/
-LIBCOM_API void epicsStdCall
+epicsShareFunc void epicsShareAPI
     gphInitPvt(struct gphPvt **ppvt, int tableSize);
-LIBCOM_API GPHENTRY * epicsStdCall
+epicsShareFunc GPHENTRY * epicsShareAPI
     gphFind(struct gphPvt *pvt, const char *name, void *pvtid);
-LIBCOM_API GPHENTRY * epicsStdCall
+epicsShareFunc GPHENTRY * epicsShareAPI
     gphFindParse(struct gphPvt *pvt, const char *name, size_t len, void *pvtid);
-LIBCOM_API GPHENTRY * epicsStdCall
+epicsShareFunc GPHENTRY * epicsShareAPI
     gphAdd(struct gphPvt *pvt, const char *name, void *pvtid);
-LIBCOM_API void epicsStdCall
+epicsShareFunc void epicsShareAPI
     gphDelete(struct gphPvt *pvt, const char *name, void *pvtid);
-LIBCOM_API void epicsStdCall gphFreeMem(struct gphPvt *pvt);
-LIBCOM_API void epicsStdCall gphDump(struct gphPvt *pvt);
-LIBCOM_API void epicsStdCall gphDumpFP(FILE *fp, struct gphPvt *pvt);
+epicsShareFunc void epicsShareAPI gphFreeMem(struct gphPvt *pvt);
+epicsShareFunc void epicsShareAPI gphDump(struct gphPvt *pvt);
+epicsShareFunc void epicsShareAPI gphDumpFP(FILE *fp, struct gphPvt *pvt);
 
 #ifdef __cplusplus
 }

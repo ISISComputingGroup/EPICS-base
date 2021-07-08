@@ -3,8 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS BASE is distributed subject to a Software License Agreement found
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
@@ -15,6 +15,7 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "syncGroup.h"
@@ -22,7 +23,7 @@
 /*
  * ca_sg_create()
  */
-extern "C" int epicsStdCall ca_sg_create ( CA_SYNC_GID * pgid )
+extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid )
 {
     ca_client_context * pcac;
     int caStatus;
@@ -66,7 +67,7 @@ int ca_sync_group_destroy ( CallbackGuard & cbGuard, epicsGuard < epicsMutex > &
 /*
  * ca_sg_delete()
  */
-extern "C" int epicsStdCall ca_sg_delete ( const CA_SYNC_GID gid )
+extern "C" int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid )
 {
     ca_client_context * pcac;
     int caStatus = fetchClientContext ( & pcac );
@@ -101,7 +102,7 @@ void sync_group_reset ( ca_client_context & client, CASG & sg )
         epicsGuard < epicsMutex > guard ( client.mutex );
         sg.reset ( *client.pCallbackGuard.get(), guard );
     }
-    else {
+    else {  
         //
         // we will definately stall out here if all of the
         // following are true
@@ -125,7 +126,7 @@ void sync_group_reset ( ca_client_context & client, CASG & sg )
 // !!!! is disabled. This prevents the preemptive callback lock from being released
 // !!!! by other threads than the one that locked it.
 //
-extern "C" int epicsStdCall ca_sg_block (
+extern "C" int epicsShareAPI ca_sg_block (
     const CA_SYNC_GID gid, ca_real timeout )
 {
     ca_client_context *pcac;
@@ -153,7 +154,7 @@ extern "C" int epicsStdCall ca_sg_block (
 /*
  * ca_sg_reset
  */
-extern "C" int epicsStdCall ca_sg_reset ( const CA_SYNC_GID gid )
+extern "C" int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid )
 {
     ca_client_context *pcac;
     int caStatus = fetchClientContext (&pcac);
@@ -177,7 +178,7 @@ extern "C" int epicsStdCall ca_sg_reset ( const CA_SYNC_GID gid )
 /*
  * ca_sg_stat
  */
-extern "C" int epicsStdCall ca_sg_stat ( const CA_SYNC_GID gid )
+extern "C" int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
 {
     ca_client_context * pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -200,7 +201,7 @@ extern "C" int epicsStdCall ca_sg_stat ( const CA_SYNC_GID gid )
 /*
  * ca_sg_test
  */
-extern "C" int epicsStdCall ca_sg_test ( const CA_SYNC_GID gid )
+extern "C" int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid )
 {
     ca_client_context * pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -244,7 +245,7 @@ extern "C" int epicsStdCall ca_sg_test ( const CA_SYNC_GID gid )
 /*
  * ca_sg_array_put()
  */
-extern "C" int epicsStdCall ca_sg_array_put ( const CA_SYNC_GID gid, chtype type,
+extern "C" int epicsShareAPI ca_sg_array_put ( const CA_SYNC_GID gid, chtype type,
     arrayElementCount count, chid pChan, const void *pValue )
 {
     ca_client_context *pcac;
@@ -261,7 +262,7 @@ extern "C" int epicsStdCall ca_sg_array_put ( const CA_SYNC_GID gid, chtype type
     }
 
     try {
-        pcasg->put ( guard, pChan, type,
+        pcasg->put ( guard, pChan, type, 
             static_cast < unsigned > ( count ), pValue );
         return ECA_NORMAL;
     }
@@ -306,7 +307,7 @@ extern "C" int epicsStdCall ca_sg_array_put ( const CA_SYNC_GID gid, chtype type
 /*
  * ca_sg_array_get()
  */
-extern "C" int epicsStdCall ca_sg_array_get ( const CA_SYNC_GID gid, chtype type,
+extern "C" int epicsShareAPI ca_sg_array_get ( const CA_SYNC_GID gid, chtype type,
     arrayElementCount count, chid pChan, void *pValue )
 {
     ca_client_context *pcac;
@@ -323,7 +324,7 @@ extern "C" int epicsStdCall ca_sg_array_get ( const CA_SYNC_GID gid, chtype type
     }
 
     try {
-        pcasg->get ( guard, pChan, type,
+        pcasg->get ( guard, pChan, type, 
             static_cast < unsigned > ( count ), pValue );
         return ECA_NORMAL;
     }

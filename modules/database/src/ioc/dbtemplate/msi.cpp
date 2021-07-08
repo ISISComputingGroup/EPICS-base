@@ -3,7 +3,6 @@
 * National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 * Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
 * in the file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -301,11 +300,11 @@ static void makeSubstitutions(inputData * const inputPvt,
             char *pstart;
             char *pend;
             int  cmdind=-1;
-            size_t  i;
+            int  i;
 
             for (i = 0; i < NELEMENTS(cmdNames); i++) {
                 if (strstr(command, cmdNames[i])) {
-                    cmdind = (int)i;
+                    cmdind = i;
                 }
             }
             if (cmdind < 0) goto endcmd;

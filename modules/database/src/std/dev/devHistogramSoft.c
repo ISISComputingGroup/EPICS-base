@@ -3,14 +3,14 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* devHistogramSoft.c */
 /*
- *      Author:     Janet Anderson
- *      Date:       07/02/91
+ *      Author:		Janet Anderson
+ *      Date:		07/02/91
  */
 #include <stdlib.h>
 #include <stdio.h>
@@ -28,19 +28,29 @@
 #include "epicsExport.h"
 
 /* Create the dset for devHistogramSoft */
-static long init_record(dbCommon *pcommon);
+static long init_record(histogramRecord *prec);
 static long read_histogram(histogramRecord *prec);
-
-histogramdset devHistogramSoft = {
-    {6, NULL, NULL, init_record, NULL},
-    read_histogram, NULL
+struct {
+	long		number;
+	DEVSUPFUN	report;
+	DEVSUPFUN	init;
+	DEVSUPFUN	init_record;
+	DEVSUPFUN	get_ioint_info;
+	DEVSUPFUN	read_histogram;
+	DEVSUPFUN	special_linconv;
+}devHistogramSoft={
+	6,
+	NULL,
+	NULL,
+	init_record,
+	NULL,
+	read_histogram,
+	NULL
 };
-epicsExportAddress(dset, devHistogramSoft);
-
-static long init_record(dbCommon *pcommon)
+epicsExportAddress(dset,devHistogramSoft);
+
+static long init_record(histogramRecord	*prec)
 {
-    histogramRecord *prec = (histogramRecord *)pcommon;
-
     if (recGblInitConstantLink(&prec->svl,DBF_DOUBLE,&prec->sgnl))
         prec->udf = FALSE;
 

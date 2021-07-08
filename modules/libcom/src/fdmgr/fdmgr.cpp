@@ -3,9 +3,9 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 //
 //      File descriptor management C++ class library
@@ -15,18 +15,19 @@
 //              johill@lanl.gov
 //              505 665 1831
 //
-// NOTES:
+// NOTES: 
 // 1) the routines in this file provide backward compatibility with the original
 // "C" based file descriptor manager API
 // 2) This library is _not_ thread safe
 //
 
 #include <stddef.h>
+#define epicsExportSharedSymbols
 #include "locationException.h"
 #include "epicsAssert.h"
 #include "fdManager.h"
 #include "fdmgr.h"
-
+ 
 static const fdRegType fdiToFdRegType[] = {fdrRead, fdrWrite, fdrException};
 static const unsigned fdiToFdRegTypeNElements = sizeof (fdiToFdRegType) / sizeof (fdiToFdRegType[0]);
 const unsigned mSecPerSec = 1000u;
@@ -40,16 +41,16 @@ public:
     class noFunctionSpecified {};
     class doubleDelete {};
 
-    LIBCOM_API fdRegForOldFdmgr (const SOCKET fdIn, const fdRegType type, 
-        const bool onceOnly, fdManager &manager, pCallBackFDMgr pFunc, void *pParam);
-    LIBCOM_API ~fdRegForOldFdmgr ();
+    epicsShareFunc fdRegForOldFdmgr (const SOCKET fdIn, const fdRegType type, 
+		const bool onceOnly, fdManager &manager, pCallBackFDMgr pFunc, void *pParam);
+    epicsShareFunc ~fdRegForOldFdmgr ();
 
 private:
     pCallBackFDMgr pFunc;
     void *pParam;
-    LIBCOM_API virtual void callBack ();
-    fdRegForOldFdmgr ( const fdRegForOldFdmgr & );
-    fdRegForOldFdmgr & operator = ( const fdRegForOldFdmgr & );
+	epicsShareFunc virtual void callBack ();
+	fdRegForOldFdmgr ( const fdRegForOldFdmgr & );
+	fdRegForOldFdmgr & operator = ( const fdRegForOldFdmgr & );
 };
 
 class oldFdmgr;
@@ -59,8 +60,8 @@ class oldFdmgr;
 //
 class timerForOldFdmgr : public epicsTimerNotify, public chronIntIdRes<timerForOldFdmgr> {
 public:
-    LIBCOM_API timerForOldFdmgr (oldFdmgr &fdmgr, double delay, pCallBackFDMgr pFunc, void *pParam);
-    LIBCOM_API virtual ~timerForOldFdmgr ();
+	epicsShareFunc timerForOldFdmgr (oldFdmgr &fdmgr, double delay, pCallBackFDMgr pFunc, void *pParam);
+	epicsShareFunc virtual ~timerForOldFdmgr ();
 
     //
     // exceptions
@@ -73,22 +74,22 @@ private:
     pCallBackFDMgr pFunc;
     void *pParam;
     unsigned id;
-    LIBCOM_API expireStatus expire ( const epicsTime & currentTime );
-    timerForOldFdmgr ( const timerForOldFdmgr & );
-    timerForOldFdmgr & operator = ( const timerForOldFdmgr & );
+    epicsShareFunc expireStatus expire ( const epicsTime & currentTime );
+	timerForOldFdmgr ( const timerForOldFdmgr & );
+	timerForOldFdmgr & operator = ( const timerForOldFdmgr & );
 };
 
 class oldFdmgr : public fdManager {
     friend class timerForOldFdmgr;
-    friend LIBCOM_API int epicsStdCall fdmgr_clear_timeout (fdctx *pfdctx, fdmgrAlarmId id);
+    friend epicsShareFunc int epicsShareAPI fdmgr_clear_timeout (fdctx *pfdctx, fdmgrAlarmId id);
 
 public:
     oldFdmgr ();
 
 private:
     chronIntIdResTable <timerForOldFdmgr> resTbl;
-    oldFdmgr ( const oldFdmgr & );
-    oldFdmgr & operator = ( const oldFdmgr & );
+	oldFdmgr ( const oldFdmgr & );
+	oldFdmgr & operator = ( const oldFdmgr & );
 };
 
 #ifdef _MSC_VER
@@ -103,11 +104,11 @@ template class resTable<timerForOldFdmgr, chronIntId>;
 #   pragma warning ( pop )
 #endif
 
-LIBCOM_API fdRegForOldFdmgr::fdRegForOldFdmgr 
-    (const SOCKET fdIn, const fdRegType typeIn,
-        const bool onceOnlyIn, fdManager &managerIn,
+epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr 
+    (const SOCKET fdIn, const fdRegType typeIn, 
+	    const bool onceOnlyIn, fdManager &managerIn, 
         pCallBackFDMgr pFuncIn, void *pParamIn) :
-    fdReg (fdIn, typeIn, onceOnlyIn, managerIn),
+    fdReg (fdIn, typeIn, onceOnlyIn, managerIn), 
         pFunc (pFuncIn), pParam (pParamIn)
 {
     if (pFuncIn==NULL) {
@@ -115,21 +116,21 @@ LIBCOM_API fdRegForOldFdmgr::fdRegForOldFdmgr
     }
 }
 
-LIBCOM_API fdRegForOldFdmgr::~fdRegForOldFdmgr ()
+epicsShareFunc fdRegForOldFdmgr::~fdRegForOldFdmgr ()
 {
     if (this->pFunc==NULL) {
         throwWithLocation ( doubleDelete () );
     }
 }
 
-LIBCOM_API void fdRegForOldFdmgr::callBack ()
+epicsShareFunc void fdRegForOldFdmgr::callBack ()
 {
     (*this->pFunc) (this->pParam);
 }
 
-timerForOldFdmgr::timerForOldFdmgr ( oldFdmgr &fdmgrIn,
+timerForOldFdmgr::timerForOldFdmgr ( oldFdmgr &fdmgrIn, 
     double delayIn, pCallBackFDMgr pFuncIn, void * pParamIn ) :
-    timer ( fdmgrIn.createTimer() ),
+    timer ( fdmgrIn.createTimer() ), 
     fdmgr ( fdmgrIn ), pFunc ( pFuncIn ), pParam( pParamIn )
 {
     if ( pFuncIn == NULL ) {
@@ -153,7 +154,7 @@ epicsTimerNotify::expireStatus timerForOldFdmgr::expire ( const epicsTime & )
 
 oldFdmgr::oldFdmgr () {}
 
-extern "C" LIBCOM_API fdctx * epicsStdCall fdmgr_init (void)
+extern "C" epicsShareFunc fdctx * epicsShareAPI fdmgr_init (void)
 {
     oldFdmgr *pfdm;
 
@@ -168,7 +169,7 @@ extern "C" LIBCOM_API fdctx * epicsStdCall fdmgr_init (void)
     return (fdctx *) pfdm;
 }
 
-extern "C" LIBCOM_API fdmgrAlarmId epicsStdCall fdmgr_add_timeout (
+extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
     fdctx *pfdctx, struct timeval *ptimeout, pCallBackFDMgr pFunc, void *pParam)
 {
     double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <const double> (uSecPerSec);
@@ -182,8 +183,8 @@ extern "C" LIBCOM_API fdmgrAlarmId epicsStdCall fdmgr_add_timeout (
 
     while (true) {
         try {
-            pTimer = new timerForOldFdmgr
-                (*pfdm, delay, pFunc, pParam);
+            pTimer = new timerForOldFdmgr 
+			    (*pfdm, delay, pFunc, pParam);
         }
         catch (...)
         {
@@ -206,7 +207,7 @@ extern "C" LIBCOM_API fdmgrAlarmId epicsStdCall fdmgr_add_timeout (
     return id;
 }
 
-extern "C" LIBCOM_API int epicsStdCall fdmgr_clear_timeout (fdctx *pfdctx, fdmgrAlarmId id)
+extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_timeout (fdctx *pfdctx, fdmgrAlarmId id)
 {
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
     timerForOldFdmgr *pTimer;
@@ -226,7 +227,7 @@ extern "C" LIBCOM_API int epicsStdCall fdmgr_clear_timeout (fdctx *pfdctx, fdmgr
     return 0;
 }
 
-extern "C" LIBCOM_API int epicsStdCall fdmgr_add_callback (
+extern "C" epicsShareFunc int epicsShareAPI fdmgr_add_callback (
     fdctx *pfdctx, SOCKET fd, enum fdi_type fdi, pCallBackFDMgr pFunc, void *pParam)
 {
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
@@ -267,9 +268,9 @@ extern "C" LIBCOM_API int epicsStdCall fdmgr_add_callback (
         return 0;
     }
 }
-
-extern "C" LIBCOM_API int epicsStdCall fdmgr_clear_callback (
-    fdctx *pfdctx, SOCKET fd, enum fdi_type fdi)
+ 
+extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_callback (
+    fdctx *pfdctx, SOCKET fd, enum fdi_type	fdi)
 {
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
     fdReg *pFDR;
@@ -295,7 +296,7 @@ extern "C" LIBCOM_API int epicsStdCall fdmgr_clear_callback (
     }
 }
 
-extern "C" LIBCOM_API int epicsStdCall fdmgr_pend_event (fdctx *pfdctx, struct timeval *ptimeout)
+extern "C" epicsShareFunc int epicsShareAPI fdmgr_pend_event (fdctx *pfdctx, struct timeval *ptimeout)
 {
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
     double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <const double> (uSecPerSec);
@@ -310,7 +311,7 @@ extern "C" LIBCOM_API int epicsStdCall fdmgr_pend_event (fdctx *pfdctx, struct t
     return 0;
 }
 
-extern "C" LIBCOM_API int epicsStdCall fdmgr_delete (fdctx *pfdctx)
+extern "C" epicsShareFunc int epicsShareAPI fdmgr_delete (fdctx *pfdctx)
 {
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
     delete pfdm;
@@ -320,16 +321,16 @@ extern "C" LIBCOM_API int epicsStdCall fdmgr_delete (fdctx *pfdctx)
 /*
  * depricated interface
  */
-extern "C" LIBCOM_API int epicsStdCall fdmgr_clear_fd (fdctx *pfdctx, SOCKET fd)
+extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_fd (fdctx *pfdctx, SOCKET fd)
 {
-    return fdmgr_clear_callback(pfdctx, fd, fdi_read);
+	return fdmgr_clear_callback(pfdctx, fd, fdi_read);
 }
 
 /*
  * depricated interface
  */
-extern "C" LIBCOM_API int epicsStdCall fdmgr_add_fd ( 
+extern "C" epicsShareFunc int epicsShareAPI fdmgr_add_fd ( 
     fdctx   *pfdctx, SOCKET  fd, void (*pfunc)(void *pParam), void *param)
 {
-    return fdmgr_add_callback (pfdctx, fd, fdi_read, pfunc, param);
+	return fdmgr_add_callback (pfdctx, fd, fdi_read, pfunc, param);
 }

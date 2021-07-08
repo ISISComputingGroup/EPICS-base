@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 /* epicsStdio.c */
@@ -19,8 +18,9 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#define epicsExportSharedSymbols
 #define epicsStdioStdStreams
-#include "libComAPI.h"
+#include "shareLib.h"
 #include "epicsThread.h"
 #include "epicsStdio.h"
 
@@ -36,7 +36,7 @@ static void once(void *junk)
     stderrThreadPrivateId = epicsThreadPrivateCreate();
 }
 
-FILE * epicsStdCall epicsGetStdin(void)
+FILE * epicsShareAPI epicsGetStdin(void)
 {
     FILE *fp = epicsGetThreadStdin();
 
@@ -45,7 +45,7 @@ FILE * epicsStdCall epicsGetStdin(void)
     return fp;
 }
 
-FILE * epicsStdCall epicsGetStdout(void)
+FILE * epicsShareAPI epicsGetStdout(void)
 {
     FILE *fp = epicsGetThreadStdout();
 
@@ -54,7 +54,7 @@ FILE * epicsStdCall epicsGetStdout(void)
     return fp;
 }
 
-FILE * epicsStdCall epicsGetStderr(void)
+FILE * epicsShareAPI epicsGetStderr(void)
 {
     FILE *fp = epicsGetThreadStderr();
 
@@ -63,19 +63,19 @@ FILE * epicsStdCall epicsGetStderr(void)
     return fp;
 }
 
-FILE * epicsStdCall epicsGetThreadStdin(void)
+FILE * epicsShareAPI epicsGetThreadStdin(void)
 {
     epicsThreadOnce(&onceId,once,0);
     return epicsThreadPrivateGet(stdinThreadPrivateId);
 }
 
-FILE * epicsStdCall epicsGetThreadStdout(void)
+FILE * epicsShareAPI epicsGetThreadStdout(void)
 {
     epicsThreadOnce(&onceId,once,0);
     return epicsThreadPrivateGet(stdoutThreadPrivateId);
 }
 
-FILE * epicsStdCall epicsGetThreadStderr(void)
+FILE * epicsShareAPI epicsGetThreadStderr(void)
 {
     /* Deliberately don't do the epicsThreadOnce() here; epicsThreadInit()
      * is allowed to use stderr inside its once() routine, in which case we
@@ -88,25 +88,25 @@ FILE * epicsStdCall epicsGetThreadStderr(void)
     return epicsThreadPrivateGet(stderrThreadPrivateId);
 }
 
-void  epicsStdCall epicsSetThreadStdin(FILE *fp)
+void  epicsShareAPI epicsSetThreadStdin(FILE *fp)
 {
     epicsThreadOnce(&onceId,once,0);
     epicsThreadPrivateSet(stdinThreadPrivateId,fp);
 }
 
-void  epicsStdCall epicsSetThreadStdout(FILE *fp)
+void  epicsShareAPI epicsSetThreadStdout(FILE *fp)
 {
     epicsThreadOnce(&onceId,once,0);
     epicsThreadPrivateSet(stdoutThreadPrivateId,fp);
 }
 
-void  epicsStdCall epicsSetThreadStderr(FILE *fp)
+void  epicsShareAPI epicsSetThreadStderr(FILE *fp)
 {
     epicsThreadOnce(&onceId,once,0);
     epicsThreadPrivateSet(stderrThreadPrivateId,fp);
 }
 
-int epicsStdCall epicsStdoutPrintf(const char *pFormat, ...)
+int epicsShareAPI epicsStdoutPrintf(const char *pFormat, ...)
 {
     va_list     pvar;
     int         nchar;
@@ -118,12 +118,12 @@ int epicsStdCall epicsStdoutPrintf(const char *pFormat, ...)
     return nchar;
 }
 
-int epicsStdCall epicsStdoutPuts(const char *str)
+int epicsShareAPI epicsStdoutPuts(const char *str)
 {
     return fprintf(epicsGetStdout(), "%s\n", str);
 }
 
-int epicsStdCall epicsStdoutPutchar(int c)
+int epicsShareAPI epicsStdoutPutchar(int c)
 {
     return putc(c, epicsGetStdout());
 }
