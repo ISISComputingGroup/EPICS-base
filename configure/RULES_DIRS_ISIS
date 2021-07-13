@@ -1,1 +1,2 @@
 #ACTIONS += uninstall kit
+ACTIONS += ioctests
