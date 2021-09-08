@@ -93,10 +93,6 @@ for %%i in ( 10.0 11.0 12.0 13.0 14.0 )do (
 )
 set "_vcvarsalldir=%_progfiles%\Microsoft Visual Studio %VCVERSION%\VC"
 for %%i in ( Community Professional Enterprise ) do (
-    if exist "%_progfiles%\Microsoft Visual Studio\2017\%%i\VC\Auxiliary\Build" (
-        set "VCVERSION=15.0"
-        set "_vcvarsalldir=%_progfiles%\Microsoft Visual Studio\2017\%%i\VC\Auxiliary\Build"
-    )
     if exist "%_progfiles%\Microsoft Visual Studio\2019\%%i\VC\Auxiliary\Build" (
         set "VCVERSION=16.0"
         set "_vcvarsalldir=%_progfiles%\Microsoft Visual Studio\2019\%%i\VC\Auxiliary\Build"
