@@ -92,12 +92,15 @@ for %%i in ( 10.0 11.0 12.0 13.0 14.0 )do (
     if exist "%_progfiles%\Microsoft Visual Studio %%i\VC\vcvarsall.bat" set VCVERSION=%%i
 )
 set "_vcvarsalldir=%_progfiles%\Microsoft Visual Studio %VCVERSION%\VC"
-for %%i in ( Community Professional Enterprise ) do (
-    if exist "%_progfiles%\Microsoft Visual Studio\2019\%%i\VC\Auxiliary\Build" (
-        set "VCVERSION=16.0"
-        set "_vcvarsalldir=%_progfiles%\Microsoft Visual Studio\2019\%%i\VC\Auxiliary\Build"
+if not "%IBEX_USEOLDVC%" == "YES" (
+    for %%i in ( Community Professional Enterprise ) do (
+        if exist "%_progfiles%\Microsoft Visual Studio\2019\%%i\VC\Auxiliary\Build" (
+            set "VCVERSION=16.0"
+            set "_vcvarsalldir=%_progfiles%\Microsoft Visual Studio\2019\%%i\VC\Auxiliary\Build"
+        )
     )
 )
+
 REM -- express 2012 provides a 32->64 cross compiler, the full visual studio has both a cross and native compiler
 if exist "%_vcvarsalldir%\vcvars64.bat" (
     set _vcarch=x64
