@@ -1059,6 +1059,18 @@ iocsh (const char *pathname)
 					break;
 			}
 		}
+        // disable quick edit mode, can cause ioc window to freeze if user clicks in it by mistake
+        DWORD mode;
+        HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE); 
+        if (hStdin != INVALID_HANDLE_VALUE)
+        {
+            if (GetConsoleMode(hStdin, &mode) != 0)
+            {
+                mode &= ~ENABLE_QUICK_EDIT_MODE;
+                mode |= ENABLE_EXTENDED_FLAGS;
+                SetConsoleMode(hStdin, mode);
+            }
+        }
 		first_call = 0;
 	}
 #endif /* _WIN32 */
