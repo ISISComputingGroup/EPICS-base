@@ -44,8 +44,6 @@ The record-specific fields are described below.
 
 =recordtype compress
 
-...
-
 =cut
 
 menu(compressALG) {
@@ -69,10 +67,12 @@ The record-specific fields are described below, grouped by functionality.
 =head3 Scanning Parameters
 
 The compression record has the standard fields for specifying under what
-circumstances the record will be processed. These fields are listed in
-L<Scan Fields>. In addition, L<Scanning Specification>
-explains how these fields are used. Since  the compression record supports no
-direct interfaces to hardware, its SCAN field cannot specify C<<< I/O Intr >>>.
+circumstances the record will be processed. Since  the compression record
+supports no direct interfaces to hardware, its SCAN field cannot be set to C<<<
+I/O Intr >>>.
+These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
+
+=fields SCAN, PHAS, EVNT, PRIO, PINI
 
 =head3 Algorithms and Related Parameters
 
@@ -89,9 +89,11 @@ The following fields determine what channel to read and how to compress the data
 
 As stated above, the ALG field specifies which algorithm to be performed on the data.
 
-The INP should be a database or channel access link. Though INP can be a constant,
-the data compression algorithms are supported only when INP is a database link. See
-L<Address Specification> for information on specifying links.
+The INP should be a database or channel access link. Though INP can be a
+constant, the data compression algorithms are supported only when INP is a
+database link. See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for information on specifying links.
 
 
 IHIL and ILIL can be set to provide an initial value filter on the input array.
@@ -197,31 +199,39 @@ PREC controls the floating-point precision whenever C<<< get_precision >>> is
 called, and the field being referenced is the VAL field (i.e., one of the values
 contained in the circular buffer).
 
-See L<Fields Common to All Record Types>
-for more on the record name (NAME) and description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
 
 
 =head3 Alarm Parameters
 
 The compression record has the alarm parameters common to all record types
-described in L<Alarm Fields>.
+described in L<Alarm Fields|dbCommonRecord/Alarm Fields>.
 
 =head3 Run-time Parameters
 
 These parameters are used by the run-time code for processing the data
 compression algorithm. They are not configurable by the user, though some are
-accessible at run-time. They can represent the current state of the waveform or
+accessible at run-time. They can represent the current state of the algorithm or
 of the record whose field is referenced by the INP field.
 
 =fields NUSE, OUSE, BPTR, SPTR, WPTR, CVB, INPN, INX
 
 NUSE and OUSE hold the current and previous number of elements stored in VAL.
 
-BPTR is a pointer that refers to the buffer referenced by VAL.
+BPTR points to the buffer referenced by VAL.
 
 SPTR points to an array that is used for array averages.
 
-WPTR is used by the dbGetlinks routines.
+WPTR points to the buffer containing data referenced by INP.
+
+CVB stores the current compressed value for C<<< N to 1 >>> algorithms when INP
+references a scalar.
+
+INPN is updated when the record processes; if INP references an array and the
+size changes, the WPTR buffer is reallocated.
+
+INX counts the number of readings collected.
 
 =head2 Record Support
 
@@ -234,7 +244,7 @@ appropriate fields in the record.
 
   long process(struct dbCommon *precord)
 
-See L<Record Processing> below.
+See L</"Record Processing"> below.
 
   long special(struct dbAddr *paddr, int after)
 
@@ -480,7 +490,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		interest(3)
 	}
 	field(INX,DBF_ULONG) {
-		prompt("Compressed Array Inx")
+		prompt("Current number of readings")
 		special(SPC_NOMOD)
 		interest(3)
 	}

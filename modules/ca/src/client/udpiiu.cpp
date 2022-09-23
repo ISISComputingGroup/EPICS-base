@@ -205,7 +205,7 @@ udpiiu::udpiiu (
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAC: failed to set mcast ttl %d\n", ttl);
+            errlogPrintf("CAC: failed to set mcast ttl %d\n", (int)ttl);
         }
     }
 #endif
@@ -269,7 +269,7 @@ udpiiu::udpiiu (
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             epicsSocketDestroy ( this->sock );
-            errlogPrintf ( "CAC: getsockname () error was \"%s\"\n", sockErrBuf );
+            errlogPrintf ( "CAC: getsockname () " ERL_ERROR " was \"%s\"\n", sockErrBuf );
             throwWithLocation ( noSocket () );
         }
         if ( tmpAddr.sa.sa_family != AF_INET) {
@@ -431,7 +431,7 @@ void udpRecvThread::run ()
                     char sockErrBuf[64];
                     epicsSocketConvertErrnoToString ( 
                         sockErrBuf, sizeof ( sockErrBuf ) );
-                    errlogPrintf ( "CAC: UDP recv error was \"%s\"\n", 
+                    errlogPrintf ( "CAC: UDP recv " ERL_ERROR " was \"%s\"\n",
                         sockErrBuf );
                 }
             }
@@ -539,9 +539,9 @@ void epicsShareAPI caRepeaterRegistrationMessage (
     if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;
         /*
-         * Different OS return different codes when the repeater isnt running.
-         * Its ok to supress these messages because I print another warning message
-         * if we time out registerring with the repeater.
+         * Different OS return different codes when the repeater isn't running.
+         * Its ok to suppress these messages because I print another warning message
+         * if we time out registering with the repeater.
          *
          * Linux returns SOCK_ECONNREFUSED
          * Windows 2000 returns SOCK_ECONNRESET
@@ -703,7 +703,7 @@ bool udpiiu :: searchRespAction (
     const epicsTime & currentTime )
 {
     /*
-     * we dont currently know what to do with channel's 
+     * we don't currently know what to do with channel's
      * found to be at non-IP type addresses
      */
     if ( addr.sa.sa_family != AF_INET ) {
@@ -792,7 +792,7 @@ bool udpiiu::beaconAction (
      *   always set this field to INADDR_ANY
      *
      * clients always assume that if this
-     * field is set to something that isnt INADDR_ANY
+     * field is set to something that isn't INADDR_ANY
      * then it is the overriding IP address of the server.
      */
     ina.sin_family = AF_INET;
@@ -802,7 +802,7 @@ bool udpiiu::beaconAction (
     }
     else {
         /*
-         * old servers dont supply this and the
+         * old servers don't supply this and the
          * default port must be assumed
          */
         ina.sin_port = htons ( this->serverPort );
@@ -904,7 +904,7 @@ void udpiiu::postMsg (
         size = pCurMsg->m_postsize + sizeof ( *pCurMsg );
 
         /*
-         * dont allow msg body extending beyond frame boundary
+         * don't allow msg body extending beyond frame boundary
          */
         if ( size > blockSize ) {
             char buf[64];
@@ -1074,7 +1074,7 @@ void udpiiu :: SearchRespCallback :: notify (
         const osiSockAddr & addr, const epicsTime & currentTime )
 {   
     /*
-     * we dont currently know what to do with channel's 
+     * we don't currently know what to do with channel's
      * found to be at non-IP type addresses
      */
     if ( addr.sa.sa_family != AF_INET ) {
@@ -1149,7 +1149,7 @@ bool udpiiu :: datagramFlush (
 {
     guard.assertIdenticalMutex ( cacMutex );
 
-    // dont send the version header by itself
+    // don't send the version header by itself
     if ( this->nBytesInXmitBuf <= sizeof ( caHdr ) ) {
         return false;
     }

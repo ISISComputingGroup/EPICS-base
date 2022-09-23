@@ -22,7 +22,16 @@
 #include <errno.h>
 #include <ctype.h>
 
-#define epicsExportSharedSymbols
+#ifndef vxWorks
+#include <stdint.h>
+#else
+/* VxWorks automatically includes stdint.h defining SIZE_MAX in 6.9 but not earlier */
+#ifndef SIZE_MAX
+#define SIZE_MAX (size_t)-1
+#endif
+#endif
+
+#include "epicsAssert.h"
 #include "epicsStdio.h"
 #include "cantProceed.h"
 #include "epicsString.h"

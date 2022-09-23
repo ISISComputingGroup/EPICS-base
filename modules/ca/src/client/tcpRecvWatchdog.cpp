@@ -176,9 +176,15 @@ void tcpRecvWatchdog::sendBacklogProgressNotify (
 {
     guard.assertIdenticalMutex ( this->mutex );
 
+<<<<<<< HEAD
     // We dont set "beaconAnomaly" to be false here because, after we see a
     // beacon anomaly (which could be transiently detecting a reboot) we will 
     // not trust the beacon as an indicator of a healthy server until we 
+=======
+    // We don't set "beaconAnomaly" to be false here because, after we see a
+    // beacon anomaly (which could be transiently detecting a reboot) we will
+    // not trust the beacon as an indicator of a healthy server until we
+>>>>>>> vendor_7_0_7
     // receive at least one message from the server.
     if ( this->probeResponsePending && ! this->shuttingDown ) {
         this->timer.start ( *this, CA_ECHO_TIMEOUT );

@@ -15,6 +15,24 @@
 #include <mach/mach.h>
 #include <mach/clock.h>
 
+#ifndef CLOCK_REALTIME
+  #include <mach/mach.h>
+  #include <mach/clock.h>
+
+  static clock_serv_t host_clock;
+
+  #define HOST_GETCLOCK host_get_clock_service(mach_host_self(), \
+              CALENDAR_CLOCK, &host_clock)
+  #define TIMESPEC mach_timespec_t
+  #define CLOCK_GETTIME(ts) clock_get_time(host_clock, ts)
+  #define TP_NAME "MachTime"
+#else
+  #define HOST_GETCLOCK
+  #define TIMESPEC struct timespec
+  #define CLOCK_GETTIME(ts) clock_gettime(CLOCK_REALTIME, ts)
+  #define TP_NAME "macOS Clock"
+#endif
+
 #define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "osiSock.h"
 

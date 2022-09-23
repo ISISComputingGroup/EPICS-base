@@ -31,7 +31,7 @@ extern "C" {
  * virtual OS layer for devLib.c
  *
  * The global virtual OS table pdevLibVME controls
- * the behaviour of the functions defined in devLib.h.
+ * the behavior of the functions defined in devLib.h.
  * All of which call into the functions found in this table
  * to perform system specific tasks.
  */

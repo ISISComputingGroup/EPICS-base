@@ -228,10 +228,10 @@ private:
     T m_target;
 };
 
-// tests the time it takes to perform a call to an external 
-// function and also increment an integer word. The 
-// epicsInterruptIsInterruptContext function is an 
-// out-of-line function implemented in a sharable library 
+// tests the time it takes to perform a call to an external
+// function and also increment an integer word. The
+// epicsInterruptIsInterruptContext function is an
+// out-of-line function implemented in a shareable library
 // so hopefully it wont be optimized away.
 template < class T >
 inline void OrdinaryIncr < T > :: run ()
@@ -556,7 +556,7 @@ MAIN ( epicsAtomicPerform )
     // The tests running here are measuring fast
     // functions so they tend to be impacted
     // by where the cache lines are wrt to the
-    // virtual pages perhap
+    // virtual pages perhaps
     //
     measure < AtomicSet < int > > ();
     measure < AtomicSet < size_t > > ();

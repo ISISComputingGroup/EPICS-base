@@ -10,7 +10,7 @@
  * Author: Jim Kowalkowski and Marty Kraimer
  * Date:   4/97
  *
- * Intended for applications that create and free requently
+ * Intended for applications that create and free frequently
  *
  */
 

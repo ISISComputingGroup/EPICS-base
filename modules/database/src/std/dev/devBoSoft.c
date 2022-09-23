@@ -56,7 +56,7 @@ static long init_record(boRecord *prec)
  
    long status=0;
  
-    /* dont convert */
+    /* don't convert */
    status=2;
    return status;
  

@@ -6,6 +6,52 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+/**
+ * \file epicsStdio.h
+ * \brief Standardize the behavior of stdio across EPICS targets
+ *
+ * \details
+ * The `epicsStdio.h` header includes the operating system's `stdio.h` header
+ * and if used should replace it.
+ *
+ * epicsSnprintf() and epicsVsnprintf() have the same semantics as the C99
+ * functions snprintf() and vsnprintf(), but correct the behavior of the
+ * implementations on some operating systems.
+ *
+ * @note Define `epicsStdioStdStreams` and/or `epicsStdioStdPrintfEtc`
+ *       to opt out of the redirection described below.
+ *
+ * The routines epicsGetStdin(), epicsGetStdout(), epicsGetStderr(),
+ * epicsStdoutPrintf(), epicsStdoutPuts(), and epicsStdoutPutchar()
+ * are not normally named directly in user code. They are provided for use by
+ * various macros which redefine several standard C identifiers.
+ * This is done so that any I/O through these standard streams can be
+ * redirected, usually to or from a file. The primary use of this facility
+ * is for iocsh() and any commands called from it, allowing redirection of
+ * the standard input and/or output streams while running those commands.
+ * In order for this redirection to work, all modules involved in such I/O
+ * must include `epicsStdio.h` instead of the system header `stdio.h`.
+ * The redirections are:
+ * - `stdin` becomes epicsGetStdin()
+ * - `stdout` becomes epicsGetStdout()
+ * - `stderr` becomes epicsGetStderr()
+ * - `printf` becomes epicsStdoutPrintf()
+ * - `puts` becomes epicsStdoutPuts()
+ * - `putchar` becomes epicsStdoutPutchar()
+ * - `vprintf` becomes epicsStdoutVPrintf()
+ *
+ * The epicsSetThreadStdin(), epicsSetThreadStdout() and epicsSetThreadStderr()
+ * routines allow the standard file streams to be redirected on a per thread
+ * basis, e.g. calling epicsThreadStdout() will affect only the thread which
+ * calls it. To cancel a stream redirection, pass a NULL argument in another
+ * call to the same redirection routine that was used to set it.
+ *
+ * @since 3.15.6 define `epicsStdioStdPrintfEtc` to opt out of redefinition
+ *        for `printf`, `vprintf`, `puts`, and `putchar`.
+ *
+ * @since 3.15.0 define `epicsStdioStdStreams` to opt out of redefinition
+ *        of `stdin`, `stdout`, and `stderr`.
+ */
 
 /* epicsStdio.h */
 
@@ -39,6 +85,11 @@ extern "C" {
 #    undef printf
 #  endif
 #  define printf epicsStdoutPrintf
+
+#  ifdef vprintf
+#    undef vprintf
+#  endif
+#  define vprintf epicsStdoutVPrintf
 
 #  ifdef puts
 #    undef puts
@@ -84,8 +135,10 @@ epicsShareFunc void  epicsShareAPI epicsSetThreadStderr(FILE *);
 
 epicsShareFunc int epicsShareAPI epicsStdoutPrintf(
     const char *pformat, ...) EPICS_PRINTF_STYLE(1,2);
-epicsShareFunc int epicsShareAPI epicsStdoutPuts(const char *str);
-epicsShareFunc int epicsShareAPI epicsStdoutPutchar(int c);
+LIBCOM_API int epicsStdCall epicsStdoutVPrintf(
+    const char *pformat, va_list ap);
+LIBCOM_API int epicsStdCall epicsStdoutPuts(const char *str);
+LIBCOM_API int epicsStdCall epicsStdoutPutchar(int c);
 
 #ifdef  __cplusplus
 }
@@ -97,6 +150,7 @@ using ::epicsGetStdin;
 using ::epicsGetStdout;
 using ::epicsGetStderr;
 using ::epicsStdoutPrintf;
+using ::epicsStdoutVPrintf;
 using ::epicsStdoutPuts;
 using ::epicsStdoutPutchar;
 }

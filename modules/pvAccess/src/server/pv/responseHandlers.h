@@ -96,9 +96,7 @@ public:
     EchoTransportSender(osiSockAddr* echoFrom, size_t payloadSize, epics::pvData::ByteBuffer& payloadBuffer) {
         memcpy(&_echoFrom, echoFrom, sizeof(osiSockAddr));
         toEcho.resize(payloadSize);
-        if (payloadSize) {
-            payloadBuffer.getArray(&toEcho[0], payloadSize);
-        }
+        payloadBuffer.getArray(&toEcho[0], payloadSize);
     }
 
     virtual ~EchoTransportSender() {}
@@ -106,9 +104,7 @@ public:
     virtual void send(epics::pvData::ByteBuffer* buffer, TransportSendControl* control) OVERRIDE FINAL {
         control->startMessage(CMD_ECHO, toEcho.size(), toEcho.size());
         control->setRecipient(_echoFrom);
-        if (toEcho.size() > 0) {
-            buffer->putArray<char>(&toEcho[0], toEcho.size());
-        }
+        buffer->putArray<char>(&toEcho[0], toEcho.size());
     }
 
 private:

@@ -87,23 +87,34 @@ epicsShareFunc epicsEventStatus epicsEventWait ( epicsEventId pSem )
 /*
  * epicsEventWaitWithTimeout ()
  */
-epicsShareFunc epicsEventStatus epicsEventWaitWithTimeout (
-    epicsEventId pSem, double timeOut )
-{ 
-    static const unsigned mSecPerSec = 1000;
+LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
+    epicsEventId pSem, double timeout )
+{
+    /* waitable timers use 100 nanosecond intervals, like FILETIME */
+    static const unsigned ivalPerSec = 10000000u; /* number of 100ns intervals per second */
+    static const unsigned mSecPerSec = 1000u;     /* milliseconds per second */
+    HANDLE handles[2];
     DWORD status;
     DWORD tmo;
 
-    if ( timeOut <= 0.0 ) {
-        tmo = 0u;
+    if ( timeout <= 0.0 ) {
+        tmo.QuadPart = 0u;
     }
-    else if ( timeOut >= INFINITE / mSecPerSec ) {
-        tmo = INFINITE - 1;
+    else if ( timeout >= INFINITE / mSecPerSec  ) {
+        /* we need to apply a maximum wait time to stop an overflow. We choose (INFINITE - 1) milliseconds,
+           to be compatible with previous WaitForSingleObject() implementation */    
+        nIvals = (LONGLONG)(INFINITE - 1) * (ivalPerSec / mSecPerSec);
+        tmo.QuadPart = -nIvals;  /* negative value means a relative time offset for timer */
     }
     else {
-        tmo = ( DWORD ) ( ( timeOut * mSecPerSec ) + 0.5 );
-        if ( tmo == 0 ) {
-            tmo = 1;
+        nIvals = (LONGLONG)(timeout * ivalPerSec + 0.999999);
+        tmo.QuadPart = -nIvals;
+    }
+
+    if (tmo.QuadPart < 0) {
+        timer = osdThreadGetTimer();
+        if (!SetWaitableTimer(timer, &tmo, 0, NULL, NULL, 0)) {
+            return epicsEventError;
         }
     }
     status = WaitForSingleObject ( pSem->handle, tmo );

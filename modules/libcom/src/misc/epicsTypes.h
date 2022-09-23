@@ -35,7 +35,7 @@ typedef enum {
  * Architecture Independent Data Types
  * These are sufficient for all our current archs
  */
-typedef char            epicsInt8;
+typedef signed char     epicsInt8;
 typedef unsigned char   epicsUInt8;
 typedef short           epicsInt16;
 typedef unsigned short  epicsUInt16;
@@ -50,13 +50,16 @@ typedef double          epicsFloat64;
 typedef epicsInt32      epicsStatus;
 
 
+/**
+ * \brief !! Don't use this - it may vanish in the future !!
+ */
 typedef struct {
     unsigned    length;
     char        *pString;
 } epicsString;
 
-/*
- * !! Dont use this - it may vanish in the future !!
+/**
+ * \brief !! Don't use this - it may vanish in the future !!
  *
  * Provided only for backwards compatibility with
  * db_access.h
@@ -93,8 +96,8 @@ typedef union epics_any {
  * Corresponding Type Codes
  * (this enum must start at zero)
  *
- * !! Update epicsTypeToDBR_XXXX[] and DBR_XXXXToEpicsType
- *  in db_access.h if you edit this enum !!
+ * \note Update \a epicsTypeToDBR_XXXX[] and \a DBR_XXXXToEpicsType
+ *  in db_access.h if you edit this enum
  */
 typedef enum {
     epicsInt8T,

@@ -444,6 +444,9 @@ void dbFreeBase(dbBase *pdbbase)
     DBENTRY		dbentry;
     long status;
 
+    if(!pdbbase)
+        return;
+
     dbInitEntry(pdbbase,&dbentry);
     status = dbFirstRecordType(&dbentry);
     while(!status) {
@@ -680,7 +683,7 @@ long dbAddPath(DBBASE *pdbbase,const char *path)
     if (!path) return(0); /* Empty path strings are ignored */
     /* care is taken to properly deal with white space
      * 1) preceding and trailing white space is removed from paths
-     * 2) white space inbetween path separator counts as an empty name
+     * 2) white space in between path separator counts as an empty name
      *		(see below)
      */
     expectingPath = FALSE;
@@ -711,21 +714,21 @@ long dbAddPath(DBBASE *pdbbase,const char *path)
 		plast--;
 	}
 
-	/*
-	 * len is always nonzero because we found something that
-	 * 1) isnt white space
-	 * 2) isnt a path separator
-	 */
-	len = (plast - path) + 1;
-    if (dbAddOnePath (pdbbase, path, (unsigned) len)) return (-1);
-	path += len;
-	if (pcolon) {
-	    path += strlen(OSI_PATH_LIST_SEPARATOR);
-	}
+        /*
+         * len is always nonzero because we found something that
+         * 1) isn't white space
+         * 2) isn't a path separator
+         */
+        len = (plast - path) + 1;
+        if (dbAddOnePath (pdbbase, path, (unsigned) len)) return (-1);
+        path += len;
+        if (pcolon) {
+            path += strlen(OSI_PATH_LIST_SEPARATOR);
+        }
     }
 
     /*
-     * an empty name at beginning, middle, or end of a path string that isnt
+     * an empty name at beginning, middle, or end of a path string that isn't
      * empty means current directory
      */
     if (expectingPath||sawMissingPath) {
@@ -2269,8 +2272,8 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
             len -= (parm - pstr);
         }
 
-        /* generalized extraction of ID charactor and integer pairs (eg. "#C15 S14") */
-        ret = sscanf(pinfo->target, "# %c%d %c%d %c%d %c%d %c%d %c",
+        /* generalized extraction of ID character and integer pairs (eg. "#C15 S14") */
+        ret = sscanf(pinfo->target, "# %c%i %c%i %c%i %c%i %c%i %c",
                      &pinfo->hwid[0], &pinfo->hwnums[0],
                      &pinfo->hwid[1], &pinfo->hwnums[1],
                      &pinfo->hwid[2], &pinfo->hwnums[2],
@@ -2329,11 +2332,11 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
     }
 
     pinfo->ltype = PV_LINK;
-    pstr = strchr(pstr, ' '); /* find start of link modifiers (can't be seperated by tabs) */
+    pstr = strchr(pstr, ' '); /* find start of link modifiers (can't be separated by tabs) */
     if (pstr) {
         *pstr++ = '\0'; /* isolate modifiers. pinfo->target is PV name only for re-use in struct pv_link */
 
-        /* Space seperation of modifiers isn't required, and other chars are ignored.
+        /* Space separation of modifiers isn't required, and other chars are ignored.
          * Order of comparisons resolves ambiguity by checking for
          * longer matches first.
          * eg. "QQCPPXMSITT" is pvlOptCPP|pvlOptMSI
@@ -3233,32 +3236,32 @@ void dbDumpRecordType(DBBASE *pdbbase,const char *recordTypeName)
     }
     for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
     pdbRecordType; pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
-	if(recordTypeName) {
-	    gotMatch = (strcmp(recordTypeName,pdbRecordType->name)==0)
-		? TRUE : FALSE;
-	}else {
-	    gotMatch=TRUE;
-	}
-	if(!gotMatch) continue;
-	printf("name(%s) no_fields(%hd) no_prompt(%hd) no_links(%hd)\n",
-	    pdbRecordType->name,pdbRecordType->no_fields,
-	    pdbRecordType->no_prompt,pdbRecordType->no_links);
-	printf("index name\tsortind sortname\n");
-	for(i=0; i<pdbRecordType->no_fields; i++) {
-	    pdbFldDes = pdbRecordType->papFldDes[i];
-	    printf("%5d %s\t%7d %s\n",
-		i,pdbFldDes->name,
-		pdbRecordType->sortFldInd[i],pdbRecordType->papsortFldName[i]);
-	}
-	printf("link_ind ");
-	for(i=0; i<pdbRecordType->no_links; i++)
-	    printf(" %hd",pdbRecordType->link_ind[i]);
-	printf("\n");
-	printf("indvalFlddes %d name %s\n",pdbRecordType->indvalFlddes,
-	    pdbRecordType->pvalFldDes->name);
-    printf("rset * %p rec_size %d\n",
-	    (void *)pdbRecordType->prset,pdbRecordType->rec_size);
-	if(recordTypeName) break;
+        if(recordTypeName) {
+            gotMatch = (strcmp(recordTypeName,pdbRecordType->name)==0)
+                ? TRUE : FALSE;
+        }else {
+            gotMatch=TRUE;
+        }
+        if(!gotMatch) continue;
+        printf("name(%s) no_fields(%hd) no_prompt(%hd) no_links(%hd)\n",
+            pdbRecordType->name,pdbRecordType->no_fields,
+            pdbRecordType->no_prompt,pdbRecordType->no_links);
+        printf("index offset size name\tsortind sortname\n");
+        for(i=0; i<pdbRecordType->no_fields; i++) {
+            pdbFldDes = pdbRecordType->papFldDes[i];
+            printf("%5d %6u %4u %s\t%7d %s\n",
+                i,pdbFldDes->offset,pdbFldDes->size, pdbFldDes->name,
+                pdbRecordType->sortFldInd[i],pdbRecordType->papsortFldName[i]);
+        }
+        printf("link_ind ");
+        for(i=0; i<pdbRecordType->no_links; i++)
+            printf(" %hd",pdbRecordType->link_ind[i]);
+        printf("\n");
+        printf("indvalFlddes %d name %s\n",pdbRecordType->indvalFlddes,
+            pdbRecordType->pvalFldDes->name);
+        printf("rset * %p rec_size %d\n",
+            (void *)pdbRecordType->prset,pdbRecordType->rec_size);
+        if(recordTypeName) break;
     }
 }
 

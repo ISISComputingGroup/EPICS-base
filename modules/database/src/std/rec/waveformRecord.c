@@ -131,6 +131,7 @@ static long process(struct dbCommon *pcommon)
     struct waveformRecord *prec = (struct waveformRecord *)pcommon;
     struct wfdset *pdset = (struct wfdset *)(prec->dset);
     unsigned char pact=prec->pact;
+    epicsUInt32 nord = prec->nord;
     long status;
 
     if ((pdset==NULL) || (pdset->read_wf==NULL)) {
@@ -146,9 +147,12 @@ static long process(struct dbCommon *pcommon)
     if (!pact && prec->pact)
         return 0;
 
+    prec->pact = TRUE;
     prec->udf = FALSE;
     recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
+    if (nord != prec->nord)
+        db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
     monitor(prec);
 
     /* process the forward scan link record */
@@ -212,7 +216,9 @@ static long put_array_info(DBADDR *paddr, long nNew)
         prec->nord = prec->nelm;
 
     if (nord != prec->nord)
+    {
         db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
+    }
     return 0;
 }
 
@@ -340,11 +346,7 @@ static long readValue(waveformRecord *prec)
 
     switch (prec->simm) {
     case menuYesNoNO: {
-        epicsUInt32 nord = prec->nord;
-
         status = pdset->read_wf(prec);
-        if (nord != prec->nord)
-            db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
         break;
     }
 
@@ -359,7 +361,6 @@ static long readValue(waveformRecord *prec)
 
             if (nRequest != prec->nord) {
                 prec->nord = nRequest;
-                db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
             }
             prec->pact = FALSE;
         }

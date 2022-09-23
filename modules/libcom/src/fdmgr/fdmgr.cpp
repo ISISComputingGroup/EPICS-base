@@ -319,7 +319,7 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_delete (fdctx *pfdctx)
 }
 
 /*
- * depricated interface
+ * deprecated interface
  */
 extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_fd (fdctx *pfdctx, SOCKET fd)
 {
@@ -327,7 +327,7 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_fd (fdctx *pfdctx, SOCKE
 }
 
 /*
- * depricated interface
+ * deprecated interface
  */
 extern "C" epicsShareFunc int epicsShareAPI fdmgr_add_fd ( 
     fdctx   *pfdctx, SOCKET  fd, void (*pfunc)(void *pParam), void *param)

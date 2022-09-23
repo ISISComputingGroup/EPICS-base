@@ -78,7 +78,7 @@
 
 /* 
  *  these can be external since there is only one instance
- *  per machine so we dont care about reentrancy
+ *  per machine so we don't care about reentrancy
  */
 static tsDLList < repeaterClient > client_list;
 
@@ -334,7 +334,7 @@ static void fanOut ( const osiSockAddr & from, const void * pMsg,
 
     while ( ( pclient = client_list.get () ) ) {
         theClients.add ( *pclient );
-        /* Dont reflect back to sender */
+        /* Don't reflect back to sender */
         if ( pclient->identicalAddress ( from ) ) {
             continue;
         }
@@ -391,7 +391,7 @@ static void register_new_client ( osiSockAddr & from,
          * repeater would not always allow the loopback address
          * as a local client address so current clients alternate
          * between the address of the first non-loopback interface
-         * found and the loopback addresss when subscribing with 
+         * found and the loopback address when subscribing with
          * the CA repeater until all CA repeaters have been updated
          * to current code.
          */
@@ -451,7 +451,7 @@ static void register_new_client ( osiSockAddr & from,
     }
 
     /*
-     * send a noop message to all other clients so that we dont 
+     * send a noop message to all other clients so that we don't
      * accumulate sockets when there are no beacons
      */
     caHdr noop;

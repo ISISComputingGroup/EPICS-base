@@ -112,7 +112,113 @@ receiver(void *arg)
     if (!testOk1(errors == 0))
         testDiag("Error count was %d", errors);
     testDiag("%s exiting", myName);
-    epicsEventSignal(finished);
+}
+
+extern "C" void
+fastReceiver(void *arg)
+{
+    epicsMessageQueue *q = (epicsMessageQueue *)arg;
+    char cbuf[80];
+    int len;
+    numReceived = 0;
+    while (!recvExit) {
+        len = q->receive(cbuf, sizeof cbuf, 0.010);
+        if (len > 0) {
+            numReceived++;
+        }
+    }
+    recvExit = 0;
+}
+
+void sleepySender(double delay)
+{
+    epicsThreadOpts opts = {epicsThreadPriorityMedium, epicsThreadStackMedium, 1};
+    epicsThreadId rxThread;
+
+    testDiag("sleepySender: sending every %.3f seconds", delay);
+    epicsMessageQueue q(4, 20);
+    rxThread = epicsThreadCreateOpt("Fast Receiver", fastReceiver, &q, &opts);
+    if (!rxThread)
+        testAbort("Task create failed");
+
+    numSent = 0;
+    for (int i = 0 ; i < SLEEPY_TESTS ; i++) {
+        if (q.send((void *)msg1, 4) == 0) {
+            numSent++;
+        }
+        epicsThreadSleep(delay);
+    }
+    epicsThreadSleep(1.0);
+    testOk(numSent == SLEEPY_TESTS, "Sent %d (should be %d)",
+        numSent, SLEEPY_TESTS);
+    testOk(numReceived == SLEEPY_TESTS, "Received %d (should be %d)",
+        numReceived, SLEEPY_TESTS);
+
+    recvExit = 1;
+    while (q.send((void *)msg1, 4) != 0)
+        epicsThreadSleep(0.01);
+    epicsThreadMustJoin(rxThread);
+}
+
+extern "C" void
+fastSender(void *arg)
+{
+    epicsMessageQueue *q = (epicsMessageQueue *)arg;
+    numSent = 0;
+
+    // Send first without timeout
+    q->send((void *)msg1, 4);
+    numSent++;
+
+    // The rest have a timeout
+    while (!sendExit) {
+        if (q->send((void *)msg1, 4, 0.010) == 0) {
+            numSent++;
+        }
+    }
+    sendExit = 0;
+}
+
+void sleepyReceiver(double delay)
+{
+    epicsThreadOpts opts = {epicsThreadPriorityMedium,
+        epicsThreadStackMedium, 1};
+    epicsThreadId txThread;
+
+    testDiag("sleepyReceiver: acquiring every %.3f seconds", delay);
+    epicsMessageQueue q(4, 20);
+
+    // Fill the queue
+    for (int i = q.pending(); i < 4 ;i++) {
+        q.send((void *)msg1, 4);
+    }
+
+    txThread = epicsThreadCreateOpt("Fast Sender", fastSender, &q, &opts);
+    if (!txThread)
+        testAbort("Task create failed");
+    epicsThreadSleep(0.5);
+
+    char cbuf[80];
+    int len;
+    numReceived = 0;
+
+    for (int i = 0 ; i < SLEEPY_TESTS ; i++) {
+        len = q.receive(cbuf, sizeof cbuf);
+        if (len > 0) {
+            numReceived++;
+        }
+        epicsThreadSleep(delay);
+    }
+
+    testOk(numSent == SLEEPY_TESTS, "Sent %d (should be %d)",
+        numSent, SLEEPY_TESTS);
+    testOk(numReceived == SLEEPY_TESTS, "Received %d (should be %d)",
+        numReceived, SLEEPY_TESTS);
+
+    sendExit = 1;
+    while (q.receive(cbuf, sizeof cbuf) <= 0)
+        epicsThreadSleep(0.01);
+    epicsThreadMustJoin(txThread);
 }
 
 extern "C" void

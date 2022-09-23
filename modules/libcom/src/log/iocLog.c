@@ -128,7 +128,7 @@ int epicsShareAPI iocLogInit (void)
         return iocLogSuccess;
     }
     /*
-     * dont init twice
+     * don't init twice
      */
     if (iocLogClient!=NULL) {
         return iocLogSuccess;

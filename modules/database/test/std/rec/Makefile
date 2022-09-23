@@ -36,6 +36,8 @@ TESTS += arrayOpTest
 
 TESTPROD_HOST += recMiscTest
 recMiscTest_SRCS += recMiscTest.c
+recMiscTest_CFLAGS_NO = -DLINK_DYNAMIC
+recMiscTest_CFLAGS += $(recMiscTest_CFLAGS_$(STATIC_BUILD))
 recMiscTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += recMiscTest.c
 TESTFILES += ../recMiscTest.db
@@ -117,6 +119,8 @@ regressTest_SRCS += regressTest.c
 regressTest_SRCS += regressTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/regressTest.dbd ../regressArray1.db ../regressHex.db ../regressLinkMS.db
 TESTFILES += ../badCaLink.db
+TESTFILES += ../regressLongCalc.db
+TESTFILES += ../regressLinkSevr.db
 TESTS += regressTest
 
 TARGETS += $(COMMON_DIR)/simmTest.dbd
@@ -147,6 +151,19 @@ asyncproctest_SRCS += asyncproctest.c
 asyncproctest_SRCS += asyncproctest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/asyncproctest.dbd ../asyncproctest.db
 TESTS += asyncproctest
+
+TESTPROD_HOST += linkFilterTest
+linkFilterTest_SRCS += linkFilterTest.c
+linkFilterTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += linkFilterTest.c
+TESTFILES += ../linkFilterTest.db
+TESTS += linkFilterTest
+
+# These are compile-time tests, no need to link or run
+TARGETS += dbHeaderTest$(OBJ)
+TARGET_SRCS += dbHeaderTest.cpp
+TARGETS += dbHeaderTestxx$(OBJ)
+TARGET_SRCS += dbHeaderTestxx.cpp
 
 ifeq ($(T_A),$(EPICS_HOST_ARCH))
 # Host-only tests of softIoc/softIocPVA, caget and pvget (if present)

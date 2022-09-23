@@ -22,6 +22,7 @@ epicsShareFunc int coreRelease(void)
     printf ( "############################################################################\n" );
     printf ( "## %s\n", epicsReleaseVersion );
     printf ( "## %s\n", "EPICS Base built " __DATE__ );
+    printf ( "## %s\n", "Rev. Date " EPICS_VCS_VERSION_DATE );
     printf ( "############################################################################\n" );
     return 0;
 }

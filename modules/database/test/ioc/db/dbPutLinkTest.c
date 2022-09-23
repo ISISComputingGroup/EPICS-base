@@ -60,6 +60,7 @@ static const struct testParseDataT {
     TEST_PV_LINK(" world MSICP", "world", pvlOptMSI|pvlOptCP),
 
     {"#C14 S145 @testing", {VME_IO, "testing", 0, "CS", {14, 145}}},
+    {"#C14 S0x1b @testing", {VME_IO, "testing", 0, "CS", {14, 0x1b}}},
     {"#C14 S145", {VME_IO, "", 0, "CS", {14, 145}}},
     {"#B11 C12 N13 A14 F15 @cparam", {CAMAC_IO, "cparam", 0, "BCNAF", {11, 12, 13, 14, 15}}},
     {"#B11 C12 N13 A14 F15", {CAMAC_IO, "", 0, "BCNAF", {11, 12, 13, 14, 15}}},
@@ -696,7 +697,7 @@ void testTSEL(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(337);
+    testPlan(348);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();

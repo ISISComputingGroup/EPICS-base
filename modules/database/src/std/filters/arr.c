@@ -145,23 +145,23 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
 
     /* Extract from buffer */
     case dbfl_type_ref:
-        pdst = NULL;
-        nSource = pfl->no_elements;
-        nTarget = wrapArrayIndices(&start, my->incr, &end, nSource);
-        pfl->no_elements = nTarget;
-        if (nTarget) {
-            /* Copy the data out */
-            void *psrc = pfl->u.r.field;
-
-            pdst = freeListCalloc(my->arrayFreeList);
-            if (!pdst) break;
-            offset = start;
-            dbExtractArrayFromBuf(psrc, pdst, pfl->field_size, pfl->field_type,
-                nTarget, nSource, offset, my->incr);
+        must_lock = !pfl->dtor;
+        if (must_lock) {
+            dbScanLock(dbChannelRecord(chan));
+            dbChannelGetArrayInfo(chan, &pSource, &nSource, &offset);
         }
-        if (pfl->u.r.dtor) pfl->u.r.dtor(pfl);
-        if (nTarget) {
-            pfl->u.r.dtor = freeArray;
+        nTarget = wrapArrayIndices(&start, my->incr, &end, nSource);
+        if (nTarget > 0) {
+            /* copy the data */
+            pTarget = freeListCalloc(my->arrayFreeList);
+            if (!pTarget) break;
+            /* must do the wrap-around with the original no_elements */
+            offset = (offset + start) % pfl->no_elements;
+            dbExtractArray(pSource, pTarget, pfl->field_size,
+                nTarget, pfl->no_elements, offset, my->incr);
+            if (pfl->dtor) pfl->dtor(pfl);
+            pfl->u.r.field = pTarget;
+            pfl->dtor = freeArray;
             pfl->u.r.pvt = my->arrayFreeList;
             pfl->u.r.field = pdst;
         }

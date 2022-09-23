@@ -55,64 +55,64 @@ static void getMaxRangeValues(short field_type, double *pupper_limit,
     double *plower_limit);
 
 
-
+void recGblRecordError(long status, void *pdbc,
+    const char *pmessage)
+{
+    dbCommon *precord = pdbc;
+    char errMsg[256] = "";
+    if (status)
+        errSymLookup(status, errMsg, sizeof(errMsg));
+
+    errlogPrintf("recGblRecordError: %s %s PV: %s\n",
+        pmessage ? pmessage : "", errMsg,
+        precord ? precord->name : "Unknown");
+}
+
 void recGblDbaddrError(long status, const struct dbAddr *paddr,
     const char *pmessage)
 {
     dbCommon *precord = 0;
-    dbFldDes	*pdbFldDes = 0;
+    dbFldDes *pdbFldDes = 0;
+    char errMsg[256] = "";
 
-    if(paddr) {
+    if (paddr) {
         pdbFldDes = paddr->pfldDes;
         precord = paddr->precord;
     }
-    errPrintf(status,0,0,
-        "PV: %s.%s "
-        "error detected in routine: %s\n",
-        (paddr ? precord->name : "Unknown"),
-        (pdbFldDes ? pdbFldDes->name : ""),
-        (pmessage ? pmessage : "Unknown"));
-    return;
-}
+    if (status)
+        errSymLookup(status, errMsg, sizeof(errMsg));
 
-void recGblRecordError(long status, void *pdbc,
-    const char *pmessage)
-{
-    dbCommon	*precord = pdbc;
-
-    errPrintf(status,0,0,
-        "PV: %s %s\n",
-        (precord ? precord->name : "Unknown"),
-        (pmessage ? pmessage : ""));
-    return;
+    errlogPrintf("recGblDbaddrError: %s %s PV: %s.%s\n",
+        pmessage ? pmessage : "",errMsg,
+        precord ? precord->name : "Unknown",
+        pdbFldDes ? pdbFldDes->name : "");
 }
-
-void recGblRecSupError(long status, const struct dbAddr *paddr,
+void recGblRecSupError(long status, const struct dbAddr *paddr,
     const char *pmessage, const char *psupport_name)
 {
     dbCommon *precord = 0;
     dbFldDes *pdbFldDes = 0;
     dbRecordType *pdbRecordType = 0;
+    char errMsg[256] = "";
 
-    if(paddr) {
+    if (paddr) {
         precord = paddr->precord;
         pdbFldDes = paddr->pfldDes;
-        if(pdbFldDes) pdbRecordType = pdbFldDes->pdbRecordType;
+        if (pdbFldDes)
+            pdbRecordType = pdbFldDes->pdbRecordType;
     }
-    errPrintf(status,0,0,
-        "Record Support Routine (%s) "
-        "Record Type %s "
-        "PV %s.%s "
-        " %s\n",
-        (psupport_name ? psupport_name : "Unknown"),
-        (pdbRecordType ? pdbRecordType->name : "Unknown"),
-        (paddr ? precord->name : "Unknown"),
-        (pdbFldDes ? pdbFldDes->name : ""),
-        (pmessage ? pmessage : ""));
-    return;
+
+    if (status)
+        errSymLookup(status, errMsg, sizeof(errMsg));
+
+    errlogPrintf("recGblRecSupError: %s %s %s::%s PV: %s.%s\n",
+        pmessage ? pmessage : "", errMsg,
+        pdbRecordType ? pdbRecordType->name : "Unknown",
+        psupport_name ? psupport_name : "Unknown",
+        precord ? precord->name : "Unknown",
+        pdbFldDes ? pdbFldDes->name : "");
 }
-
-void recGblGetPrec(const struct dbAddr *paddr, long *precision)
+void recGblGetPrec(const struct dbAddr *paddr, long *precision)
 {
     dbFldDes *pdbFldDes = paddr->pfldDes;
 
@@ -285,7 +285,7 @@ void recGblGetTimeStampSimm(void *pvoid, const epicsEnum16 simm, struct link *si
     } else {
         if (simm != menuSimmNO) {
             if (siol && !dbLinkIsConstant(siol)) {
-                if (dbGetTimeStamp(siol, &prec->time))
+                if (dbGetTimeStampTag(siol, &prec->time, &prec->utag))
                     errlogPrintf("recGblGetTimeStampSimm: dbGetTimeStamp (sim mode) failed, %s.SIOL = %s\n",
                         prec->name, siol->value.pv_link.pvname);
                 return;

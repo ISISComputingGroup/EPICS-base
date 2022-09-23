@@ -171,10 +171,21 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
             return status;
     }
 
-    if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType) {
-        status = ppv_link->getCvt(paddr->pfield, pbuffer, paddr);
-    } else {
-        unsigned short dbfType = paddr->field_type;
+    if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType)
+    {
+        /* shortcut: scalar with known conversion, no filter */
+        status = ppv_link->getCvt(dbChannelField(chan), pbuffer, paddr);
+    }
+    else if (dbChannelFinalElements(chan) == 1 && (!pnRequest || *pnRequest == 1)
+                && dbChannelSpecial(chan) != SPC_DBADDR
+                && dbChannelSpecial(chan) != SPC_ATTRIBUTE
+                && ellCount(&chan->filters) == 0)
+    {
+        /* Simple scalar w/o filters, so *Final* type has no additional information.
+         * Needed to correctly handle DBF_MENU fields, which become DBF_ENUM during
+         * probe of dbChannelOpen().
+         */
+        unsigned short dbfType = dbChannelFieldType(chan);
 
         if (dbrType < 0 || dbrType > DBR_ENUM || dbfType > DBF_DEVICE)
             return S_db_badDbrtype;

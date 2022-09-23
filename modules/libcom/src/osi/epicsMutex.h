@@ -7,6 +7,37 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
+/**\file epicsMutex.h
+ *
+ * \brief APIs for the epicsMutex mutual exclusion semaphore
+ *
+ * Mutual exclusion semaphores are for situations requiring exclusive access to
+ * resources. An epicsMutex may be claimed recursively, i.e. taken more than
+ * once by a thread, which must release it as many times as it was taken.
+ * Recursive usage is common for a set of routines that call each other while
+ * working on an exclusive resource.
+ *
+ * The typical C++ use of a mutual exclusion semaphore is:
+ \code
+     epicsMutex lock;
+     ...
+     ...
+     {
+         epicsMutex::guard_t G(lock); // lock
+         // process resources
+     } // unlock
+     // or for compatibility
+     {
+         epicsGuard<epicsMutex> G(lock); // lock
+         // process resources
+     } // unlock
+ \endcode
+ *
+ * \note The implementation:
+ *   - MUST implement recursive locking
+ *   - SHOULD implement priority inheritance and deletion safety if possible.
+ **/
 #ifndef epicsMutexh
 #define epicsMutexh
 
@@ -39,6 +70,13 @@ public:
     epicsMutex ( const char *pFileName = __builtin_FILE(), int lineno = __builtin_LINE() );
 #endif
     ~epicsMutex ();
+
+    /**\brief Display information about the semaphore.
+     *
+     * \note Results are architecture dependent.
+     *
+     * \param level Desired information level to report
+     **/
     void show ( unsigned level ) const;
     void lock (); /* blocks until success */
     void unlock ();
@@ -90,9 +128,25 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock(
 }
 epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock(
     epicsMutexId id);
-epicsShareFunc void epicsShareAPI epicsMutexShow(
+
+/**\brief Display information about the semaphore.
+ *
+ * \note Results are architecture dependent.
+ *
+ * \param id The mutex identifier.
+ * \param level Desired information level to report
+ **/
+LIBCOM_API void epicsStdCall epicsMutexShow(
     epicsMutexId id,unsigned  int level);
-epicsShareFunc void epicsShareAPI epicsMutexShowAll(
+
+/**\brief Display information about all epicsMutex semaphores.
+ *
+ * \note Results are architecture dependent.
+ *
+ * \param onlyLocked Non-zero to show only locked semaphores.
+ * \param level Desired information level to report
+ **/
+LIBCOM_API void epicsStdCall epicsMutexShowAll(
     int onlyLocked,unsigned  int level);
 
 /*NOTES:

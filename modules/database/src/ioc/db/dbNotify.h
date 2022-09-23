@@ -129,7 +129,7 @@ epicsShareFunc int dbNotifyDump(void);
  * if a process request is issued and also calls the client callbacks.
  *
  * A process request is issued if any of the following is true.
- * 1) The requester has issued a processs request and record is passive.
+ * 1) The requester has issued a process request and record is passive.
  * 2) The requester is doing a put, the record is passive, and either
  *     a) The field description is process passive.
  *     b) The field is PROC.
@@ -155,7 +155,7 @@ epicsShareFunc int dbNotifyDump(void);
  *		As soon as a record completes processing the field is set NULL
  *	ppnr    pointer to processNotifyRecord, which is a private structure
  *              owned by dbNotify.
- *		dbNotify is reponsible for this structure.
+ *              dbNotify is responsible for this structure.
  *
  */
 #ifdef __cplusplus

@@ -131,7 +131,7 @@ typedef epicsOldString dbr_class_name_t;
 epicsShareExtern const int epicsTypeToDBR_XXXX [lastEpicsType+1];
 
 /*
- * The DBR_XXXX types are indicies into this array
+ * The DBR_XXXX types are indices into this array
  */
 epicsShareExtern const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1];
 

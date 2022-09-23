@@ -362,7 +362,7 @@ void epicsThreadResume(epicsThreadId id)
 
 void epicsThreadExitMain(void)
 {
-    errlogPrintf("epicsThreadExitMain was called for vxWorks. Why?\n");
+    cantProceed("epicsThreadExitMain() must no longer be used.\n");
 }
 
 unsigned int epicsThreadGetPriority(epicsThreadId id)

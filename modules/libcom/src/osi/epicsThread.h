@@ -7,6 +7,51 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
+/**
+ * \file epicsThread.h
+ *
+ * \brief C++ and C descriptions for a thread.
+ *
+ * The epicsThread API is meant as a somewhat minimal interface for
+ * multithreaded applications. It can be implemented on a wide variety of
+ * systems with the restriction that the system MUST support a
+ * multithreaded environment.
+ * A POSIX pthreads version is provided.
+ *
+ * The interface provides the following thread facilities,
+ * with restrictions as noted:
+ * - Life cycle: a thread starts life as a result of a call to
+ *   epicsThreadCreate. It terminates when the thread function returns.
+ *   It should not return until it has released all resources it uses.
+ *   If a thread is expected to terminate as a natural part of its life
+ *   cycle then the thread function must return.
+ * - epicsThreadOnce: this provides the ability to have an
+ *   initialization function that is guaranteed to be called exactly
+ *   once.
+ * - main: if a main routine finishes its work but wants to leave other
+ *   threads running it can call epicsThreadExitMain, which should be
+ *   the last statement in main.
+ * - Priorities: ranges between 0 and 99 with a higher number meaning
+ *   higher priority. A number of constants are defined for iocCore
+ *   specific threads. The underlying implementation may collapse the
+ *   range 0 to 99 into a smaller range; even a single priority. User
+ *   code should never rely on the existence of multiple thread
+ *   priorities to guarantee correct behavior.
+ * - Stack Size: epicsThreadCreate accepts a stack size parameter. Three
+ *   generic sizes are available: small, medium,and large. Portable code
+ *   should always use one of the generic sizes. Some implementation may
+ *   ignore the stack size request and use a system default instead.
+ *   Virtual memory systems providing generous stack sizes can be
+ *   expected to use the system default.
+ * - epicsThreadId: every epicsThread has an Id which gets returned by
+ *   epicsThreadCreate and is valid as long as that thread still exists.
+ *   A value of 0 always means no thread. If a threadId is used after
+ *   the thread has terminated,the results are not defined (but will
+ *   normally lead to bad things happening). Thus code that looks after
+ *   other threads MUST be aware of threads terminating.
+ */
+
 #ifndef epicsThreadh
 #define epicsThreadh
 

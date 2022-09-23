@@ -12,6 +12,20 @@
 #ifndef INC_epicsStdlib_H
 #define INC_epicsStdlib_H
 
+/** 
+ * \file epicsStdlib.h
+ * \brief Functions to convert strings to primitive types
+ *
+ * These routines convert a string into an integer of the indicated type and 
+ * number base, or into a floating point type. The units pointer argument may 
+ * be NULL, but if not it will be left pointing to the first non-whitespace 
+ * character following the numeric string, or to the terminating zero byte. 
+ * 
+ * The return value from these routines is a status code, zero meaning OK.
+ * For the macro functions beginning with `epicsScan` the return code is 0 
+ * or 1 (0=failure or 1=success, similar to the sscanf() function).
+ */
+
 #include <stdlib.h>
 #include <limits.h>
 
@@ -68,7 +82,7 @@ epicsShareFunc int
 #define epicsParseFloat64(str, to, units) epicsParseDouble(str, to, units)
 
 /* These macros return 1 if successful, 0 on failure.
- * This is analagous to the return value from sscanf()
+ * This is analogous to the return value from sscanf()
  */
 #define epicsScanLong(str, to, base) (!epicsParseLong(str, to, base, NULL))
 #define epicsScanULong(str, to, base) (!epicsParseULong(str, to, base, NULL))

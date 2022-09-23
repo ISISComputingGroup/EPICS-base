@@ -69,9 +69,18 @@ extern "C" {
         /** generate indented (beautiful) output */
         yajl_gen_beautify = 0x01,
         /**
-         * Set an indent string which is used when yajl_gen_beautify
-         * is enabled.  Maybe something like \\t or some number of
-         * spaces.  The default is four spaces ' '.
+         * Set the indent string which is used when \ref yajl_gen_beautify
+         * is enabled, which may only contain whitespace characters such as
+         * \c \\t or some number of spaces. The default is four spaces ' '.
+         *
+         * yajl_gen_config() argument type: const char *
+         *
+         * The pointer argument passed is stored (not copied) and must remain
+         * valid for the lifetime of the handle, or until replaced.
+         *
+         * Example: \code{.cpp}
+         * yajl_gen_config(g, yajl_gen_indent_string, "  "); // 2 spaces
+         * \endcode
          */
         yajl_gen_indent_string = 0x02,
         /**
@@ -136,9 +145,9 @@ extern "C" {
     YAJL_API yajl_gen_status yajl_gen_array_open(yajl_gen hand);
     YAJL_API yajl_gen_status yajl_gen_array_close(yajl_gen hand);
 
-    /** access the null terminated generator buffer.  If incrementally
-     *  outputing JSON, one should call yajl_gen_clear to clear the
-     *  buffer.  This allows stream generation. */
+    /** Access the zero-terminated generator buffer. If incrementally
+     *  outputting JSON, one should call yajl_gen_clear() to clear the
+     *  buffer. This allows stream generation. */
     YAJL_API yajl_gen_status yajl_gen_get_buf(yajl_gen hand,
                                               const unsigned char ** buf,
                                               size_t * len);
@@ -147,6 +156,19 @@ extern "C" {
      *  state.  This function will not "reset" the generator state, and is
      *  intended to enable incremental JSON outputing. */
     YAJL_API void yajl_gen_clear(yajl_gen hand);
+
+    /** Reset the generator state. Allows a client to generate multiple
+     *  JSON entities in a stream.
+     *  \param hand The generator handle.
+     *  \param sep This string will be inserted to separate the previously
+     *             generated output from the following; passing \c NULL means
+     *             *no separation* of entities (beware that generating
+     *             multiple JSON numbers without a separator creates
+     *             ambiguous output).
+     *
+     *  Note: This call does not clear yajl's output buffer, which must be
+     *  accomplished explicitly by calling yajl_gen_clear(). */
+    YAJL_API void yajl_gen_reset(yajl_gen hand, const char * sep);
 
 #ifdef __cplusplus
 }

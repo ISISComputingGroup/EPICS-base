@@ -277,12 +277,12 @@ char		*pvalue
 
 skip_rest:
 
-	/*
-	 * wait for the operation to complete
-	 * (outstabnding decrements to zero)
-	 */
-	while(ntries){
-		ca_pend_event(1.0);
+    /*
+     * wait for the operation to complete
+     * (outstanding decrements to zero)
+     */
+    while(ntries){
+        ca_pend_event(1.0);
 
 		if(!outstanding){
             SEVCHK(ca_clear_channel(chan_id),NULL);

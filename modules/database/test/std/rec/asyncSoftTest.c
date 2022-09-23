@@ -7,6 +7,8 @@
 
 #include <string.h>
 
+#define EPICS_DBCA_PRIVATE_API
+
 #include "dbAccess.h"
 #include "dbStaticLib.h"
 #include "dbTest.h"
@@ -114,6 +116,8 @@ void checkAsyncOutput(const char *rec, dbCommon *async)
 
     strcpy(proc, rec);
     strcat(proc, ".PROC");
+
+    testdbCaWaitForConnect(dbGetDevLink(testdbRecordPtr(rec)));
 
     testdbPutFieldOk(proc, DBF_CHAR, 1);
 

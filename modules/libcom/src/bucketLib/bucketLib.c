@@ -341,22 +341,22 @@ static int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, const v
 	 */
 	hashid = (*pBSET->pHash) (prb, pId);
 
-	pi->pApp = pApp;
-	pi->pId = pId;
-	pi->type = pBSET->type;
-	assert ((hashid & ~prb->hashIdMask) == 0);
-	ppi = &prb->pTable[hashid];
-	/*
-	 * Dont reuse a resource id !
-	 */
-	ppiExists = (*pBSET->pCompare) (ppi, pId);
-	if (ppiExists) {
-		freeListFree(prb->freeListPVT,pi);
-		return S_bucket_idInUse;
-	}
-	pi->pItem = *ppi;
-	prb->pTable[hashid] = pi;
-	prb->nInUse++;
+    pi->pApp = pApp;
+    pi->pId = pId;
+    pi->type = pBSET->type;
+    assert ((hashid & ~prb->hashIdMask) == 0);
+    ppi = &prb->pTable[hashid];
+    /*
+     * Don't reuse a resource id !
+     */
+    ppiExists = (*pBSET->pCompare) (ppi, pId);
+    if (ppiExists) {
+        freeListFree(prb->freeListPVT,pi);
+        return S_bucket_idInUse;
+    }
+    pi->pItem = *ppi;
+    prb->pTable[hashid] = pi;
+    prb->nInUse++;
 
 	return S_bucket_success;
 }

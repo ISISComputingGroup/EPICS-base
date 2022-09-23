@@ -6,6 +6,37 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
+/**\file epicsEvent.h
+ *
+ * \brief APIs for the epicsEvent binary semaphore.
+ *
+ * Defines the C++ and C API's for a simple binary semaphore. If multiple threads are
+ * waiting on the same event, only one of them will be woken when the event is signaled.
+ *
+ * The primary use of an event semaphore is for thread synchronization. An example of using an
+ * event semaphore is a consumer thread that processes requests from one or more producer threads.
+ * For example:
+ *
+ * When creating the consumer thread also create an epicsEvent.
+ \code
+   epicsEvent event;
+ \endcode
+ * The consumer thread has code containing:
+ \code
+       while(1) {
+           pevent.wait();
+           while( {more work} ) {
+               {process work}
+           }
+       }
+ \endcode
+ * Producers create requests and issue the statement:
+ \code
+       pevent.trigger();
+ \endcode
+ **/
+
 #ifndef epicsEventh
 #define epicsEventh
 
@@ -37,9 +68,26 @@ public:
     ~epicsEvent ();
     void trigger ();
     void signal () { this->trigger(); }
-    void wait ();                   /* blocks until full */
-    bool wait ( double timeOut );   /* false if still empty at time out */
-    bool tryWait ();                /* false if empty */
+    /**\brief Wait for the event.
+     * \note Blocks until full.
+     **/
+    void wait ();
+    /**\brief Wait for the event or until the specified timeout.
+     * \param timeout The timeout delay in seconds. A timeout of zero is
+     * equivalent to calling tryWait(); NaN or any value too large to be
+     * represented to the target OS is equivalent to no timeout.
+     * \return True if the event was triggered, False if it timed out.
+     **/
+    bool wait ( double timeout );
+    /**\brief Similar to wait() except that if the event is currently empty the
+     * call will return immediately.
+     * \return True if the event was full (triggered), False if empty.
+     **/
+    bool tryWait ();
+    /**\brief Display information about the semaphore.
+     * \note The information displayed is architecture dependent.
+     * \param level An unsigned int for the level of information to be displayed.
+     **/
     void show ( unsigned level ) const;
 
     class invalidSemaphore;         /* exception payload */
@@ -63,12 +111,39 @@ epicsShareFunc void epicsEventMustTrigger(epicsEventId id);
 #define epicsEventSignal(ID) epicsEventMustTrigger(ID)
 epicsShareFunc epicsEventStatus epicsEventWait(
     epicsEventId id);
-epicsShareFunc void epicsEventMustWait(epicsEventId id);
-epicsShareFunc epicsEventStatus epicsEventWaitWithTimeout(
-    epicsEventId id, double timeOut);
-epicsShareFunc epicsEventStatus epicsEventTryWait(
+
+/**\brief Wait for an event (see epicsEventWait()).
+ *
+ * This routine does not return if the identifier is invalid.
+ * \param id The event identifier.
+ */
+LIBCOM_API void epicsEventMustWait(epicsEventId id);
+
+/**\brief Wait an the event or until the specified timeout period is over.
+ * \note Blocks until full or timeout.
+ * \param id The event identifier.
+ * \param timeout The timeout delay in seconds. A timeout of zero is
+ * equivalent to calling epicsEventTryWait(); NaN or any value too large
+ * to be represented to the target OS is equivalent to no timeout.
+ * \return Status indicator.
+ **/
+LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout(
+    epicsEventId id, double timeout);
+
+/**\brief Similar to wait() except that if the event is currently empty the
+ * call will return immediately with status \c epicsEventWaitTimeout.
+ * \param id The event identifier.
+ * \return Status indicator, \c epicsEventWaitTimeout when the event is empty.
+ **/
+LIBCOM_API epicsEventStatus epicsEventTryWait(
     epicsEventId id);
-epicsShareFunc void epicsEventShow(
+
+/**\brief Display information about the semaphore.
+ * \note The information displayed is architecture dependent.
+ * \param id The event identifier.
+ * \param level An unsigned int for the level of information to be displayed.
+ **/
+LIBCOM_API void epicsEventShow(
     epicsEventId id, unsigned int level);
 
 #ifdef __cplusplus

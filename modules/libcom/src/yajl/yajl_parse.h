@@ -38,7 +38,7 @@ extern "C" {
         yajl_status_error
     } yajl_status;
 
-    /** attain a human readable, english, string for an error */
+    /** Return a human readable, English, string for an error. */
     YAJL_API const char * yajl_status_to_string(yajl_status code);
 
     /** an opaque handle to a parser */
@@ -138,13 +138,18 @@ extern "C" {
          */
         yajl_allow_trailing_garbage = 0x04,
         /**
-         * Allow multiple values to be parsed by a single handle.  The
-         * entire text must be valid JSON, and values can be seperated
-         * by any kind of whitespace.  This flag will change the
-         * behavior of the parser, and cause it continue parsing after
-         * a value is parsed, rather than transitioning into a
-         * complete state.  This option can be useful when parsing multiple
-         * values from an input stream.
+         * Allow multiple values to be parsed by a single handle. The entire
+         * text must be valid JSON, and values can be separated by any kind of
+         * whitespace. This flag will change the behavior of the parser, and
+         * cause it to continue parsing after a value is parsed, rather than
+         * transitioning into a complete state. This option can be useful when
+         * parsing multiple values from an input stream.
+         *
+         * yajl_config() argument type: int (boolean)
+         *
+         * Example: \code{.cpp}
+         * yajl_config(h, yajl_allow_multiple_values, 1); // multi-doc stream
+         * \endcode
          */
         yajl_allow_multiple_values = 0x08,
         /**

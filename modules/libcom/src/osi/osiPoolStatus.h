@@ -29,7 +29,15 @@ extern "C" {
  * along with whatever additional free space is necessary to keep the system running 
  * reliably
  *
- * this routine is called quite frequently so an efficent implementation is important
+ * The meaning of "safely allocated" is target-specific, some additional free
+ * space is usually necessary to keep the system running reliably.
+ * On vxWorks this returns True if at least 100000 bytes is free.
+ *
+ * \note This routine is called quite frequently by the IOC so an efficient
+ * implementation is important.
+ *
+ * \param contiguousBlockSize Block size to check.
+ * \return True if the requested memory should be available.
  */
 epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ( size_t contiguousBlockSize );
 

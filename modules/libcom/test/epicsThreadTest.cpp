@@ -107,6 +107,18 @@ void dodelay(void *arg)
     epicsThreadSleep(2.0);
 }
 
+epicsThreadId joiningThread;
+
+void checkJoined(epicsThreadId thread)
+{
+    char name[80] = "?";
+
+    if(thread==joiningThread) {
+        epicsThreadGetName(thread, name, sizeof(name));
+        testFail("Joined thread '%s' is still alive!", name);
+    }
+}
+
 void joinTests(void *arg)
 {
     struct joinStuff *stuff = (struct joinStuff *) arg;
@@ -117,11 +129,17 @@ void joinTests(void *arg)
     epicsThreadSleep(0.1);
     epicsThreadMustJoin(tid);
 
+    joiningThread = tid;
+    epicsThreadMap(checkJoined);
+
     // Parent joins before task finishes
     tid = epicsThreadCreateOpt("await",
         &dowait, stuff->trigger, stuff->opts);
     stuff->trigger->signal();
     epicsThreadMustJoin(tid);
+
+    joiningThread = tid;
+    epicsThreadMap(checkJoined);
 
     // Parent gets delayed until task finishes
     epicsTime start, end;
@@ -137,9 +155,14 @@ void joinTests(void *arg)
     testOk(duration > 1.0, "Join delayed parent (%g seconds)", duration);
     testTodoEnd();
 
+    joiningThread = tid;
+    epicsThreadMap(checkJoined);
+
     // This is a no-op
     epicsThreadId self = epicsThreadGetIdSelf();
     epicsThreadMustJoin(self);
+    tid = epicsThreadGetIdSelf();
+    testOk(self==tid, "%p == %p avoid self re-alloc", self, tid);
 
     // This is a no-op as well, except for a warning.
     eltc(0);
@@ -211,7 +234,7 @@ static void testOkToBlock()
 
 MAIN(epicsThreadTest)
 {
-    testPlan(13);
+    testPlan(17);
 
     unsigned int ncpus = epicsThreadGetCPUs();
     testDiag("System has %u CPUs", ncpus);

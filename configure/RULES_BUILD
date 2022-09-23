@@ -190,7 +190,7 @@ endif
 checkRelease:
 	+$(CONVERTRELEASE) checkRelease
 warnRelease:
-	$(CONVERTRELEASE) checkRelease
+	-$(CONVERTRELEASE) checkRelease
 noCheckRelease:
 ifeq ($(EPICS_HOST_ARCH),$(T_A))
 	$(info Warning: RELEASE file consistency checks have been disabled)
@@ -355,23 +355,25 @@ $(MODNAME): %$(MODEXT): %$(EXE)
 #---------------------------------------------------------------
 # Automated testing
 
-runtests: $(TESTSCRIPTS)
+runtests: run-tap-tests
+run-tap-tests: | build
+ifneq ($(TESTSCRIPTS.t),)
 ifdef RUNTESTS_ENABLED
-	$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^
+	$(ECHO) "$(PROVE) $(TESTSCRIPTS.t)"
+	@$(PROVE) $(TESTSCRIPTS.t) || $(PROVE_FAILURE)
+endif
 endif
 
-testspec: $(TESTSCRIPTS)
-	@$(RM) $@
-	@echo OS-class: $(OS_CLASS) > $@
-	@echo Target-arch: $(T_A) >> $@
-	$(if $^, @echo Tests: $^ >> $@)
-	$(if $(TESTFILES), @echo Files: $(TESTFILES) >> $@)
-	$(if $(TESTSPEC_$(OS_CLASS)), @echo "Harness: $(TESTSPEC_$(OS_CLASS))" >> $@)
+tapfiles: $(TAPFILES)
+junitfiles: $(JUNITFILES)
+# prevent deletion of partial output from failing tests
+.PRECIOUS: $(TAPFILES) $(JUNITFILES)
 
 test-results: tapfiles
 ifneq ($(TAPFILES),)
 ifdef RUNTESTS_ENABLED
-	$(PROVE) --failures --ext .tap --exec "$(CAT)" --color $(TAPFILES)
+	$(ECHO) "$(PROVE.tap) $(TAPFILES)"
+	@$(PROVE.tap) $(TAPFILES) || $(PROVE_FAILURE)
 endif
 
 CURRENT_TAPFILES := $(wildcard $(TAPFILES))
@@ -390,7 +392,7 @@ tapfiles: $(TESTSCRIPTS) $(TAPFILES)
 junitfiles: $(JUNITFILES)
 
 # A .tap file is the output from running the associated test script
-%.tap: %.t
+$(TAPFILES.t): %.tap: %.t | build
 ifdef RUNTESTS_ENABLED
 	$(PERL) $< -tap > $@
 endif
@@ -546,16 +548,16 @@ $(INSTALL_DOC)/%: ../%
 	$(ECHO) "Installing doc $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(INSTALL_DOC)
 
+$(INSTALL_HTML)/$(HTMLS_DIR)/%: $(COMMON_DIR)/%
+	$(ECHO) "Installing generated html $@"
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+
 $(INSTALL_HTML)/$(HTMLS_DIR)/%: %
 	$(ECHO) "Installing html $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_HTML)/$(HTMLS_DIR)/%: ../%
 	$(ECHO) "Installing html $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
-
-$(INSTALL_HTML)/$(HTMLS_DIR)/%: $(COMMON_DIR)/%
-	$(ECHO) "Installing generated html $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_TEMPLATES_SUBDIR)/%: ../%

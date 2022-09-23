@@ -22,18 +22,28 @@ extern "C" int sysClkRateGet(void);
 epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
     epicsMessageQueueId id,
     void *message,
-    unsigned int messageSize,
+    unsigned int size,
     double timeout)
 {
     int ticks;
+    int rate = sysClkRateGet();
 
-    if (timeout<=0.0) {
+    if (timeout <= 0.0) {
         ticks = 0;
-    } else {
-        ticks = (int)(timeout*sysClkRateGet());
-        if(ticks<=0) ticks = 1;
     }
-    return msgQSend((MSG_Q_ID)id, (char *)message, messageSize, ticks, MSG_PRI_NORMAL);
+    else if (timeout < (double) INT_MAX / rate) {
+        ticks = timeout * rate;
+        if (ticks == 0) {
+            /* 0 < timeout < 1/rate; round up */
+            ticks = 1;
+        }
+    }
+    else {
+        /* timeout is NaN or too big to represent in ticks */
+        ticks = WAIT_FOREVER;
+    }
+
+    return msgQSend((MSG_Q_ID)id, (char *)message, size, ticks, MSG_PRI_NORMAL);
 }
 
 epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
@@ -43,12 +53,22 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
     double timeout)
 {
     int ticks;
+    int rate = sysClkRateGet();
 
-    if (timeout<=0.0) {
+    if (timeout <= 0.0) {
         ticks = 0;
-    } else {
-        ticks = (int)(timeout*sysClkRateGet());
-        if(ticks<=0) ticks = 1;
     }
+    else if (timeout < (double) INT_MAX / rate) {
+        ticks = timeout * rate;
+        if (ticks == 0) {
+            /* 0 < timeout < 1/rate, round up */
+            ticks = 1;
+        }
+    }
+    else {
+        /* timeout is NaN or too big to represent in ticks */
+        ticks = WAIT_FOREVER;
+    }
+
     return msgQReceive((MSG_Q_ID)id, (char *)message, size, ticks);
 }

@@ -64,7 +64,9 @@ extern "C" {
 /*
  *  General API
  *
- *  This section applies to all bus types
+ * Display a table of registered bus address ranges, including the owner of
+ * each registered address.
+ * \return 0, or an error status value
  */
 
 epicsShareFunc long devAddressMap(void); /* print an address map */
@@ -162,7 +164,13 @@ epicsShareFunc long devDisconnectInterruptVME(
 /*
  * determine if a VME interrupt vector is in use
  *
- * returns boolean
+ * The VMEbus allows multiple CPU boards to be installed in the same
+ * backplane. When this is done, the different VME interrupt levels
+ * must be assigned to the CPUs since they cannot be shared. This
+ * routine tells the VME interface that it should connect interrupts
+ * from the indicated interrupt level to a CPU interrupt line.
+ * \param level VMEbus interrupt level to enable, 1-7.
+ * \return 0, or an error status value.
  */
 epicsShareFunc int devInterruptInUseVME (unsigned vectorNumber);
 

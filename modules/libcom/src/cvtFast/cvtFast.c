@@ -91,17 +91,16 @@ int cvtFloatToString(float flt_value, char *pdest,
                 pdest++;
         }
 
-        /* fraction */
-        if (precision > 0){
-		/* convert fractional portional to ASCII */
-                *pdest = '.';
-                pdest++;
-                for (fplace /= 10, i = precision; i > 0; fplace /= 10,i--){
-                        number = fraction / fplace;
-                        fraction -= number * fplace;
-                        *pdest = number + '0';
-                        pdest++;
-                }
+    /* fraction */
+    if (precision > 0){
+    /* convert fractional portion to ASCII */
+        *pdest = '.';
+        pdest++;
+        for (fplace /= 10, i = precision; i > 0; fplace /= 10,i--){
+            number = fraction / fplace;
+            fraction -= number * fplace;
+            *pdest = number + '0';
+            pdest++;
         }
         *pdest = 0;
 
@@ -172,17 +171,16 @@ int cvtDoubleToString(
                 pdest++;
         }
 
-        /* fraction */
-        if (precision > 0){
-		/* convert fractional portional to ASCII */
-                *pdest = '.';
-                pdest++;
-                for (fplace /= 10, i = precision; i > 0; fplace /= 10,i--){
-                        number = fraction / fplace;
-                        fraction -= number * fplace;
-                        *pdest = number + '0';
-                        pdest++;
-                }
+    /* fraction */
+    if (precision > 0){
+    /* convert fractional portion to ASCII */
+        *pdest = '.';
+        pdest++;
+        for (fplace /= 10, i = precision; i > 0; fplace /= 10,i--){
+            number = fraction / fplace;
+            fraction -= number * fplace;
+            *pdest = number + '0';
+            pdest++;
         }
         *pdest = 0;
 

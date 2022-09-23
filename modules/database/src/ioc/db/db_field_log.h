@@ -83,7 +83,6 @@ struct dbfl_val {
  * must explicitly call the dtor function.
  */
 struct dbfl_ref {
-    dbfl_freeFunc     *dtor;  /* Callback to free filter-allocated resources */
     void              *pvt;   /* Private pointer */
     void              *field; /* Field value */
 };
@@ -99,6 +98,7 @@ typedef struct db_field_log {
     short        field_type;  /* DBF type of data */
     short        field_size;  /* Data size */
     long        no_elements;  /* No of array elements */
+    dbfl_freeFunc     *dtor;  /* Callback to free filter-allocated resources */
     union {
         struct dbfl_val v;
         struct dbfl_ref r;
@@ -127,6 +127,8 @@ typedef struct db_field_log {
  *  For this type all meta-data members are used.  The dbfl_val side of the
  *  data union is used.
  */
+#define dbfl_has_copy(p)\
+ ((p) && ((p)->type==dbfl_type_val || (p)->dtor || (p)->no_elements==0))
 
 #ifdef __cplusplus
 }

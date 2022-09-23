@@ -36,9 +36,12 @@
 #include "link.h"
 #include "special.h"
 
-
-
-/*global declarations*/
+/* This file is included from dbYacc.y
+ * Duplicate some declarations to avoid warnings from analysis tools which don't know about this.
+ */
+static int yyerror(char *str);
+static long pvt_yy_parse(void);
+/*global declarations*/
 epicsShareDef char *makeDbdDepends=0;
 
 epicsShareDef int dbRecordsOnceOnly=0;
@@ -97,11 +100,11 @@ static char *mac_input_buffer=NULL;
 static char *my_buffer_ptr=NULL;
 static MAC_HANDLE *macHandle = NULL;
 typedef struct inputFile{
-	ELLNODE		node;
-	char		*path;
-	char		*filename;
-	FILE		*fp;
-	int		line_num;
+    ELLNODE     node;
+    const char  *path;
+    const char  *filename;
+    FILE        *fp;
+    int         line_num;
 }inputFile;
 static ELLLIST inputFileList = ELLLIST_INIT;
 
@@ -152,7 +155,7 @@ static void *getLastTemp(void)
     return(ptempListNode->item);
 }
 
-static char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
+const char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
 {
     ELLLIST	*ppathList = (ELLLIST *)pdbbase->pathPvt;
     dbPathNode	*pdbPathNode;
@@ -220,6 +223,11 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
         epicsPrintf("dbReadCOM: Parser stack dirty %d\n", ellCount(&tempList));
     }
 
+    if (getIocState() != iocVoid) {
+        status = -2;
+        goto cleanup;
+    }
+
     if(*ppdbbase == 0) *ppdbbase = dbAllocBase();
     pdbbase = *ppdbbase;
     if(path && strlen(path)>0) {
@@ -262,8 +270,8 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
             pinputFile->path = dbOpenFile(pdbbase, pinputFile->filename, &fp1);
         if (!pinputFile->filename || !fp1) {
             errPrintf(0, __FILE__, __LINE__,
-                "dbRead opening file %s",pinputFile->filename);
-            free(pinputFile->filename);
+                "dbRead opening file %s\n",pinputFile->filename);
+            free((char*)pinputFile->filename);
             free(pinputFile);
             status = -1;
             goto cleanup;
@@ -271,6 +279,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
         pinputFile->fp = fp1;
     } else {
         pinputFile->fp = fp;
+        fp = NULL;
     }
     pinputFile->line_num = 0;
     pinputFileNow = pinputFile;
@@ -326,6 +335,8 @@ cleanup:
     if(my_buffer) free((void *)my_buffer);
     my_buffer = NULL;
     freeInputFileList();
+    if(fp)
+        fclose(fp);
     return(status);
 }
 
@@ -1031,6 +1042,35 @@ static void dbBreakBody(void)
     pgphentry->userPvt = pnewbrkTable;
 }
 
+    if (!*name) {
+        yyerrorAbort("Error: Record/Alias name can't be empty");
+        return 1;
+    }
+
+    for(; *pos; i++, pos++) {
+        unsigned char c = *pos;
+        if(i==0) {
+            /* first character restrictions */
+            if(c=='-' || c=='+' || c=='[' || c=='{') {
+                errlogPrintf("Warning: Record/Alias name '%s' should not begin with '%c'\n", name, c);
+            }
+        }
+        /* any character restrictions */
+        if(c < ' ') {
+            errlogPrintf("Warning: Record/Alias name '%s' should not contain non-printable 0x%02x\n",
+                         name, c);
+
+        } else if(c==' ' || c=='\t' || c=='"' || c=='\'' || c=='.' || c=='$') {
+            epicsPrintf("Error: Bad character '%c' in Record/Alias name \"%s\"\n",
+                c, name);
+            yyerrorAbort(NULL);
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 static void dbRecordHead(char *recordType, char *name, int visible)
 {
     char *badch;

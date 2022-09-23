@@ -8,7 +8,7 @@
 \*************************************************************************/
 
 /*
- *      WIN32 specific initialisation for bsd sockets,
+ *      WIN32 specific initialization for bsd sockets,
  *      based on Chris Timossi's base/src/ca/windows_depend.c,
  *      and also further additions by Kay Kasemir when this was in
  *      dllmain.cc
@@ -85,14 +85,14 @@ static void osiLocalAddrOnce ( void *raw )
     for (pIfinfo = pIfinfoList; pIfinfo < (pIfinfoList+numifs); pIfinfo++){
 
         /*
-         * dont use interfaces that have been disabled
+         * don't use interfaces that have been disabled
          */
         if (!(pIfinfo->iiFlags & IFF_UP)) {
             continue;
         }
 
         /*
-         * dont use the loop back interface
+         * don't use the loop back interface
          */
         if (pIfinfo->iiFlags & IFF_LOOPBACK) {
             continue;
@@ -185,7 +185,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
     for (pIfinfo = pIfinfoList; pIfinfo < (pIfinfoList+numifs); pIfinfo++){
 
         /*
-         * dont bother with interfaces that have been disabled
+         * don't bother with interfaces that have been disabled
          */
         if (!(pIfinfo->iiFlags & IFF_UP)) {
             continue;
@@ -205,7 +205,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
         }
 
         /*
-         * if it isnt a wildcarded interface then look for
+         * if it isn't a wildcarded interface then look for
          * an exact match
          */
         if (pMatchAddr->sa.sa_family != AF_UNSPEC) {

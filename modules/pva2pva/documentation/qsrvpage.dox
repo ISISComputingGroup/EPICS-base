@@ -23,7 +23,9 @@ which is also the PV name.
 So unlike records, the "field" of a group have a different meaning.
 Group field names are _not_ part of the PV name.
 
-A group definition is split among several records.
+A group definition may be split among several records,
+or included in separate JSON file(s).
+
 For example of a group including two records is:
 
 @code
@@ -40,6 +42,23 @@ record(ai, "rec:Y") {
         "Y": {+channel:"VAL"}
     }
   })
+}
+@endcode
+
+Or equivalently with separate .db file and .json files.
+
+@code
+# some .db
+record(ai, "rec:X") {}
+record(ai, "rec:Y") {}
+@endcode
+
+@code
+{
+    "grp:name": {
+        "X": {+channel:"VAL"},
+        "Y": {+channel:"VAL"}
+    }
 }
 @endcode
 
@@ -68,7 +87,6 @@ record(...) {
     info(Q:group, {
         "<group_name>":{
             +id:"some/NT:1.0",  # top level ID
-            +meta:"FLD",        # map top level alarm/timeStamp
             +atomic:true,       # whether monitors default to multi-locking atomicity
             "<field.name>":{
                 +type:"scalar", # controls how map VAL mapped onto <field.name>
@@ -76,7 +94,8 @@ record(...) {
                 +id:"some/NT:1.0",
                 +trigger:"*",   # "*" or comma seperated list of <field.name>s
                 +putorder:0,    # set for fields where put is allowed, processing done in increasing order
-            }
+            },
+            "": {+type:"meta", +channel:"VAL"} # special case adds meta-data fields at top level
         }
     })
 }
@@ -89,6 +108,7 @@ record(...) {
 @li "any"
 @li "meta"
 @li "proc"
+@li "structure"
 
 The "scalar" mapping places an NTScalar or NTScalarArray as a sub-structure.
 
@@ -99,11 +119,14 @@ The "any" mapping places a variant union into which the "value" is placed.
 
 The "meta" mapping ignores the "value" and places only the alarm and time
 meta-data as sub-fields.
-The special group level tag 'meta:""' allows these meta-data fields to be
+Placing an entry in a blank field name '"": {+type:"meta"}' allows these meta-data fields to be
 placed in the top-level structure.
 
 The "proc" mapping uses neither "value" nor meta-data.
 Instead the target record is processed during a put.
+
+The "structure" mapping allows an "+id" to be attached without a "+channel".
+So none of "+channel", "+trigger", nor "+putorder" are meaningful for a "structure" mapping.
 
 @subsubsection qsrv_group_map_trig Field Update Triggers
 
@@ -166,7 +189,7 @@ record(ai, "...") {
 
 QSRV will enforce an optional access control policy file (.acf) loaded by the usual means (cf. asSetFilename() ).
 This policy is applied to both Single and Group PVs.  With Group PVs, restrictions are not defined for the group,
-but rather for the individual member records.  So the same policy will be applied regardess of how a record
+but rather for the individual member records.  The same policy will be applied regardess of how a record
 is accessed (individually, or through a group).
 
 Policy application differs from CA (RSRV) in several ways:
@@ -179,6 +202,16 @@ against the list of groups of which the client username is a member.  Username t
 to QSRV, and depends on IOC host authentication configuration.  Note that this is still based on the client provided
 username string.
 
+@code
+UAG(special) {
+  someone, "role/op"
+}
+@endcode
+
+The "special" UAG will match CA or PVA clients with the username "someone".
+It will also match a PVA client if the client provided username is a member
+of the "op" group (supported on POSIX targets and Windows).
+
 @subsection qsrv_link PVAccess Links
 
 When built against Base >= 3.16.1, support is enabled for PVAccess links,
@@ -186,8 +219,6 @@ which are analogous to Channel Access (CA) links.  However, the syntax
 for PVA links is quite different.
 
 @note The "dbjlr" and "dbpvar" IOC shell command provide information about PVA links in a running IOC.
-
-@warning The PVA Link syntax shown below is provisional and subject to change.
 
 A simple configuration using defaults is
 

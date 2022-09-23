@@ -154,7 +154,15 @@ static long process(struct dbCommon *pcommon)
                 recGblSetSevr(prec,UDF_ALARM,prec->udfs);
         }
 
-        if (prec->nsev < INVALID_ALARM )
+    /* Update the timestamp before writing output values so it
+     * will be up to date if any downstream records fetch it via TSEL */
+    recGblGetTimeStampSimm(prec, prec->simm, NULL);
+
+    if (prec->nsev < INVALID_ALARM )
+            status=writeValue(prec); /* write the new value */
+    else {
+        switch (prec->ivoa) {
+            case (menuIvoaContinue_normally) :
                 status=writeValue(prec); /* write the new value */
         else {
                 switch (prec->ivoa) {

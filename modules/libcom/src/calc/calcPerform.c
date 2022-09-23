@@ -287,10 +287,16 @@ epicsShareFunc long
 	    *ptop = ! *ptop;
 	    break;
 
-        /* For bitwise operations on values with bit 31 set, double values
-         * must first be cast to unsigned to correctly set that bit; the
-         * double value must be negative in that case. The result must be
-         * cast to a signed integer before converting to the double result.
+        /* Be VERY careful converting double to int in case bit 31 is set!
+         * Out-of-range errors give very different results on different systems.
+         * Convert negative doubles to signed and positive doubles to unsigned
+         * first to avoid overflows if bit 32 is set.
+         * The result is always signed, values with bit 31 set are negative
+         * to avoid problems when writing the value to signed integer fields
+         * like longout.VAL or ao.RVAL. However unsigned fields may give
+         * problems on some architectures. (Fewer than giving problems with
+         * signed integer. Maybe the conversion functions should handle
+         * overflows better.)
          */
 
 	case BIT_OR:

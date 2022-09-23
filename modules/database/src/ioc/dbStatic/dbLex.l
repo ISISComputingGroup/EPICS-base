@@ -86,10 +86,6 @@ static int yyreset(void)
 ")"	return(yytext[0]);
 ","	return(yytext[0]);
 
-{doublequote}({stringchar}|{escape})*{newline} { /* bad string */
-	yyerrorAbort("Newline in string, closing quote missing");
-}
-
 <JSON>"null"	return jsonNULL;
 <JSON>"true"	return jsonTRUE;
 <JSON>"false"	return jsonFALSE;
@@ -115,9 +111,23 @@ static int yyreset(void)
 
 <INITIAL,JSON>{whitespace}	;
 
-<INITIAL,JSON>.	{
-	char message[40];
-	YY_BUFFER_STATE *dummy=0;
+
+  /* Error patterns */
+
+{doublequote}({stringchar}|{escape})*{newline} {
+    yyerrorAbort("Newline in string, closing quote missing");
+}
+
+<JSON>{doublequote}({stringchar}|{escape})*{doublequote} {
+    yyerrorAbort("Bad character in JSON string");
+}
+<JSON>{singlequote}({stringchar}|{escape})*{singlequote} {
+    yyerrorAbort("Bad character in JSON string");
+}
+
+<INITIAL,JSON>. {
+    char message[40];
+    YY_BUFFER_STATE *dummy=0;
 
 	if (isprint((int) yytext[0])) {
 	    sprintf(message, "Invalid character '%c'", yytext[0]);

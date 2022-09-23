@@ -22,8 +22,8 @@ extern "C" {
 #  define finite(x) isfinite((double)(x))
 #endif
 
-epicsShareExtern float epicsNAN;
-epicsShareExtern float epicsINF;
+LIBCOM_API extern const float epicsNAN;
+LIBCOM_API extern const float epicsINF;
 
 #ifdef __cplusplus
 }

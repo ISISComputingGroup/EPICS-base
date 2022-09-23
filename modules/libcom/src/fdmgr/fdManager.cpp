@@ -160,7 +160,7 @@ epicsShareFunc void fdManager::process (double delay)
                 if (this->pCBReg != NULL) {
                     //
                     // check only after we see that it is non-null so
-                    // that we dont trigger bounds-checker dangling pointer 
+                    // that we don't trigger bounds-checker dangling pointer
                     // error
                     //
                     assert (this->pCBReg==pReg);
@@ -177,9 +177,9 @@ epicsShareFunc void fdManager::process (double delay)
         }
         else if ( status < 0 ) {
             int errnoCpy = SOCKERRNO;
-            
-            // dont depend on flags being properly set if 
-            // an error is retuned from select
+
+            // don't depend on flags being properly set if
+            // an error is returned from select
             for ( size_t i = 0u; i < fdrNEnums; i++ ) {
                 FD_ZERO ( &fdSetsPtr[i] );
             }

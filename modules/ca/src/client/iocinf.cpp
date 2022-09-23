@@ -81,7 +81,7 @@ extern "C" int epicsShareAPI addAddrToChannelAccessAddressList
     const char *pStr;
     const char *pToken;
     struct sockaddr_in addr;
-    char buf[32u]; /* large enough to hold an IP address */
+    char buf[256u]; /* large enough to hold an IP address or hostname */
     int status, ret = -1;
 
     pStr = envGetConfigParamPtr (pEnv);
@@ -191,7 +191,7 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
     int             yes;
 
     /*
-     * dont load the list twice
+     * don't load the list twice
      */
     assert ( ellCount (pList) == 0 );
 

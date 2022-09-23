@@ -28,6 +28,10 @@
 #endif
 
 #define epicsExportSharedSymbols
+/* epicsStdio uses epicsThreadOnce(), require explicit use to avoid unexpected recursion */
+#define epicsStdioStdStreams
+#define epicsStdioStdPrintfEtc
+
 #include "epicsStdio.h"
 #include "ellLib.h"
 #include "epicsEvent.h"
@@ -87,12 +91,12 @@ static epicsThreadOSD *createImplicit(void);
 
 #define checkStatus(status,message) \
 if((status))  {\
-    errlogPrintf("%s error %s\n",(message),strerror((status))); \
+    errlogPrintf("%s " ERL_ERROR " %s\n",(message),strerror((status))); \
 }
 
 #define checkStatusQuit(status,message,method) \
 if(status) { \
-    errlogPrintf("%s  error %s\n",(message),strerror((status))); \
+    errlogPrintf("%s  " ERL_ERROR " %s\n",(message),strerror((status))); \
     cantProceed((method)); \
 }
 
@@ -206,8 +210,9 @@ static epicsThreadOSD * init_threadInfo(const char *name,
     return(pthreadInfo);
 }
 
-static void free_threadInfo(epicsThreadOSD *pthreadInfo)
+static void free_threadInfo(void* raw)
 {
+    epicsThreadOSD *pthreadInfo = raw;
     int status;
 
     if(epicsAtomicDecrIntT(&pthreadInfo->refcnt) > 0) return;
@@ -265,7 +270,7 @@ int           low, try;
          * at all. However, we still must return
          * a priority range accepted by the SCHED_FIFO
          * policy. Otherwise, epicsThreadCreate() cannot
-         * detect the unsufficient permission (EPERM)
+         * detect the insufficient permission (EPERM)
          * and fall back to a non-RT thread (because
          * pthread_attr_setschedparam would fail with
          * EINVAL due to the bad priority).
@@ -319,14 +324,31 @@ int          status;
     a_p->usePolicy = arg.ok;
 }
 #endif
-
+/* 0 - In the process which loads libCom.
+ * 1 - In a newly fork()'d child process
+ * 2 - In a child which has been warned
+ */
+static int childAfterFork;
+
+static void childHook(void)
+{
+    epicsAtomicSetIntT(&childAfterFork, 1);
+}
 
 static void once(void)
 {
     epicsThreadOSD *pthreadInfo;
     int status;
 
-    pthread_key_create(&getpthreadInfo,0);
+#ifdef __rtems__
+    (void)childHook;
+#else
+    status = pthread_atfork(NULL, NULL, &childHook);
+    checkStatusOnce(status, "pthread_atfork");
+#endif
+
+    checkStatusOnceQuit(pthread_key_create(&getpthreadInfo,&free_threadInfo),
+                        "pthread_key_create","epicsThreadInit");
     status = pthread_mutex_init(&onceLock,0);
     checkStatusQuit(status,"pthread_mutex_init","epicsThreadInit");
     status = pthread_mutex_init(&listLock,0);
@@ -411,7 +433,6 @@ static void * start_routine(void *arg)
     (*pthreadInfo->createFunc)(pthreadInfo->createArg);
 
     epicsExitCallAtThreadExits ();
-    free_threadInfo(pthreadInfo);
     return(0);
 }
 
@@ -420,6 +441,11 @@ static void epicsThreadInit(void)
     static pthread_once_t once_control = PTHREAD_ONCE_INIT;
     int status = pthread_once(&once_control,once);
     checkStatusQuit(status,"pthread_once","epicsThreadInit");
+
+    if(epicsAtomicGetIntT(&childAfterFork)==1 &&  epicsAtomicCmpAndSwapIntT(&childAfterFork, 1, 2)==1) {
+        fprintf(stderr, "Warning: Undefined Behavior!\n"
+                        "         Detected use of epicsThread from child process after fork()\n");
+    }
 }
 
 epicsShareFunc
@@ -636,7 +662,7 @@ void epicsThreadMustJoin(epicsThreadId id)
             errlogPrintf("Warning: %s thread self-join of unjoinable\n", id->name);
 
         } else {
-            /* try to error nicely, however in all likelyhood de-ref of
+            /* try to error nicely, however in all likelihood de-ref of
              * 'id' has already caused SIGSEGV as we are racing thread exit,
              * which free's 'id'.
              */
@@ -681,6 +707,9 @@ epicsShareFunc void epicsShareAPI epicsThreadExitMain(void)
     epicsThreadOSD *pthreadInfo;
 
     epicsThreadInit();
+
+    cantProceed("epicsThreadExitMain() must no longer be used.\n");
+
     pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     if(pthreadInfo==NULL)
         pthreadInfo = createImplicit();
@@ -689,7 +718,6 @@ epicsShareFunc void epicsShareAPI epicsThreadExitMain(void)
         cantProceed("epicsThreadExitMain");
     }
     else {
-    free_threadInfo(pthreadInfo);
     pthread_exit(0);
     }
 }
@@ -924,7 +952,7 @@ epicsShareFunc void epicsShareAPI epicsThreadShow(epicsThreadId showThread, unsi
     checkStatus(status,"pthread_mutex_unlock epicsThreadShowAll");
     if(status) return;
     if (!found)
-        printf("Thread %#lx (%lu) not found.\n", (unsigned long)showThread, (unsigned long)showThread);
+        epicsStdoutPrintf("Thread %#lx (%lu) not found.\n", (unsigned long)showThread, (unsigned long)showThread);
 }
 
 epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate(void)
@@ -938,8 +966,10 @@ epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate(void)
         return NULL;
     status = pthread_key_create(key,0);
     checkStatus(status,"pthread_key_create epicsThreadPrivateCreate");
-    if(status)
+    if(status) {
+        free(key);
         return NULL;
+    }
     return((epicsThreadPrivateId)key);
 }
 

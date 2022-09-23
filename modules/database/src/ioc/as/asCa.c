@@ -244,7 +244,7 @@ void asCaStart(void)
         asCaTaskClearChannels=epicsEventMustCreate(epicsEventEmpty);
         threadid = epicsThreadCreateOpt("asCaTask", (EPICSTHREADFUNC)asCaTask, 0, &opts);
         if(threadid==0) {
-            errMessage(0,"asCaStart: taskSpawn Failure\n");
+            errMessage(0,"asCaStart: taskSpawn Failure");
         }
     }
     epicsMutexMustLock(asCaTaskLock);

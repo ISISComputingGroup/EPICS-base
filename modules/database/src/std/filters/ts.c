@@ -21,11 +21,23 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
     epicsTimeStamp now;
     epicsTimeGetCurrent(&now);
 
-    /* If string or array, must make a copy (to ensure coherence between time and data) */
-    if (pfl->type == dbfl_type_rec) {
-        dbScanLock(dbChannelRecord(chan));
-        dbChannelMakeArrayCopy(pvt, pfl, chan);
-        dbScanUnlock(dbChannelRecord(chan));
+    /* If reference and not already copied,
+       must make a copy (to ensure coherence between time and data) */
+    if (pfl->type == dbfl_type_ref && !pfl->dtor) {
+        void *pTarget = calloc(pfl->no_elements, pfl->field_size);
+        void *pSource = pfl->u.r.field;
+        if (pTarget) {
+            long offset = 0;
+            long nSource = pfl->no_elements;
+            dbScanLock(dbChannelRecord(chan));
+            dbChannelGetArrayInfo(chan, &pSource, &nSource, &offset);
+            dbExtractArray(pSource, pTarget, pfl->field_size,
+                nSource, pfl->no_elements, offset, 1);
+            pfl->u.r.field = pTarget;
+            pfl->dtor = freeArray;
+            pfl->u.r.pvt = pvt;
+            dbScanUnlock(dbChannelRecord(chan));
+        }
     }
 
     pfl->time = now;

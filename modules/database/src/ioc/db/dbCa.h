@@ -47,8 +47,12 @@ epicsShareFunc long dbCaPutLink(struct link *plink,short dbrType,
 extern struct ca_client_context * dbCaClientContext;
 
 #ifdef EPICS_DBCA_PRIVATE_API
-epicsShareFunc void dbCaSync(void);
-epicsShareFunc unsigned long dbCaGetUpdateCount(struct link *plink);
+/* Wait CA link work queue to become empty.  eg. after from dbPut() to OUT */
+DBCORE_API void dbCaSync(void);
+/* Wait for the data update counter to reach the specified value. */
+DBCORE_API void testdbCaWaitForUpdateCount(DBLINK *plink, unsigned long cnt);
+/* Wait for CA link to become connected */
+DBCORE_API void testdbCaWaitForConnect(DBLINK *plink);
 #endif
 
 /* These macros are for backwards compatibility */

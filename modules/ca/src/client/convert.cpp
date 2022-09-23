@@ -36,7 +36,7 @@
 #include "caerr.h"
 
 /*
- * NOOP if this isnt required
+ * NOOP if this isn't required
  */
 #ifdef EPICS_CONVERSION_REQUIRED
 
@@ -327,7 +327,7 @@ arrayElementCount   num         /* number of values     */
 **      int  encode;            boolean, if true vax to ieee
 **                           else ieee to vax
 **
-**  converts fields ofstruct in HOST format to ieee format
+**  converts fields of struct in HOST format to ieee format
 **     or 
 **  converts fields of struct in NET format to fields with HOST 
 **      format
@@ -1023,7 +1023,7 @@ arrayElementCount   num         /* number of values     */
 **      int  encode;            boolean, if true vax to ieee
 **                           else ieee to vax
 **
-**  converts fields ofstruct in HOST format to ieee format
+**  converts fields of struct in HOST format to ieee format
 **     or 
 **  converts fields of struct in NET format to fields with HOST 
 **      format
@@ -1057,7 +1057,7 @@ arrayElementCount   num         /* number of values     */
 /****************************************************************************
 **  cvrt_sts_long(s,d)
 **
-**  converts fields ofstruct in HOST format to ieee format
+**  converts fields of struct in HOST format to ieee format
 **     or 
 **  converts fields of struct in NET format to fields with HOST 
 **      format
@@ -1119,7 +1119,7 @@ arrayElementCount   num         /* number of values     */
 /****************************************************************************
 **  cvrt_time_short(s,d)
 **
-**  converts fields ofstruct in HOST format to ieee format
+**  converts fields of struct in HOST format to ieee format
 **     or 
 **  converts fields of struct in NET format to fields with HOST 
 **      format
@@ -1240,7 +1240,7 @@ arrayElementCount   num         /* number of values     */
 /****************************************************************************
 **  cvrt_sts_char(s,d)
 **
-**  converts fields ofstruct in HOST format to ieee format
+**  converts fields of struct in HOST format to ieee format
 **     or 
 **  converts fields of struct in NET format to fields with HOST 
 **      format
@@ -1275,7 +1275,7 @@ arrayElementCount   num         /* number of values     */
 /****************************************************************************
 **  cvrt_time_long(s,d)
 **
-**  converts fields ofstruct in HOST format to ieee format
+**  converts fields of struct in HOST format to ieee format
 **     or 
 **  converts fields of struct in NET format to fields with HOST 
 **      format
@@ -1326,7 +1326,7 @@ arrayElementCount   num         /* number of values     */
     for(i=0; i<num; i++){
         *pDest = dbr_ntohs( *pSrc );
         /*
-         * dont increment these inside the MACRO 
+         * don't increment these inside the MACRO
          */
         pDest++;
         pSrc++;

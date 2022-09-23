@@ -41,7 +41,16 @@
 #   define OFFSET(structure, member) offsetof(structure, member)
 #endif
 
-/* Subtract member byte offset, returning pointer to parent object */
+/** \brief Find parent object from a member pointer
+ *
+ * Subtracts the byte offset of the member in the structure from the
+ * pointer to the member itself, giving a pointer to parent structure.
+ * \param ptr Pointer to a member data field of a structure
+ * \param structure Type name of the parent structure
+ * \param member Field name of the data member
+ * \return Pointer to the parent structure
+ * \note Both GCC and Clang will type-check this macro.
+ */
 #ifndef CONTAINER
 # ifdef __GNUC__
 #   define CONTAINER(ptr, structure, member) ({                     \

@@ -1,8 +1,8 @@
 # Version number for the PV Database API and shared library
 
 EPICS_PVDATABASE_MAJOR_VERSION = 4
-EPICS_PVDATABASE_MINOR_VERSION = 5
-EPICS_PVDATABASE_MAINTENANCE_VERSION = 1
+EPICS_PVDATABASE_MINOR_VERSION = 7
+EPICS_PVDATABASE_MAINTENANCE_VERSION = 0
 
 # Development flag, set to zero for release versions
 

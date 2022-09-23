@@ -250,6 +250,12 @@ static long process(struct dbCommon *pcommon)
             }
         }
         checkAlarms(prec);
+
+        if ( !pact ) {
+            /* Update the timestamp before writing output values so it
+             * will be up to date if any downstream records fetch it via TSEL */
+            recGblGetTimeStamp(prec);
+        }
         /* check for output link execution */
         switch (prec->oopt) {
         case calcoutOOPT_Every_Time:

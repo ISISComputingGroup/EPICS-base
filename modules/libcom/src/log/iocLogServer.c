@@ -126,6 +126,7 @@ int main(void)
 
     pserver->pfdctx = (void *) fdmgr_init();
     if (!pserver->pfdctx) {
+        free(pserver);
         fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
         return IOCLS_ERROR;
     }
@@ -273,7 +274,7 @@ static int seekLatestLine (struct ioc_log_server *pserver)
                 static const int tm_epoch_year = 1900;
                 if (theDate.tm_year>tm_epoch_year) {
                     theDate.tm_year -= tm_epoch_year;
-                    theDate.tm_isdst = -1; /* dont know */
+                    theDate.tm_isdst = -1; /* don't know */
                     lineTime = mktime (&theDate);
                     if ( lineTime != invalidTime ) {
                         if (theLatestTime == invalidTime || 
@@ -624,17 +625,17 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 			break;
 		}
 
-		/*
-		 * find the first carrage return and create
-		 * an entry in the log for the message associated
-		 * with it. If a carrage return does not exist and 
-		 * the buffer isnt full then move the partial message 
-		 * to the front of the buffer and wait for a carrage 
-		 * return to arrive. If the buffer is full and there
-		 * is no carrage return then force the message out and 
-		 * insert an artificial carrage return.
-		 */
-		nchar = pclient->nChar - lineIndex;
+        /*
+         * find the first carrage return and create
+         * an entry in the log for the message associated
+         * with it. If a carrage return does not exist and
+         * the buffer isn't full then move the partial message
+         * to the front of the buffer and wait for a carrage
+         * return to arrive. If the buffer is full and there
+         * is no carrage return then force the message out and
+         * insert an artificial carrage return.
+         */
+        nchar = pclient->nChar - lineIndex;
         for ( crIndex = lineIndex; crIndex < pclient->nChar; crIndex++ ) {
             if ( pclient->recvbuf[crIndex] == '\n' ) {
                 break;
@@ -718,12 +719,6 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 static void freeLogClient(struct iocLogClient     *pclient)
 {
 	int		status;
-
-#	ifdef	DEBUG
-	if(length == 0){
-		fprintf(stderr, "iocLogServer: nil message disconnect\n");
-	}
-#	endif
 
 	/*
 	 * flush any left overs

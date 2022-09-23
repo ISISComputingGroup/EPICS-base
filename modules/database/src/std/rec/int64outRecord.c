@@ -153,8 +153,10 @@ static long process(dbCommon *pcommon)
 		if (!status) convert(prec,value);
 	}
 
-	/* check for alarms */
-	checkAlarms(prec);
+        /* Update the timestamp before writing output values so it
+         * will be up to date if any downstream records fetch it via TSEL */
+        recGblGetTimeStampSimm(prec, prec->simm, NULL);
+    }
 
         if (prec->nsev < INVALID_ALARM )
                 status=writeValue(prec); /* write the new value */

@@ -23,7 +23,12 @@ extern "C" {
 /* NUM_TIME_EVENTS are now allowed if supported by a custom time provider */
 /* which should provide its own advancing timestamp validation. */
 
-epicsShareFunc void generalTime_Init(void);
+/**\brief Initialize the framework.
+ *
+ * This routine is called automatically by any function that requires the
+ * framework. It does not need to be called explicitly.
+ **/
+LIBCOM_API void generalTime_Init(void);
 
 epicsShareFunc int  installLastResortEventProvider(void);
 

@@ -105,7 +105,8 @@ void lazy_dbd(const std::string& dbd_file) {
           std::string("Failed to load DBD file: ")+dbd_file);
     std::cout<<"dbLoadDatabase(\""<<dbd_file<<"\")\n";
 
-    softIoc_registerRecordDeviceDriver(pdbbase);
+    errIf(softIoc_registerRecordDeviceDriver(pdbbase),
+          "Failed to initialize database");
     std::cout<<"softIoc_registerRecordDeviceDriver(pdbbase)\n";
     registryFunctionAdd("exit", (REGISTRYFUNCTION) exitSubroutine);
 }

@@ -175,16 +175,16 @@ union value {
     char		*constantStr;	/*constant string*/
     struct macro_link	macro_link;	/* link containing macro substitution*/
     struct json_link    json;           /* JSON-encoded link */
-    struct pv_link	pv_link;	/* link to process variable*/
-    struct vmeio	vmeio;		/* vme io point */
-    struct camacio	camacio;	/* camac io point */
-    struct rfio		rfio;		/* CEBAF RF buffer interface */
-    struct abio		abio;		/* allen-bradley io point */
-    struct gpibio	gpibio;
-    struct bitbusio	bitbusio;
-    struct instio	instio;		/* instrument io link */
-    struct bbgpibio	bbgpibio;	/* bitbus to gpib io link */
-    struct vxiio	vxiio;		/* vxi io */
+    struct pv_link      pv_link;        /* link to process variable*/
+    struct vmeio        vmeio;          /* vme io point */
+    struct camacio      camacio;        /* camac io point */
+    struct rfio         rfio;           /* CEBAF RF buffer interface */
+    struct abio         abio;           /* Allen-Bradley io point */
+    struct gpibio       gpibio;
+    struct bitbusio     bitbusio;
+    struct instio       instio;         /* instrument io link */
+    struct bbgpibio     bbgpibio;       /* bitbus to gpib io link */
+    struct vxiio        vxiio;          /* vxi io */
 };
 
 struct lset;

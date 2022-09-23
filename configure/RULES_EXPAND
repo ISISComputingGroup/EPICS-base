@@ -15,18 +15,22 @@ vpath %@ $(USR_VPATH) $(ALL_SRC_DIRS)
 # Variable expansion
 
 # Default settings
-EXPAND_TOOL ?= $(PERL) $(TOOLS)/expandVars.pl
+EXPAND_TOOL ?= $(PERL) $(TOOLS)/expandVars.pl $(QUIET_FLAG)
 
 EXPANDFLAGS += -t $(INSTALL_LOCATION) -a $(T_A)
 EXPANDFLAGS += $(addprefix -D ,$(EXPAND_VARS))
 
-# The names of files to be expanded must end with '@'
+# Output files
 EXPANDED = $(EXPAND:%@=%)
+EXPANDED_COMMON = $(EXPAND_COMMON:%@=$(COMMON_DIR)/%)
 
 $(EXPANDED): %: %@
 	$(ECHO) "Expanding $< to $@"
-	@$(RM) $@
-	@$(EXPAND_TOOL) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@
+	$(EXPAND_TOOL) $(EXPANDARCH) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@
+
+$(EXPANDED_COMMON): $(COMMON_DIR)/%: %@
+	$(ECHO) "Expanding $< to $(COMMON_DIR)/$@"
+	$(EXPAND_TOOL) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@
 
 clean: expand_clean
 
