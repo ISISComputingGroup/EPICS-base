@@ -66,17 +66,21 @@ else
   # Using a disabled rule aborts
   #
 
-  cleandirs distclean uninstall realuninstall archuninstall:
+  distclean uninstall realuninstall archuninstall:
 	$(error Target '$@' not available in a submodule)
 
 endif # DISABLE_TOP_RULES
 
+# Clean out old results
+before-runtests before-test-results: rm-failure-file
+rm-failure-file:
+	$(RM) $(TESTS_FAILED_PATH)
 
 help:
 	@echo "Usage: gnumake [options] [target] ..."
 	@echo "Targets supported by all Makefiles:"
 	@echo "     all            - Same as install (default rule)"
-	@echo "     inc            - Installs header files"
+	@echo "     inc            - Installs header, dbd and html files"
 	@echo "     build          - Builds and installs all targets"
 	@echo "     install        - Builds and installs all targets"
 	@echo "     clean          - Removes the O.<arch> dirs created by running make"
@@ -110,7 +114,7 @@ endif
 	@echo "Object targets are supported by the O.<arch> level Makefile .e.g"
 	@echo "     xxxRecord.o"
 
-.PHONY: cleandirs distclean uninstall help
+.PHONY: distclean uninstall rm-failure-file help
 .PHONY: realuninstall archuninstall uninstallDirs
 
 ifndef DISABLE_TOP_RULES

@@ -67,4 +67,3 @@ DIRECTORY_TARGETS += $(foreach type, $(FILE_TYPE),$(INSTALL_$(type)))
 
 FILE_TYPE += DATA
 INSTALL_DATA = $(INSTALL_LOCATION)/data
-

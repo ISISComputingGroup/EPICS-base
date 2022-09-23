@@ -1,5 +1,28 @@
-# Set the default behavior, in case people don't have core.autocrlf set.
+.ci/          export-ignore
+.tools/       export-ignore
+.github/      export-ignore
+.appveyor/    export-ignore
+.appveyor.yml export-ignore
+README        export-subst
+
+#Which files need CRLF handling
+# default to automatic
 * text=auto
+
+# batch script parser on windows requires CRLF
+*.bat text eol=crlf
+
+# extensions for scripts which may be executable via. "#!..." must have LF
+*.pl text
+*.plt text
+*.sh text eol=lf
+*.cmd text
+# .cmd in unexpanded templates
+*.cmd@* text
+# executable scripts w/o extensions
+modules/ca/src/client/S99caRepeater@ text eol=lf
+modules/libcom/src/log/S99logServer@ text eol=lf
+startup/EpicsHostArch text eol=lf
 
 # Explicitly declare text files you want to always be normalized and converted
 # to native line endings on checkout.
@@ -9,10 +32,7 @@
 *.h text
 *.hpp text
 *.java text
-*.sh text eol=lf
 *.csh text eol=lf
-*.bat text
-*.cmd text
 *.db text
 *.dbd text
 *.template text
