@@ -95,7 +95,7 @@ static const int osdRealtimePriorityList [osdRealtimePriorityStateCount] =
 BOOL WINAPI DllMain (
     HINSTANCE hModule, DWORD dwReason, LPVOID lpReserved )
 {
-    static DWORD dllHandleIndex;
+    static DWORD dllHandleIndex = TLS_OUT_OF_INDEXES;
     HMODULE dllHandle = 0;
     BOOL success = TRUE;
 
@@ -109,7 +109,9 @@ BOOL WINAPI DllMain (
 		break;
 
 	case DLL_PROCESS_DETACH:
-        success = TlsFree ( dllHandleIndex );
+        if (dllHandleIndex != TLS_OUT_OF_INDEXES) {
+            success = TlsFree ( dllHandleIndex );
+        }
 		break;
 
 	case DLL_THREAD_ATTACH:
@@ -186,7 +188,7 @@ static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
     InitializeCriticalSection ( & pWin32ThreadGlobal->mutex );
     ellInit ( & pWin32ThreadGlobal->threadList );
     pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS = TlsAlloc();
-    if ( pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS == 0xFFFFFFFF ) {
+    if ( pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS == TLS_OUT_OF_INDEXES ) {
         DeleteCriticalSection ( & pWin32ThreadGlobal->mutex );
         free ( pWin32ThreadGlobal );
         pWin32ThreadGlobal = 0;
@@ -428,8 +430,6 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     BOOL success;
 
     if ( pGbl )  {
-        setThreadName ( pParm->id, pParm->pName );
-
         success = TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, pParm );
         if ( success ) {
             osdThreadHooksRun ( ( epicsThreadId ) pParm );
@@ -568,6 +568,7 @@ epicsThreadId epicsThreadCreateOpt (
         }
         /* weird win32 interface threadId parameter inconsistency */
         pParmWIN32->id = ( DWORD ) threadId ;
+        setThreadName ( pParmWIN32->id, pParmWIN32->pName );
     }
 
     osdPriority = epicsThreadGetOsdPriorityValue (opts->priority);
@@ -1057,7 +1058,7 @@ epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate ()
     epicsThreadPrivateOSD *p = ( epicsThreadPrivateOSD * ) malloc ( sizeof ( *p ) );
     if ( p ) {
         p->key = TlsAlloc ();
-        if ( p->key == 0xFFFFFFFF ) {
+        if ( p->key == TLS_OUT_OF_INDEXES ) {
             free ( p );
             p = 0;
         }
