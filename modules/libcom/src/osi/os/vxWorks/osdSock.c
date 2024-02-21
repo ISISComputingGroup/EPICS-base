@@ -44,8 +44,8 @@ epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate (
     return sock;
 }
 
-epicsShareFunc int epicsShareAPI epicsSocketAccept ( 
-    int sock, struct sockaddr * pAddr, osiSocklen_t * addrlen )
+epicsShareFunc SOCKET epicsShareAPI epicsSocketAccept ( 
+    SOCKET sock, struct sockaddr * pAddr, osiSocklen_t * addrlen )
 {
     int newSock = accept ( sock, pAddr, addrlen );
     if ( newSock < 0 ) {
