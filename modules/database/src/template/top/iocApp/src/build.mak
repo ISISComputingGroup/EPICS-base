@@ -17,6 +17,7 @@ DBD += $(APPNAME).dbd
 
 # _APPNAME_.dbd will be made up from these files:
 $(APPNAME)_DBD += base.dbd
+$(APPNAME)_DBD += qsrv.dbd
 ## ISIS standard dbd ##
 $(APPNAME)_DBD += icpconfig.dbd
 $(APPNAME)_DBD += pvdump.dbd
@@ -24,6 +25,7 @@ $(APPNAME)_DBD += asSupport.dbd
 $(APPNAME)_DBD += devIocStats.dbd
 $(APPNAME)_DBD += caPutLog.dbd
 $(APPNAME)_DBD += utilities.dbd
+$(APPNAME)_DBD += PVAServerRegister.dbd
 ## Stream device support ##
 $(APPNAME)_DBD += calcSupport.dbd
 $(APPNAME)_DBD += asyn.dbd
@@ -53,7 +55,7 @@ $(APPNAME)_LIBS += autosave
 $(APPNAME)_LIBS += utilities pugixml libjson zlib
 $(APPNAME)_LIBS += calc sscan
 $(APPNAME)_LIBS += pcrecpp pcre
-$(APPNAME)_LIBS += seq pv
+$(APPNAME)_LIBS += seq pv qsrv
 
 # _APPNAME__registerRecordDeviceDriver.cpp derives from _APPNAME_.dbd
 $(APPNAME)_SRCS += $(APPNAME)_registerRecordDeviceDriver.cpp
@@ -66,6 +68,7 @@ $(APPNAME)_SRCS_vxWorks += -nil-
 #$(APPNAME)_OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 
 # Finally link to the EPICS Base libraries
+$(APPNAME)_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
 $(APPNAME)_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 #===========================
