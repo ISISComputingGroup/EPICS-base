@@ -65,6 +65,8 @@ $(APPNAME)_SRCS_vxWorks += -nil-
 # Add support from base/src/vxWorks if needed
 #$(APPNAME)_OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 
+include $(CONFIG)/CONFIG_PVA_ISIS
+
 # Finally link to the EPICS Base libraries
 $(APPNAME)_LIBS += $(EPICS_BASE_IOC_LIBS)
 
