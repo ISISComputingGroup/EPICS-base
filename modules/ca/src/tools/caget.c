@@ -255,7 +255,7 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
     for (n = 0; n < nPvs; n++) {
 
         switch (format) {
-        case plain:             /* Emulate old caget behaviour */
+        case plain:             /* Emulate old caget behavior */
             if (pvs[n].nElems <= 1 && fieldSeparator == ' ') printf("%-30s", pvs[n].name);
             else                                               printf("%s", pvs[n].name);
             printf("%c", fieldSeparator);
@@ -391,6 +391,8 @@ int main (int argc, char *argv[])
 
     LINE_BUFFER(stdout);        /* Configure stdout buffering */
 
+    use_ca_timeout_env ( &caTimeout);
+
     while ((opt = getopt(argc, argv, ":taicnhsSVe:f:g:l:#:d:0:w:p:F:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
@@ -436,8 +438,8 @@ int main (int argc, char *argv[])
             if(epicsScanDouble(optarg, &caTimeout) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid timeout value "
-                        "- ignored. ('caget -h' for help.)\n", optarg);
-                caTimeout = DEFAULT_TIMEOUT;
+                        "- ignored, using '%.1f'. ('caget -h' for help.)\n",
+                        optarg, caTimeout);
             }
             break;
         case '#':               /* Array count */

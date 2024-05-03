@@ -56,7 +56,6 @@ void epicsShareAPI gphInitPvt(gphPvt **ppvt, int size)
     pgphPvt->paplist = callocMustSucceed(size, sizeof(ELLLIST *), "gphInitPvt");
     pgphPvt->lock = epicsMutexMustCreate();
     *ppvt = pgphPvt;
-    return;
 }
 
 GPHENTRY * epicsShareAPI gphFindParse(gphPvt *pgphPvt, const char *name, size_t len, void *pvtid)
@@ -171,7 +170,6 @@ void epicsShareAPI gphDelete(gphPvt *pgphPvt, const char *name, void *pvtid)
     }
 
     epicsMutexUnlock(pgphPvt->lock);
-    return;
 }
 
 void epicsShareAPI gphFreeMem(gphPvt *pgphPvt)

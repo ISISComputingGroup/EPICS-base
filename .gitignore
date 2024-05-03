@@ -17,7 +17,11 @@ relPaths.sh
 /modules/RELEASE.*.local
 /modules/Makefile.local
 /QtC-*
+.project
+/.qtc_*
+/.vscode/
 *.orig
 *.log
 .*.swp
-.project
+.DS_Store
+.iocsh_history

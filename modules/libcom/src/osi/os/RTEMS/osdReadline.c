@@ -15,6 +15,8 @@
 #include <string.h>
 #include <libtecla.h>
 
+#include "epicsReadlinePvt.h"
+
 struct osdContext {};
 
 /*

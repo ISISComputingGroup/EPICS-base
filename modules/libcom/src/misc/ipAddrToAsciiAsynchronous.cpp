@@ -339,7 +339,7 @@ void ipAddrToAsciiGlobal::run ()
 
             {
                 epicsGuardRelease < epicsMutex > unguard ( guard );
-                // dont call callback with lock applied
+                // don't call callback with lock applied
                 pCur->pCB->transactionComplete ( this->nameTmp );
             }
 

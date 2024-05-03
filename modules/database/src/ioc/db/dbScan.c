@@ -168,9 +168,13 @@ void scanStop(void)
         epicsEventSignal(ppsl->loopEvent);
         epicsEventWait(startStopEvent);
     }
+    for (i = 0; i < nPeriodic; i++) {
+        epicsThreadMustJoin(periodicTaskId[i]);
+    }
 
     scanOnce((dbCommon *)&exitOnce);
     epicsEventWait(startStopEvent);
+    epicsThreadMustJoin(onceTaskId);
 }
 
 void scanCleanup(void)
@@ -761,14 +765,16 @@ void scanOnceQueueShow(const int reset)
 
 static void initOnce(void)
 {
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+    opts.joinable = 1;
+    opts.priority = epicsThreadPriorityScanLow + nPeriodic;
+    opts.stackSize = epicsThreadStackBig;
     if ((onceQ = epicsRingBytesLockedCreate(sizeof(onceEntry)*onceQueueSize)) == NULL) {
         cantProceed("initOnce: Ring buffer create failed\n");
     }
     if(!onceSem)
         onceSem = epicsEventMustCreate(epicsEventEmpty);
-    onceTaskId = epicsThreadCreate("scanOnce",
-        epicsThreadPriorityScanLow + nPeriodic,
-        epicsThreadGetStackSize(epicsThreadStackBig), onceTask, 0);
+    onceTaskId = epicsThreadCreateOpt("scanOnce", onceTask, 0, &opts);
 
     epicsEventWait(startStopEvent);
 }
@@ -817,7 +823,7 @@ static void periodicTask(void *arg)
             epicsTimeAddSeconds(&next, delay);
             if (++overruns >= 10 &&
                 epicsTimeDiffInSeconds(&now, &reported) > report_delay) {
-                errlogPrintf("\ndbScan warning from '%s' scan thread:\n"
+                errlogPrintf("\ndbScan " ERL_WARNING " from '%s' scan thread:\n"
                     "\tScan processing averages %.3f seconds (%.3f .. %.3f).\n"
                     "\tOver-runs have now happened %u times in a row.\n"
                     "\tTo fix this, move some records to a slower scan rate.\n",
@@ -932,14 +938,16 @@ static void spawnPeriodic(int ind)
 {
     periodic_scan_list *ppsl = papPeriodic[ind];
     char taskName[20];
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+    opts.joinable = 1;
+    opts.priority = epicsThreadPriorityScanLow + ind;
+    opts.stackSize = epicsThreadStackBig;
 
     if (!ppsl) return;
 
     sprintf(taskName, "scan-%g", ppsl->period);
-    periodicTaskId[ind] = epicsThreadCreate(
-        taskName, epicsThreadPriorityScanLow + ind,
-        epicsThreadGetStackSize(epicsThreadStackBig),
-        periodicTask, (void *)ppsl);
+    periodicTaskId[ind] = epicsThreadCreateOpt(
+        taskName, periodicTask, (void *)ppsl, &opts);
 
     epicsEventWait(startStopEvent);
 }

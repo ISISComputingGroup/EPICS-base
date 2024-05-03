@@ -2,13 +2,14 @@
 #define PDB_H
 
 #include <dbEvent.h>
+#include <asLib.h>
 
 #include <pv/configuration.h>
 #include <pv/pvAccess.h>
 
 #include "weakmap.h"
 
-#include <shareLib.h>
+#include <pv/qsrv.h>
 
 struct PDBProvider;
 
@@ -64,10 +65,29 @@ struct QSRV_API PDBProvider : public epics::pvAccess::ChannelProvider,
 
     dbEventCtx event_context;
 
+    typedef std::list<std::string> group_files_t;
+    static group_files_t group_files;
+
     static size_t num_instances;
 };
 
 QSRV_API
 void QSRVRegistrar_counters();
+
+class AsWritePvt {
+    void * pvt;
+public:
+    AsWritePvt() :pvt(NULL) {}
+    explicit AsWritePvt(void * pvt): pvt(pvt) {}
+    ~AsWritePvt() {
+        asTrapWriteAfterWrite(pvt);
+    }
+    void swap(AsWritePvt& o) {
+        std::swap(pvt, o.pvt);
+    }
+private:
+    AsWritePvt(const AsWritePvt&);
+    AsWritePvt& operator=(const AsWritePvt&);
+};
 
 #endif // PDB_H

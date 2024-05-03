@@ -7,6 +7,7 @@ namespace pvalink {
 
 pvaLink::pvaLink()
     :alive(true)
+    ,type((dbfType)-1)
     ,plink(0)
     ,used_scratch(false)
     ,used_queue(false)
@@ -89,7 +90,9 @@ pvd::PVField::const_shared_pointer pvaLink::getSubField(const char *name)
         } else {
             // we access a sub-struct
             ret = lchan->op_mon.root->getSubField(fieldName);
-            if(ret->getField()->getType()!=pvd::structure) {
+            if(!ret) {
+                // noop
+            } else if(ret->getField()->getType()!=pvd::structure) {
                 // addressed sub-field isn't a sub-structure
                 if(strcmp(name, "value")!=0) {
                     // unless we are trying to fetch the "value", we fail here

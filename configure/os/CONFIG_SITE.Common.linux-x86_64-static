@@ -31,12 +31,20 @@ COMMANDLINE_LIBRARY = READLINE
 #COMMANDLINE_LIBRARY = READLINE_CURSES
 
 
+<<<<<<< HEAD:configure/os/CONFIG_SITE.Common.linux-x86_64-static
 # Uncomment the followings lines to build with CLANG instead of GCC.
 #
 #GNU         = NO
 #CMPLR_CLASS = clang
 #CC          = clang
 #CCC         = clang++
+=======
+# WARNING: Variables that are set in $(CONFIG)/CONFIG.gnuCommon cannot be
+# overridden in this file for native builds, e.g. variables such as
+#    OPT_CFLAGS_YES, WARN_CFLAGS, SHRLIB_LDFLAGS
+# They must be set in CONFIG_SITE.linux-aarch64.linux-aarch64 or for
+# cross-builds in CONFIG_SITE.<host-arch>.linux-aarch64 instead.
+>>>>>>> vendor_7_0_8:configure/os/CONFIG_SITE.Common.linux-aarch64
 
 
 # It makes sense to include debugging symbols even in optimized builds

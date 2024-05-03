@@ -40,19 +40,23 @@ namespace pva = epics::pvAccess;
 
 DBCH::DBCH(dbChannel *ch) :chan(ch)
 {
+    if(!chan)
+        throw std::invalid_argument("NULL channel");
     prepare();
 }
 
 DBCH::DBCH(const std::string& name)
     :chan(dbChannelCreate(name.c_str()))
 {
+    if(!chan)
+        throw std::invalid_argument(SB()<<"invalid channel: "<<name);
     prepare();
 }
 
 void DBCH::prepare()
 {
     if(!chan)
-        throw std::invalid_argument("NULL channel");
+        throw std::invalid_argument(SB()<<"NULL channel");
     if(dbChannelOpen(chan)) {
         dbChannelDelete(chan);
         throw std::invalid_argument(SB()<<"Failed to open channel "<<dbChannelName(chan));
@@ -205,16 +209,20 @@ struct pvArray : public pvCommon {
 
 struct metaTIME {
     DBRstatus
+    DBRamsg
     DBRtime
+    DBRutag
 
-    enum {mask = DBR_STATUS | DBR_TIME};
+    enum {mask = DBR_STATUS | DBR_AMSG | DBR_TIME | DBR_UTAG};
 };
 
 struct metaDOUBLE {
     DBRstatus
+    DBRamsg
     DBRunits
     DBRprecision
     DBRtime
+    DBRutag
     DBRgrDouble
     DBRctrlDouble
     DBRalDouble
@@ -222,12 +230,14 @@ struct metaDOUBLE {
     // similar junk
     DBRenumStrs
 
-    enum {mask = DBR_STATUS | DBR_UNITS | DBR_PRECISION | DBR_TIME | DBR_GR_DOUBLE | DBR_CTRL_DOUBLE | DBR_AL_DOUBLE};
+    enum {mask = DBR_STATUS | DBR_AMSG | DBR_UNITS | DBR_PRECISION | DBR_TIME | DBR_UTAG | DBR_GR_DOUBLE | DBR_CTRL_DOUBLE | DBR_AL_DOUBLE};
 };
 
 struct metaENUM {
     DBRstatus
+    DBRamsg
     DBRtime
+    DBRutag
     DBRenumStrs
 
     // similar junk
@@ -237,12 +247,14 @@ struct metaENUM {
     DBRctrlDouble
     DBRalDouble
 
-    enum {mask = DBR_STATUS | DBR_TIME | DBR_ENUM_STRS};
+    enum {mask = DBR_STATUS | DBR_AMSG | DBR_TIME | DBR_UTAG | DBR_ENUM_STRS};
 };
 
 struct metaSTRING {
     DBRstatus
+    DBRamsg
     DBRtime
+    DBRutag
 
     // similar junk
     DBRenumStrs
@@ -252,7 +264,7 @@ struct metaSTRING {
     DBRctrlDouble
     DBRalDouble
 
-    enum {mask = DBR_STATUS | DBR_TIME};
+    enum {mask = DBR_STATUS | DBR_AMSG | DBR_TIME | DBR_UTAG};
 };
 
 void attachTime(pvTimeAlarm& pvm, const pvd::PVStructurePtr& pv)
@@ -264,6 +276,9 @@ void attachTime(pvTimeAlarm& pvm, const pvd::PVStructurePtr& pv)
     FMAP(message, PVString, "alarm.message", ALARM);
     FMAP(sec, PVLong, "timeStamp.secondsPastEpoch", ALWAYS);
     FMAP(nsec, PVInt, "timeStamp.nanoseconds", ALWAYS);
+#ifdef HAVE_UTAG
+    FMAP(userTag, PVInt, "timeStamp.userTag", ALWAYS);
+#endif
 #undef FMAP
 }
 
@@ -328,16 +343,22 @@ void attachAll(PVX& pvm, const pvd::PVStructurePtr& pv)
     attachMeta(pvm, pv);
 }
 
-void mapStatus(unsigned code, pvd::PVInt* status, pvd::PVString* message)
+template<typename Meta>
+void mapStatus(const Meta& meta, pvd::PVInt* status, pvd::PVString* message)
 {
-    if(code<ALARM_NSTATUS)
-        message->put(epicsAlarmConditionStrings[code]);
+#ifdef HAVE_UTAG
+    if(meta.amsg[0]!='\0') {
+        message->put(meta.amsg);
+    } else
+#endif
+    if(meta.status<ALARM_NSTATUS)
+        message->put(epicsAlarmConditionStrings[meta.status]);
     else
         message->put("???");
 
     // Arbitrary mapping from DB status codes
     unsigned out;
-    switch(code) {
+    switch(meta.status) {
     case NO_ALARM:
         out = 0;
         break;
@@ -385,6 +406,10 @@ void putMetaImpl(const pvTimeAlarm& pv, const META& meta)
     if(pv.nsecMask) {
         pv.userTag->put(nsec&pv.nsecMask);
         nsec &= ~pv.nsecMask;
+#ifdef HAVE_UTAG
+    } else {
+        pv.userTag->put(meta.utag);
+#endif
     }
     pv.nsec->put(nsec);    pv.sec->put(meta.time.secPastEpoch+POSIX_TIME_AT_EPICS_EPOCH);
 }
@@ -400,7 +425,7 @@ void putTime(const pvTimeAlarm& pv, unsigned dbe, db_field_log *pfl)
 
     putMetaImpl(pv, meta);
     if(dbe&DBE_ALARM) {
-        mapStatus(meta.status, pv.status.get(), pv.message.get());
+        mapStatus(meta, pv.status.get(), pv.message.get());
         pv.severity->put(meta.severity);
     }
 }
@@ -546,7 +571,7 @@ void putMeta(const pvCommon& pv, unsigned dbe, db_field_log *pfl)
     putMetaImpl(pv, meta);
 #define FMAP(MNAME, FNAME) pv.MNAME->put(meta.FNAME)
     if(dbe&DBE_ALARM) {
-        mapStatus(meta.status, pv.status.get(), pv.message.get());
+        mapStatus(meta, pv.status.get(), pv.message.get());
         FMAP(severity, severity);
     }
     if(dbe&DBE_PROPERTY) {
@@ -641,6 +666,14 @@ void findFormat(pvTimeAlarm& pvmeta, pdbRecordIterator& info, const epics::pvDat
     }
 }
 
+pvd::Status checkDISP(dbChannel *chan)
+{
+    dbCommon *prec = dbChannelRecord(chan);
+    pvd::Status ret;
+    if(prec->disp && dbChannelField(chan)!=&prec->disp)
+        ret = pvd::Status::error("Put Disabled");
+    return ret;
+}
 
 template<typename PVX, typename META>
 struct PVIFScalarNumeric : public PVIF
@@ -698,7 +731,10 @@ struct PVIFScalarNumeric : public PVIF
 
     virtual pvd::Status get(const epics::pvData::BitSet& mask, proc_t proc, bool permit) OVERRIDE FINAL
     {
-        pvd::Status ret;
+        pvd::Status ret = checkDISP(chan);
+        if(!ret)
+            return ret;
+
         bool newval = mask.logical_and(pvmeta.maskVALUEPut);
         if(newval) {
             if(permit)
@@ -763,9 +799,22 @@ short PVD2DBR(pvd::ScalarType pvt)
     return -1;
 }
 
-epics::pvData::FieldConstPtr
-ScalarBuilder::dtype(dbChannel *channel)
+static
+pvd::StructureConstPtr buildTimeStamp()
 {
+    return pvd::FieldBuilder::begin()
+                    ->add("secondsPastEpoch", pvd::pvLong)
+                    ->add("nanoseconds", pvd::pvInt)
+                    ->add("userTag", pvd::pvInt)
+                  ->createStructure();
+}
+
+epics::pvData::FieldConstPtr
+ScalarBuilder::dtype()
+{
+    if(!channel)
+        throw std::runtime_error("+type:\"scalar\" requires +channel:");
+
     short dbr = dbChannelFinalFieldType(channel);
     const long maxelem = dbChannelFinalElements(channel);
     const pvd::ScalarType pvt = DBR2PVD(dbr);
@@ -794,7 +843,7 @@ ScalarBuilder::dtype(dbChannel *channel)
                          ->addArray("value", pvt);
 
     builder = builder->add("alarm", standard->alarm())
-                     ->add("timeStamp", standard->timeStamp());
+                     ->add("timeStamp", buildTimeStamp());
 
     if(dbr!=DBR_ENUM) {
         builder = builder->addNestedStructure("display")
@@ -819,7 +868,7 @@ ScalarBuilder::dtype(dbChannel *channel)
 }
 
 PVIF*
-ScalarBuilder::attach(dbChannel *channel, const epics::pvData::PVStructurePtr& root, const FieldName& fldname)
+ScalarBuilder::attach(const epics::pvData::PVStructurePtr& root, const FieldName& fldname)
 {
     if(!channel)
         throw std::runtime_error("+type:\"scalar\" requires +channel:");
@@ -906,7 +955,10 @@ struct PVIFPlain : public PVIF
 
     virtual pvd::Status get(const epics::pvData::BitSet& mask, proc_t proc, bool permit) OVERRIDE FINAL
     {
-        pvd::Status ret;
+        pvd::Status ret = checkDISP(chan);
+        if(!ret)
+            return ret;
+
         bool newval = mask.get(fieldOffset);
         if(newval) {
             if(permit)
@@ -936,10 +988,14 @@ struct PVIFPlain : public PVIF
 
 struct PlainBuilder : public PVIFBuilder
 {
+    explicit PlainBuilder(dbChannel* chan) :PVIFBuilder(chan) {}
     virtual ~PlainBuilder() {}
 
     // fetch the structure description
-    virtual epics::pvData::FieldConstPtr dtype(dbChannel *channel) OVERRIDE FINAL {
+    virtual epics::pvData::FieldConstPtr dtype() OVERRIDE FINAL {
+        if(!channel)
+            throw std::runtime_error("+type:\"plain\" requires +channel:");
+
         const short dbr = dbChannelFinalFieldType(channel);
         const long maxelem = dbChannelFinalElements(channel);
         const pvd::ScalarType pvt = DBR2PVD(dbr);
@@ -956,8 +1012,7 @@ struct PlainBuilder : public PVIFBuilder
     // Attach to a structure instance.
     // must be of the type returned by dtype().
     // need not be the root structure
-    virtual PVIF* attach(dbChannel *channel,
-                         const epics::pvData::PVStructurePtr& root,
+    virtual PVIF* attach(const epics::pvData::PVStructurePtr& root,
                          const FieldName& fldname) OVERRIDE FINAL
     {
         if(!channel)
@@ -976,10 +1031,11 @@ struct PlainBuilder : public PVIFBuilder
 
 struct AnyScalarBuilder : public PVIFBuilder
 {
+    explicit AnyScalarBuilder(dbChannel* chan) :PVIFBuilder(chan) {}
     virtual ~AnyScalarBuilder() {}
 
     // fetch the structure description
-    virtual epics::pvData::FieldConstPtr dtype(dbChannel *channel) OVERRIDE FINAL {
+    virtual epics::pvData::FieldConstPtr dtype() OVERRIDE FINAL {
         (void)channel; //ignored
         return pvd::getFieldCreate()->createVariantUnion();
     }
@@ -987,8 +1043,7 @@ struct AnyScalarBuilder : public PVIFBuilder
     // Attach to a structure instance.
     // must be of the type returned by dtype().
     // need not be the root structure
-    virtual PVIF* attach(dbChannel *channel,
-                         const epics::pvData::PVStructurePtr& root,
+    virtual PVIF* attach(const epics::pvData::PVStructurePtr& root,
                          const FieldName& fldname) OVERRIDE FINAL
     {
         if(!channel)
@@ -1074,25 +1129,25 @@ struct PVIFMeta : public PVIF
 
 struct MetaBuilder : public PVIFBuilder
 {
+    explicit MetaBuilder(dbChannel* chan) :PVIFBuilder(chan) {}
     virtual ~MetaBuilder() {}
 
     // fetch the structure description
-    virtual epics::pvData::FieldConstPtr dtype(dbChannel *channel) OVERRIDE FINAL {
+    virtual epics::pvData::FieldConstPtr dtype() OVERRIDE FINAL {
         throw std::logic_error("Don't call me");
     }
 
     virtual epics::pvData::FieldBuilderPtr dtype(epics::pvData::FieldBuilderPtr& builder,
-                                                 const std::string& fld,
-                                                 dbChannel *channel)
+                                                 const std::string& fld) OVERRIDE FINAL
     {
         pvd::StandardFieldPtr std(pvd::getStandardField());
         if(fld.empty()) {
             return builder->add("alarm", std->alarm())
-                          ->add("timeStamp", std->timeStamp());
+                          ->add("timeStamp", buildTimeStamp());
         } else {
             return builder->addNestedStructure(fld)
                                 ->add("alarm", std->alarm())
-                                ->add("timeStamp", std->timeStamp())
+                                ->add("timeStamp", buildTimeStamp())
                            ->endNested();
         }
     }
@@ -1100,8 +1155,7 @@ struct MetaBuilder : public PVIFBuilder
     // Attach to a structure instance.
     // must be of the type returned by dtype().
     // need not be the root structure
-    virtual PVIF* attach(dbChannel *channel,
-                         const epics::pvData::PVStructurePtr& root,
+    virtual PVIF* attach(const epics::pvData::PVStructurePtr& root,
                          const FieldName& fldname) OVERRIDE FINAL
     {
         if(!channel)
@@ -1138,26 +1192,68 @@ struct PVIFProc : public PVIF
 
 struct ProcBuilder : public PVIFBuilder
 {
+    explicit ProcBuilder(dbChannel* chan) :PVIFBuilder(chan) {}
+    virtual ~ProcBuilder() {}
+
     // fetch the structure description
-    virtual epics::pvData::FieldConstPtr dtype(dbChannel *channel) OVERRIDE FINAL {
+    virtual epics::pvData::FieldConstPtr dtype() OVERRIDE FINAL {
         throw std::logic_error("Don't call me");
     }
 
     virtual epics::pvData::FieldBuilderPtr dtype(epics::pvData::FieldBuilderPtr& builder,
-                                                 const std::string& fld,
-                                                 dbChannel *channel) OVERRIDE FINAL
+                                                 const std::string& fld) OVERRIDE FINAL
     {
         // invisible
         return builder;
     }
-    virtual PVIF* attach(dbChannel *channel,
-                         const epics::pvData::PVStructurePtr& root,
+    virtual PVIF* attach(const epics::pvData::PVStructurePtr& root,
                          const FieldName& fldname) OVERRIDE FINAL
     {
         if(!channel)
             throw std::runtime_error("+type:\"proc\" requires +channel:");
 
         return new PVIFProc(channel);
+    }
+};
+
+struct PVIFNoOp : public PVIF
+{
+    PVIFNoOp(dbChannel *channel) :PVIF(channel) {}
+
+    virtual void put(epics::pvData::BitSet& mask, unsigned dbe, db_field_log *pfl) OVERRIDE FINAL
+    {}
+
+    virtual pvd::Status get(const epics::pvData::BitSet& mask, proc_t proc, bool permit) OVERRIDE FINAL
+    {
+        return pvd::Status();
+    }
+
+    virtual unsigned dbe(const epics::pvData::BitSet& mask) OVERRIDE FINAL
+    {
+        return 0;
+    }
+};
+
+struct IDBuilder : public PVIFBuilder
+{
+    explicit IDBuilder(dbChannel* chan) :PVIFBuilder(chan) {}
+    virtual ~IDBuilder() {}
+
+    // fetch the structure description
+    virtual epics::pvData::FieldConstPtr dtype() OVERRIDE FINAL {
+        throw std::logic_error("Don't call me");
+    }
+
+    virtual epics::pvData::FieldBuilderPtr dtype(epics::pvData::FieldBuilderPtr& builder,
+                                                 const std::string& fld) OVERRIDE FINAL
+    {
+        // caller has already done builder->setId(...)
+        return builder;
+    }
+    virtual PVIF* attach(const epics::pvData::PVStructurePtr& root,
+                         const FieldName& fldname) OVERRIDE FINAL
+    {
+        return new PVIFNoOp(channel);
     }
 };
 
@@ -1202,31 +1298,32 @@ pvd::Status PVIF::get(const epics::pvData::BitSet& mask, proc_t proc, bool permi
 
 epics::pvData::FieldBuilderPtr
 PVIFBuilder::dtype(epics::pvData::FieldBuilderPtr& builder,
-                   const std::string &fld,
-                   dbChannel *channel)
+                   const std::string &fld)
 {
     if(fld.empty())
-        throw std::runtime_error("Can't attach this +type to root");
+        throw std::runtime_error(SB()<<"Can't attach +type "<<typeid(*this).name()<<" to root");
 
-    epics::pvData::FieldConstPtr ftype(this->dtype(channel));
+    epics::pvData::FieldConstPtr ftype(this->dtype());
     if(ftype)
         builder = builder->add(fld, ftype);
 
     return builder;
 }
 
-PVIFBuilder* PVIFBuilder::create(const std::string& type)
+PVIFBuilder* PVIFBuilder::create(const std::string& type, dbChannel* chan)
 {
     if(type.empty() || type=="scalar")
-        return new ScalarBuilder;
+        return new ScalarBuilder(chan);
     else if(type=="plain")
-        return new PlainBuilder;
+        return new PlainBuilder(chan);
     else if(type=="any")
-        return new AnyScalarBuilder;
+        return new AnyScalarBuilder(chan);
     else if(type=="meta")
-        return new MetaBuilder;
+        return new MetaBuilder(chan);
     else if(type=="proc")
-        return new ProcBuilder;
+        return new ProcBuilder(chan);
+    else if(type=="structure")
+        return new IDBuilder(chan);
     else
         throw std::runtime_error(std::string("Unknown +type=")+type);
 }

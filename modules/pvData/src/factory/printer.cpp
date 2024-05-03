@@ -171,7 +171,7 @@ bool printEnumT(std::ostream& strm, const PVStructure& top, bool fromtop)
     if(I>=ch.size()) {
         strm<<" <undefined>";
     } else {
-        strm<<' '<<escape(ch[I]);
+        strm<<' '<<maybeQuote(ch[I]);
     }
     return true;
 }
@@ -180,7 +180,7 @@ void csvEscape(std::string& S)
 {
     // concise, not particularly efficient...
     std::string temp(escape(S).style(escape::CSV).str());
-    if(S.find_first_of(" ,\\")!=S.npos) {// only quote if necessary (stupid Excel)
+    if(S.find_first_of("\" ,\\")!=S.npos) {// only quote if necessary (stupid Excel)
         std::string temp2;
         temp2.reserve(temp.size()+2);
         temp2.push_back('\"');
@@ -188,7 +188,7 @@ void csvEscape(std::string& S)
         temp2.push_back('\"');
         temp2.swap(temp);
     }
-    S = temp;
+    S.swap(temp);
 }
 
 bool printTable(std::ostream& strm, const PVStructure& top)
@@ -404,6 +404,9 @@ std::ostream& operator<<(std::ostream& strm, const PVStructure::Formatter& forma
     if(format.xfmt==PVStructure::Formatter::JSON) {
         JSONPrintOptions opts;
         opts.multiLine = false;
+#if EPICS_VERSION_INT>=VERSION_INT(7,0,6,1)
+        opts.json5 = true;
+#endif
         printJSON(strm, format.xtop, format.xshow ? *format.xshow : BitSet().set(0), opts);
         strm<<'\n';
         return strm;
@@ -497,7 +500,7 @@ std::ostream& operator<<(std::ostream& strm, const escape& Q)
         case '\'': next = '\''; break;
         case '\"': next = '\"'; if(Q.S==escape::CSV) quote = '"'; break;
         default:
-            if(!isprint(C)) {
+            if(!isprint((unsigned char)C)) {
                 // print three charator escape
                 strm<<"\\x"<<hexdigit(C>>4)<<hexdigit(C);
             } else {
@@ -511,6 +514,40 @@ std::ostream& operator<<(std::ostream& strm, const escape& Q)
         strm.put(next);
     }
 
+    return strm;
+}
+
+
+std::ostream& operator<<(std::ostream& strm, const maybeQuote& q)
+{
+    bool esc = false;
+    for(size_t i=0, N=q.s.size(); i<N && !esc; i++) {
+        switch(q.s[i]) {
+        case '\a':
+        case '\b':
+        case '\f':
+        case '\n':
+        case '\r':
+        case '\t':
+        case ' ':
+        case '\v':
+        case '\\':
+        case '\'':
+        case '\"':
+            esc = true;
+            break;
+        default:
+            if(!isprint((unsigned char)q.s[i])) {
+                esc = true;
+            }
+            break;
+        }
+    }
+    if(esc) {
+        strm<<'"'<<escape(q.s)<<'"';
+    } else {
+        strm<<q.s;
+    }
     return strm;
 }
 

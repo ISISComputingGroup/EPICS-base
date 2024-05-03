@@ -77,7 +77,7 @@ epicsShareExtern int dbAccessDebugPUTF;
  *	options has a bit set for each option that was accepted
  *	number_elements is actual number of elements obtained
  *
- * The individual items can be refered to by the expressions::
+ * The individual items can be referred to by the expressions::
  *
  * buffer.status
  * buffer.severity
@@ -220,6 +220,8 @@ epicsShareFunc long dbNameToAddr(const char *pname, struct dbAddr *paddr);
 /** Initialize DBADDR from a dbEntry
  * Also handles SPC_DBADDR processing. This is really an internal
  * routine for use by dbNameToAddr() and dbChannelCreate().
+ *
+ * \since 7.0.2.1
  */
 epicsShareFunc long dbEntryToAddr(const struct dbEntry *pdbentry,
     struct dbAddr *paddr);
@@ -227,6 +229,8 @@ epicsShareFunc long dbEntryToAddr(const struct dbEntry *pdbentry,
 /** Initialize DBENTRY from a valid dbAddr*
  * Constant time equivalent of dbInitEntry() then dbFindRecord(),
  * and finally dbFollowAlias().
+ *
+ * \since 3.16.1
  */
 epicsShareFunc void dbInitEntryFromAddr(struct dbAddr *paddr,
     struct dbEntry *pdbentry);
@@ -234,6 +238,8 @@ epicsShareFunc void dbInitEntryFromAddr(struct dbAddr *paddr,
 /** Initialize DBENTRY from a valid record (dbCommon*)
  * Constant time equivalent of dbInitEntry() then dbFindRecord(),
  * and finally dbFollowAlias() when no field is specified.
+ *
+ * \since 3.16.1
  */
 epicsShareFunc void dbInitEntryFromRecord(struct dbCommon *prec,
     struct dbEntry *pdbentry);

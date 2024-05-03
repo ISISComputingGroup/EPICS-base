@@ -2,6 +2,43 @@
 
 @page release_notes Release Notes
 
+Release 8.0.6 (Dec 2023)
+========================
+
+- Compatible changes
+  - Actually enable JSON-5 output in PVStructure::Formatter::JSON when available.
+  - Fix unaligned access issues for some ARM/Linux targets.
+
+Release 8.0.5 (Sep 2022)
+========================
+
+- Compatible changes
+ - Internal changes to use the YAJL API for generating JSON and JSON-5 output.
+
+Release 8.0.4 (Feb 2021)
+========================
+
+- Incompatible changes
+ - Remove ByteBuffer::align()
+- Compatible changes
+ - Deprecate SerializableControl::alignBuffer() and DeserializableControl::alignData()
+ - shared_vector_convert<>() fix convert of empty, untyped, array
+
+Release 8.0.3 (July 2020)
+=========================
+
+- Incompatible changes
+ - Removed THROW_BASE_EXCEPTION_CAUSE() macro which has long ignored its cause.
+   Any external users should switch to the functionally identical THROW_BASE_EXCEPTION_CAUSE()
+ - Various printing of functions now conditionally escape strings
+   including quote '\"' and similar charactors.
+
+Release 8.0.2 (May 2020)
+========================
+
+- Changes to documentation and unittests.
+  No functional changes to library.
+
 Release 8.0.1 (Nov 2019)
 ==========================
 

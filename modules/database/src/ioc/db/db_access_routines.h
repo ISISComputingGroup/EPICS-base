@@ -26,7 +26,7 @@ epicsShareExtern volatile int interruptAccept;
 
 
 /*
- * Adaptors for db_access users
+ * Adapters for db_access users
  */
 epicsShareFunc struct dbChannel * dbChannel_create(const char *pname);
 epicsShareFunc int dbChannel_get(struct dbChannel *chan,

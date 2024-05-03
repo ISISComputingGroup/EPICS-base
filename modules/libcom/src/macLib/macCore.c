@@ -54,7 +54,7 @@ typedef struct mac_entry {
 /*** Local function prototypes ***/
 
 /*
- * These static functions peform low-level operations on macro entries
+ * These static functions perform low-level operations on macro entries
  */
 static MAC_ENTRY *first   ( MAC_HANDLE *handle );
 static MAC_ENTRY *last    ( MAC_HANDLE *handle );
@@ -72,7 +72,7 @@ static void       trans ( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
 static void       refer ( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
                           const char **rawval, char **value, char *valend );
 
-static void cpy2val( const char *src, char **value, char *valend );
+static void cpy2val( const char *src, char **value, const char *valend );
 static char *Strdup( const char *string );
 
 
@@ -588,7 +588,7 @@ static MAC_ENTRY *lookup( MAC_HANDLE *handle, const char *name, int special )
     }
     if ( (special == FALSE) && (entry == NULL) &&
          (handle->flags & FLAG_USE_ENVIRONMENT) ) {
-        char *value = getenv(name);
+        char *value = name && *name ? getenv(name) : NULL;
         if (value) {
             entry = create( handle, name, FALSE );
             if ( entry ) {
@@ -763,8 +763,6 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
        still there to be seen) */
     *rawval = ( *r == '\0' ) ? r - 1 : r;
     *value  = v;
-
-    return;
 }
 
 /*
@@ -925,14 +923,13 @@ cleanup:
 
     *rawval = r;
     *value = v;
-    return;
 }
 
 /*
  * Copy a string, honoring the 'end of destination string' pointer
  * Returns with **value pointing to the '\0' terminator
  */
-static void cpy2val(const char *src, char **value, char *valend)
+static void cpy2val(const char *src, char **value, const char *valend)
 {
     char *v = *value;
     while ((v < valend) && (*v = *src++)) { v++; }

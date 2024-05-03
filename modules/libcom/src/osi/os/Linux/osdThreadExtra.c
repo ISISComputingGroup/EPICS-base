@@ -4,6 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2012 ITER Organization
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -22,7 +23,7 @@
 #include <sys/types.h>
 #include <sys/prctl.h>
 
-#define epicsExportSharedSymbols
+#include "epicsAtomic.h"
 #include "epicsStdio.h"
 #include "ellLib.h"
 #include "epicsEvent.h"
@@ -45,11 +46,12 @@ void epicsThreadShowInfo(epicsThreadId pthreadInfo, unsigned int level)
             if (!status)
                 priority = param.sched_priority;
         }
-        fprintf(epicsGetStdout(),"%16.16s %14p %8lu    %3d%8d %8.8s\n",
+        fprintf(epicsGetStdout(),"%16.16s %14p %8lu    %3d%8d %8.8s%s\n",
              pthreadInfo->name,(void *)
              pthreadInfo,(unsigned long)pthreadInfo->lwpId,
              pthreadInfo->osiPriority,priority,
-             pthreadInfo->isSuspended ? "SUSPEND" : "OK");
+             pthreadInfo->isSuspended ? "SUSPEND" : "OK",
+             epicsAtomicGetIntT(&pthreadInfo->isRunning) ? "" : " ZOMBIE");
     }
 }
 
@@ -58,12 +60,12 @@ static void thread_hook(epicsThreadId pthreadInfo)
     /* Set the name of the thread's process. Limited to 16 characters. */
     char comm[16];
 
-    if (strcmp(pthreadInfo->name, "_main_")) {
+    if (strcmp(pthreadInfo->name, "_main_") != 0) {
         snprintf(comm, sizeof(comm), "%s", pthreadInfo->name);
         prctl(PR_SET_NAME, comm, 0l, 0l, 0l);
     }
     pthreadInfo->lwpId = syscall(SYS_gettid);
 }
 
-epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault = thread_hook;
-epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain = thread_hook;
+EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault = thread_hook;
+EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain = thread_hook;
