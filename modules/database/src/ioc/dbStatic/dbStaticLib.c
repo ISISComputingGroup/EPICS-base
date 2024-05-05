@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -33,7 +34,6 @@
 #define DBFLDTYPES_GBLSOURCE
 #define SPECIAL_GBLSOURCE
 
-#define epicsExportSharedSymbols
 #include "dbChannel.h"
 #include "dbFldTypes.h"
 #include "dbStaticLib.h"
@@ -48,7 +48,7 @@
 
 int dbStaticDebug = 0;
 static char *pNullString = "";
-#define messagesize	276
+#define messagesize     276
 #define RPCL_LEN INFIX_TO_POSTFIX_SIZE(80)
 
 /* Must be big enough to hold a 64-bit integer in base 10, but in
@@ -57,31 +57,29 @@ static char *pNullString = "";
  */
 STATIC_ASSERT(messagesize >= 21);
 
-static char *ppstring[5]={" NPP"," PP"," CA"," CP"," CPP"};
-static char *msstring[4]={" NMS"," MS"," MSI"," MSS"};
+static const char *ppstring[5]={" NPP"," PP"," CA"," CP"," CPP"};
+static const char *msstring[4]={" NMS"," MS"," MSI"," MSS"};
 
-epicsShareDef maplinkType pamaplinkType[LINK_NTYPES] = {
-	{"CONSTANT",CONSTANT},
-	{"PV_LINK",PV_LINK},
-	{"VME_IO",VME_IO},
-	{"CAMAC_IO",CAMAC_IO},
-	{"AB_IO",AB_IO},
-	{"GPIB_IO",GPIB_IO},
-	{"BITBUS_IO",BITBUS_IO},
-	{"MACRO_LINK",MACRO_LINK},
-	{"JSON_LINK",JSON_LINK},
-        {"PN_LINK",PN_LINK},
-	{"DB_LINK",DB_LINK},
-	{"CA_LINK",CA_LINK},
-	{"INST_IO",INST_IO},
-	{"BBGPIB_IO",BBGPIB_IO},
-	{"RF_IO",RF_IO},
-	{"VXI_IO",VXI_IO}
+const maplinkType pamaplinkType[LINK_NTYPES] = {
+    {"CONSTANT",CONSTANT},
+    {"PV_LINK",PV_LINK},
+    {"VME_IO",VME_IO},
+    {"CAMAC_IO",CAMAC_IO},
+    {"AB_IO",AB_IO},
+    {"GPIB_IO",GPIB_IO},
+    {"BITBUS_IO",BITBUS_IO},
+    {"MACRO_LINK",MACRO_LINK},
+    {"JSON_LINK",JSON_LINK},
+    {"PN_LINK",PN_LINK},
+    {"DB_LINK",DB_LINK},
+    {"CA_LINK",CA_LINK},
+    {"INST_IO",INST_IO},
+    {"BBGPIB_IO",BBGPIB_IO},
+    {"RF_IO",RF_IO},
+    {"VXI_IO",VXI_IO}
 };
 
 /*forward references for private routines*/
-static void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...)
-    EPICS_PRINTF_STYLE(2,3);
 static long dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length);
 
 /* internal routines*/
@@ -91,7 +89,7 @@ static FILE *openOutstream(const char *filename)
     errno = 0;
     stream = fopen(filename,"w");
     if(!stream) {
-        fprintf(stderr,"error opening %s %s\n",filename,strerror(errno));
+        fprintf(stderr,ERL_ERROR " opening %s %s\n",filename,strerror(errno));
         return 0;
     }
     return stream;
@@ -139,8 +137,8 @@ void dbFreeLinkContents(struct link *plink)
 
 void dbFreePath(DBBASE *pdbbase)
 {
-    ELLLIST	*ppathList;
-    dbPathNode	*pdbPathNode;
+    ELLLIST     *ppathList;
+    dbPathNode  *pdbPathNode;
 
     if(!pdbbase) return;
     ppathList = (ELLLIST *)pdbbase->pathPvt;
@@ -198,7 +196,6 @@ void dbMsgNCpy(DBENTRY *pdbentry, const char *msg, size_t len)
     pdbentry->message[len] = '\0';
 }
 
-static
 void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...)
 {
     va_list args;
@@ -237,14 +234,14 @@ static void realToString(double value, char *preturn, int isdouble)
 {
     static const double delta[2] = {1e-6, 1e-15};
     static const int precision[2] = {6, 14};
-    double	absvalue;
-    int		logval,prec;
+    double  absvalue;
+    int     logval,prec;
     size_t  end;
-    char	tstr[30];
-    char	*ptstr = &tstr[0];
-    int		round;
-    int		ise = FALSE;
-    char	*loce = NULL;
+    char    tstr[30];
+    char    *ptstr = &tstr[0];
+    int     round;
+    int     ise = FALSE;
+    char    *loce = NULL;
 
     if (value == 0) {
         strcpy(preturn, "0");
@@ -335,12 +332,12 @@ static void doubleToString(double value, char *preturn)
 /*Public only for dbStaticNoRun*/
 dbDeviceMenu *dbGetDeviceMenu(DBENTRY *pdbentry)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
-    dbFldDes	*pflddes = pdbentry->pflddes;
-    dbDeviceMenu *pdbDeviceMenu;
-    devSup	*pdevSup;
-    int		ind;
-    int		nChoice;
+    dbRecordType    *precordType = pdbentry->precordType;
+    dbFldDes        *pflddes = pdbentry->pflddes;
+    dbDeviceMenu    *pdbDeviceMenu;
+    devSup          *pdevSup;
+    int             ind;
+    int             nChoice;
 
     if(!precordType) return(NULL);
     if(!pflddes) return(NULL);
@@ -371,13 +368,13 @@ dbDeviceMenu *dbGetDeviceMenu(DBENTRY *pdbentry)
 
 /* Beginning of Public Routines */
 
-#define INC_SIZE	256
+#define INC_SIZE    256
 void dbCatString(char **string,int *stringLength,char *src,char *separator)
 {
     if((*string==NULL)
     || ((strlen(*string)+strlen(src)+2) > (size_t)*stringLength)) {
-	char	*newString;
-	size_t	size;
+        char    *newString;
+        size_t  size;
 
         size = strlen(src);
 	if(*string) size += strlen(*string);
@@ -400,7 +397,7 @@ void dbCatString(char **string,int *stringLength,char *src,char *separator)
 
 dbBase * dbAllocBase(void)
 {
-    dbBase	*pdbbase;
+    dbBase  *pdbbase;
 
     pdbbase = dbCalloc(1,sizeof(dbBase));
     ellInit(&pdbbase->menuList);
@@ -418,31 +415,34 @@ dbBase * dbAllocBase(void)
 }
 void dbFreeBase(dbBase *pdbbase)
 {
-    dbMenu		*pdbMenu;
-    dbMenu		*pdbMenuNext;
-    dbRecordType	*pdbRecordType;
-    dbRecordType	*pdbRecordTypeNext;
-    dbFldDes	*	pdbFldDes;
-    dbRecordAttribute	*pAttribute;
-    dbRecordAttribute	*pAttributeNext;
-    devSup		*pdevSup;
-    devSup		*pdevSupNext;
-    dbText		*ptext;
-    dbText		*ptextNext;
+    dbMenu              *pdbMenu;
+    dbMenu              *pdbMenuNext;
+    dbRecordType        *pdbRecordType;
+    dbRecordType        *pdbRecordTypeNext;
+    dbFldDes            *pdbFldDes;
+    dbRecordAttribute   *pAttribute;
+    dbRecordAttribute   *pAttributeNext;
+    devSup              *pdevSup;
+    devSup              *pdevSupNext;
+    dbText              *ptext;
+    dbText              *ptextNext;
     dbVariableDef       *pvar;
     dbVariableDef       *pvarNext;
-    drvSup		*pdrvSup;
-    drvSup		*pdrvSupNext;
-    linkSup		*plinkSup;
-    brkTable		*pbrkTable;
-    brkTable		*pbrkTableNext;
-    chFilterPlugin  *pfilt;
-    chFilterPlugin  *pfiltNext;
-    dbGuiGroup      *pguiGroup;
-    dbGuiGroup      *pguiGroupNext;
-    int			i;
-    DBENTRY		dbentry;
+    drvSup              *pdrvSup;
+    drvSup              *pdrvSupNext;
+    linkSup             *plinkSup;
+    brkTable            *pbrkTable;
+    brkTable            *pbrkTableNext;
+    chFilterPlugin      *pfilt;
+    chFilterPlugin      *pfiltNext;
+    dbGuiGroup          *pguiGroup;
+    dbGuiGroup          *pguiGroupNext;
+    int                 i;
+    DBENTRY             dbentry;
     long status;
+
+    if(!pdbbase)
+        return;
 
     dbInitEntry(pdbbase,&dbentry);
     status = dbFirstRecordType(&dbentry);
@@ -637,7 +637,7 @@ void dbFinishEntry(DBENTRY *pdbentry)
     }
 }
 
-DBENTRY * dbCopyEntry(DBENTRY *pdbentry)
+DBENTRY * dbCopyEntry(const DBENTRY *pdbentry)
 {
     DBENTRY *pnew;
 
@@ -647,7 +647,7 @@ DBENTRY * dbCopyEntry(DBENTRY *pdbentry)
     return(pnew);
 }
 
-void dbCopyEntryContents(DBENTRY *pfrom,DBENTRY *pto)
+void dbCopyEntryContents(const DBENTRY *pfrom,DBENTRY *pto)
 {
     *pto = *pfrom;
     pto->message = NULL;
@@ -664,11 +664,11 @@ long dbPath(DBBASE *pdbbase,const char *path)
 
 long dbAddPath(DBBASE *pdbbase,const char *path)
 {
-    ELLLIST	*ppathList;
-    const char	*pcolon;
-    const char	*plast;
-    unsigned	expectingPath;
-    unsigned	sawMissingPath;
+    ELLLIST     *ppathList;
+    const char  *pcolon;
+    const char  *plast;
+    unsigned    expectingPath;
+    unsigned    sawMissingPath;
 
     if(!pdbbase) return(-1);
     ppathList = (ELLLIST *)pdbbase->pathPvt;
@@ -680,8 +680,8 @@ long dbAddPath(DBBASE *pdbbase,const char *path)
     if (!path) return(0); /* Empty path strings are ignored */
     /* care is taken to properly deal with white space
      * 1) preceding and trailing white space is removed from paths
-     * 2) white space inbetween path separator counts as an empty name
-     *		(see below)
+     * 2) white space in between path separator counts as an empty name
+     *      (see below)
      */
     expectingPath = FALSE;
     sawMissingPath = FALSE;
@@ -711,21 +711,21 @@ long dbAddPath(DBBASE *pdbbase,const char *path)
 		plast--;
 	}
 
-	/*
-	 * len is always nonzero because we found something that
-	 * 1) isnt white space
-	 * 2) isnt a path separator
-	 */
-	len = (plast - path) + 1;
-    if (dbAddOnePath (pdbbase, path, (unsigned) len)) return (-1);
-	path += len;
-	if (pcolon) {
-	    path += strlen(OSI_PATH_LIST_SEPARATOR);
-	}
+        /*
+         * len is always nonzero because we found something that
+         * 1) isn't white space
+         * 2) isn't a path separator
+         */
+        len = (plast - path) + 1;
+        if (dbAddOnePath (pdbbase, path, (unsigned) len)) return (-1);
+        path += len;
+        if (pcolon) {
+            path += strlen(OSI_PATH_LIST_SEPARATOR);
+        }
     }
 
     /*
-     * an empty name at beginning, middle, or end of a path string that isnt
+     * an empty name at beginning, middle, or end of a path string that isn't
      * empty means current directory
      */
     if (expectingPath||sawMissingPath) {
@@ -736,8 +736,8 @@ long dbAddPath(DBBASE *pdbbase,const char *path)
 
 static long dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length)
 {
-    ELLLIST	*ppathList;
-    dbPathNode *pdbPathNode;
+    ELLLIST     *ppathList;
+    dbPathNode  *pdbPathNode;
 
     if(!pdbbase) return(-1);
     ppathList = (ELLLIST *)pdbbase->pathPvt;
@@ -792,10 +792,10 @@ long dbWriteRecord(DBBASE *ppdbbase,const char *filename,
 long dbWriteRecordFP(
     DBBASE *pdbbase,FILE *fp,const char *precordTypename,int level)
 {
-    DBENTRY	dbentry;
-    DBENTRY	*pdbentry=&dbentry;
-    long	status;
-    int		dctonly;
+    DBENTRY dbentry;
+    DBENTRY *pdbentry=&dbentry;
+    long    status;
+    int     dctonly;
 
     dctonly = ((level>1) ? FALSE : TRUE);
     dbInitEntry(pdbbase,pdbentry);
@@ -896,9 +896,9 @@ long dbWriteMenu(
 
 long dbWriteMenuFP(DBBASE *pdbbase,FILE *fp,const char *menuName)
 {
-    dbMenu	*pdbMenu;
-    int		gotMatch;
-    int		i;
+    dbMenu  *pdbMenu;
+    int     gotMatch;
+    int     i;
 
     if(!pdbbase) {
 	fprintf(stderr,"pdbbase not specified\n");
@@ -944,10 +944,10 @@ long dbWriteRecordType(
 long dbWriteRecordTypeFP(
     DBBASE *pdbbase,FILE *fp,const char *recordTypeName)
 {
-    dbRecordType	*pdbRecordType;
-    dbFldDes	*pdbFldDes;
-    int		gotMatch;
-    int		i;
+    dbRecordType    *pdbRecordType;
+    dbFldDes        *pdbFldDes;
+    int             gotMatch;
+    int             i;
 
     if(!pdbbase) {
 	fprintf(stderr,"pdbbase not specified\n");
@@ -969,7 +969,7 @@ long dbWriteRecordTypeFP(
 	if(!gotMatch) continue;
 	fprintf(fp,"recordtype(%s) {\n",pdbRecordType->name);
 	for(i=0; i<pdbRecordType->no_fields; i++) {
-	    int	j;
+            int j;
 
 	    pdbFldDes = pdbRecordType->papFldDes[i];
 	    fprintf(fp,"\tfield(%s,%s) {\n",pdbFldDes->name,
@@ -1033,8 +1033,8 @@ long dbWriteDevice(DBBASE *pdbbase,const char *filename)
 
 long dbWriteDeviceFP(DBBASE *pdbbase,FILE *fp)
 {
-    dbRecordType	*pdbRecordType;
-    devSup	*pdevSup;
+    dbRecordType    *pdbRecordType;
+    devSup          *pdevSup;
 
     if(!pdbbase) {
 	fprintf(stderr,"dbWriteDeviceFP: pdbbase not specified\n");
@@ -1075,7 +1075,7 @@ long dbWriteDriver(DBBASE *pdbbase,const char *filename)
 
 long dbWriteDriverFP(DBBASE *pdbbase,FILE *fp)
 {
-    drvSup	*pdrvSup;
+    drvSup  *pdrvSup;
 
     if(!pdbbase) {
 	fprintf(stderr,"pdbbase not specified\n");
@@ -1105,7 +1105,7 @@ long dbWriteLinkFP(DBBASE *pdbbase, FILE *fp)
 
 long dbWriteRegistrarFP(DBBASE *pdbbase,FILE *fp)
 {
-    dbText	*ptext;
+    dbText  *ptext;
 
     if(!pdbbase) {
 	fprintf(stderr,"pdbbase not specified\n");
@@ -1135,7 +1135,7 @@ long dbWriteFunctionFP(DBBASE *pdbbase,FILE *fp)
 
 long dbWriteVariableFP(DBBASE *pdbbase,FILE *fp)
 {
-    dbVariableDef	*pvar;
+    dbVariableDef   *pvar;
 
     if(!pdbbase) {
 	fprintf(stderr,"pdbbase not specified\n");
@@ -1161,9 +1161,9 @@ long dbWriteBreaktable(DBBASE *pdbbase,const char *filename)
 
 long dbWriteBreaktableFP(DBBASE *pdbbase,FILE *fp)
 {
-    brkTable	*pbrkTable;
-    brkInt	*pbrkInt;
-    int		i;
+    brkTable    *pbrkTable;
+    brkInt      *pbrkInt;
+    int         i;
 
     if (!pdbbase) {
 	fprintf(stderr,"pdbbase not specified\n");
@@ -1185,8 +1185,8 @@ long dbWriteBreaktableFP(DBBASE *pdbbase,FILE *fp)
 
 long dbFindRecordType(DBENTRY *pdbentry,const char *recordType)
 {
-    dbBase	*pdbbase = pdbentry->pdbbase;
-    GPHENTRY	*phash;
+    dbBase      *pdbbase = pdbentry->pdbbase;
+    GPHENTRY    *phash;
 
     zeroDbentry(pdbentry);
     phash = gphFind(pdbbase->pgpHash,recordType,&pdbbase->recordTypeList);
@@ -1230,10 +1230,10 @@ int dbGetNRecordTypes(DBENTRY *pdbentry)
 long dbPutRecordAttribute(
     DBENTRY *pdbentry, const char *name, const char*value)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
-    int			createNew = TRUE;
-    int			compare;
-    dbRecordAttribute	*pattribute;
+    dbRecordType        *precordType = pdbentry->precordType;
+    int                 createNew = TRUE;
+    int                 compare;
+    dbRecordAttribute   *pattribute;
 
     if(!precordType) return(S_dbLib_recordTypeNotFound);
     pattribute = (dbRecordAttribute *)ellFirst(&precordType->attributeList);
@@ -1248,7 +1248,7 @@ long dbPutRecordAttribute(
     }
     if(createNew) {
 	dbRecordAttribute *pnew;
-	dbFldDes	  *pdbFldDes;
+        dbFldDes          *pdbFldDes;
 
 	pnew = dbCalloc(1,sizeof(dbRecordAttribute));
 	if(pattribute) {
@@ -1322,10 +1322,10 @@ long dbFirstField(DBENTRY *pdbentry,int dctonly)
 
 long dbNextField(DBENTRY *pdbentry,int dctonly)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
-    dbRecordNode	*precnode = pdbentry->precnode;
-    dbFldDes  		*pflddes;
-    short		indfield = pdbentry->indfield;
+    dbRecordType    *precordType = pdbentry->precordType;
+    dbRecordNode    *precnode = pdbentry->precnode;
+    dbFldDes        *pflddes;
+    short           indfield = pdbentry->indfield;
 
     if(!precordType) return(S_dbLib_recordTypeNotFound);
     indfield++;
@@ -1358,9 +1358,9 @@ long dbNextField(DBENTRY *pdbentry,int dctonly)
 
 int dbGetNFields(DBENTRY *pdbentry,int dctonly)
 {
-    dbRecordType		*precordType = pdbentry->precordType;
-    dbFldDes  		*pflddes;
-    int			indfield,n;
+    dbRecordType    *precordType = pdbentry->precordType;
+    dbFldDes        *pflddes;
+    int             indfield,n;
 
     if(!precordType) return(S_dbLib_recordTypeNotFound);
     n = 0;
@@ -1375,15 +1375,23 @@ int dbGetNFields(DBENTRY *pdbentry,int dctonly)
 
 char * dbGetFieldName(DBENTRY *pdbentry)
 {
-    dbFldDes  	*pflddes = pdbentry->pflddes;
+    dbFldDes    *pflddes = pdbentry->pflddes;
 
     if(!pflddes) return(NULL);
     return(pflddes->name);
 }
 
-char * dbGetDefault(DBENTRY *pdbentry)
+int dbGetFieldDbfType(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
+
+    if(!pflddes) return(-1);
+    return(pflddes->field_type);
+}
+
+char * dbGetDefault(DBENTRY *pdbentry)
+{
+    dbFldDes    *pflddes = pdbentry->pflddes;
 
     if(!pflddes) return(NULL);
     return(pflddes->initial);
@@ -1391,7 +1399,7 @@ char * dbGetDefault(DBENTRY *pdbentry)
 
 char * dbGetPrompt(DBENTRY *pdbentry)
 {
-    dbFldDes  	*pflddes = pdbentry->pflddes;
+    dbFldDes    *pflddes = pdbentry->pflddes;
 
     if(!pflddes) return(NULL);
     return(&pflddes->prompt[0]);
@@ -1399,7 +1407,7 @@ char * dbGetPrompt(DBENTRY *pdbentry)
 
 int dbGetPromptGroup(DBENTRY *pdbentry)
 {
-    dbFldDes  	*pflddes = pdbentry->pflddes;
+    dbFldDes    *pflddes = pdbentry->pflddes;
 
     if(!pflddes) return(0);
     return(pflddes->promptgroup);
@@ -1407,12 +1415,12 @@ int dbGetPromptGroup(DBENTRY *pdbentry)
 
 long dbCreateRecord(DBENTRY *pdbentry,const char *precordName)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
-    dbFldDes		*pdbFldDes;
-    PVDENTRY       	*ppvd;
-    ELLLIST           	*preclist = NULL;
-    dbRecordNode       	*pNewRecNode = NULL;
-    long		status = 0;
+    dbRecordType    *precordType = pdbentry->precordType;
+    dbFldDes        *pdbFldDes;
+    PVDENTRY        *ppvd;
+    ELLLIST         *preclist = NULL;
+    dbRecordNode    *pNewRecNode = NULL;
+    long            status = 0;
 
     if(!precordType) return(S_dbLib_recordTypeNotFound);
     /*Get size of NAME field*/
@@ -1442,12 +1450,12 @@ long dbCreateRecord(DBENTRY *pdbentry,const char *precordName)
 
 long dbDeleteAliases(DBENTRY *pdbentry)
 {
-    dbBase		*pdbbase = pdbentry->pdbbase;
-    dbRecordType	*precordType = pdbentry->precordType;
-    dbRecordNode	*precnode = pdbentry->precnode;
-    ELLLIST     	*preclist = &precordType->recList;
-    dbRecordNode	*pAliasNode, *pAliasNodeNext;
-    DBENTRY		dbentry;
+    dbBase          *pdbbase = pdbentry->pdbbase;
+    dbRecordType    *precordType = pdbentry->precordType;
+    dbRecordNode    *precnode = pdbentry->precnode;
+    ELLLIST         *preclist = &precordType->recList;
+    dbRecordNode    *pAliasNode, *pAliasNodeNext;
+    DBENTRY         dbentry;
     void *precord;
 
     if (!precnode) return S_dbLib_recNotFound;
@@ -1471,11 +1479,11 @@ long dbDeleteAliases(DBENTRY *pdbentry)
 
 long dbDeleteRecord(DBENTRY *pdbentry)
 {
-    dbBase		*pdbbase = pdbentry->pdbbase;
-    dbRecordType	*precordType = pdbentry->precordType;
-    dbRecordNode	*precnode = pdbentry->precnode;
-    ELLLIST     	*preclist;
-    long		status;
+    dbBase          *pdbbase = pdbentry->pdbbase;
+    dbRecordType    *precordType = pdbentry->precordType;
+    dbRecordNode    *precnode = pdbentry->precnode;
+    ELLLIST         *preclist;
+    long            status;
 
     if (!precnode) return S_dbLib_recNotFound;
     if (precnode->flags & DBRN_FLAGS_HASALIAS)
@@ -1501,10 +1509,10 @@ long dbDeleteRecord(DBENTRY *pdbentry)
 
 long dbFreeRecords(DBBASE *pdbbase)
 {
-    DBENTRY		dbentry;
-    dbRecordType	*pdbRecordType;
-    dbRecordNode	*pdbRecordNode;
-    dbRecordNode	*pdbRecordNodeNext;
+    DBENTRY         dbentry;
+    dbRecordType    *pdbRecordType;
+    dbRecordNode    *pdbRecordNode;
+    dbRecordNode    *pdbRecordNodeNext;
 
     dbInitEntry(pdbbase,&dbentry);
     pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
@@ -1560,8 +1568,8 @@ long dbFindRecord(DBENTRY *pdbentry, const char *pname)
 
 long dbFirstRecord(DBENTRY *pdbentry)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
-    dbRecordNode	*precnode;
+    dbRecordType    *precordType = pdbentry->precordType;
+    dbRecordNode    *precnode;
 
     zeroDbentry(pdbentry);
     if(!precordType) return(S_dbLib_recordTypeNotFound);
@@ -1574,8 +1582,8 @@ long dbFirstRecord(DBENTRY *pdbentry)
 
 long dbNextRecord(DBENTRY *pdbentry)
 {
-    dbRecordNode	*precnode=pdbentry->precnode;
-    long		status=0;
+    dbRecordNode    *precnode=pdbentry->precnode;
+    long            status=0;
 
     if(!precnode) return(S_dbLib_recNotFound);
     precnode = (dbRecordNode *)ellNext(&precnode->node);
@@ -1587,7 +1595,7 @@ long dbNextRecord(DBENTRY *pdbentry)
 
 int dbGetNRecords(DBENTRY *pdbentry)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
+    dbRecordType    *precordType = pdbentry->precordType;
 
     if(!precordType) return(0);
     return(ellCount(&precordType->recList));
@@ -1595,7 +1603,7 @@ int dbGetNRecords(DBENTRY *pdbentry)
 
 int dbGetNAliases(DBENTRY *pdbentry)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
+    dbRecordType    *precordType = pdbentry->precordType;
 
     if(!precordType) return(0);
     return(precordType->no_aliases);
@@ -1613,7 +1621,7 @@ char * dbGetRecordName(DBENTRY *pdbentry)
 
 long dbVisibleRecord(DBENTRY *pdbentry)
 {
-    dbRecordNode	*precnode = pdbentry->precnode;
+    dbRecordNode    *precnode = pdbentry->precnode;
 
     if(!precnode) return(S_dbLib_recNotFound);
     precnode->flags |= DBRN_FLAGS_VISIBLE;
@@ -1622,7 +1630,7 @@ long dbVisibleRecord(DBENTRY *pdbentry)
 
 long dbInvisibleRecord(DBENTRY *pdbentry)
 {
-    dbRecordNode	*precnode = pdbentry->precnode;
+    dbRecordNode    *precnode = pdbentry->precnode;
 
     if(!precnode) return(S_dbLib_recNotFound);
     precnode->flags &= ~DBRN_FLAGS_VISIBLE;
@@ -1631,7 +1639,7 @@ long dbInvisibleRecord(DBENTRY *pdbentry)
 
 int dbIsVisibleRecord(DBENTRY *pdbentry)
 {
-    dbRecordNode	*precnode = pdbentry->precnode;
+    dbRecordNode    *precnode = pdbentry->precnode;
 
     if(!precnode) return 0;
     return precnode->flags & DBRN_FLAGS_VISIBLE ? 1 : 0;
@@ -1644,6 +1652,7 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     dbRecordNode *pnewnode;
     DBENTRY tempEntry;
     PVDENTRY *ppvd;
+    long status;
 
     if (!precordType)
         return S_dbLib_recordTypeNotFound;
@@ -1656,9 +1665,10 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
         return S_dbLib_recNotFound;
 
     dbInitEntry(pdbentry->pdbbase, &tempEntry);
-    if (!dbFindRecord(&tempEntry, alias))
-        return S_dbLib_recExists;
+    status = dbFindRecord(&tempEntry, alias);
     dbFinishEntry(&tempEntry);
+    if (!status)
+        return S_dbLib_recExists;
 
     pnewnode = dbCalloc(1, sizeof(dbRecordNode));
     pnewnode->recordname = epicsStrDup(alias);
@@ -1668,14 +1678,15 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     precnode->flags |= DBRN_FLAGS_HASALIAS;
     ellInit(&pnewnode->infoList);
 
-    ellAdd(&precordType->recList, &pnewnode->node);
-    precordType->no_aliases++;
-
     ppvd = dbPvdAdd(pdbentry->pdbbase, precordType, pnewnode);
     if (!ppvd) {
         errMessage(-1, "dbCreateAlias: Add to PVD failed");
+        free(pnewnode);
         return -1;
     }
+
+    ellAdd(&precordType->recList, &pnewnode->node);
+    precordType->no_aliases++;
 
     return 0;
 }
@@ -1691,7 +1702,7 @@ int dbFollowAlias(DBENTRY *pdbentry)
 
 int dbIsAlias(DBENTRY *pdbentry)
 {
-    dbRecordNode	*precnode = pdbentry->precnode;
+    dbRecordNode    *precnode = pdbentry->precnode;
 
     if(!precnode) return 0;
     return precnode->flags & DBRN_FLAGS_ISALIAS ? 1 : 0;
@@ -1699,12 +1710,12 @@ int dbIsAlias(DBENTRY *pdbentry)
 
 long dbCopyRecord(DBENTRY *pdbentry,const char *newRecordName,int overWriteOK)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
-    dbFldDes		*pdbFldDes;
-    dbRecordNode	*precnode = pdbentry->precnode;
-    long		status;
-    DBENTRY		dbentry;
-    char		*pvalue;
+    dbRecordType    *precordType = pdbentry->precordType;
+    dbFldDes        *pdbFldDes;
+    dbRecordNode    *precnode = pdbentry->precnode;
+    long            status;
+    DBENTRY         dbentry;
+    char            *pvalue;
 
     if(!precordType) return(S_dbLib_recordTypeNotFound);
     /*Get size of NAME field*/
@@ -1836,9 +1847,9 @@ int dbFoundField(DBENTRY *pdbentry)
 
 char * dbGetString(DBENTRY *pdbentry)
 {
-    dbFldDes  	*pflddes = pdbentry->pflddes;
-    void	*pfield = pdbentry->pfield;
-    DBLINK 	*plink;
+    dbFldDes    *pflddes = pdbentry->pflddes;
+    void        *pfield = pdbentry->pfield;
+    DBLINK      *plink;
 
     if (!pflddes) {
         dbMsgCpy(pdbentry, "fldDes not found");
@@ -1908,8 +1919,8 @@ char * dbGetString(DBENTRY *pdbentry)
 	case PV_LINK:
 	case CA_LINK:
 	case DB_LINK: {
-	    int 	ppind;
-	    short	pvlMask;
+            int     ppind;
+            short   pvlMask;
 
 	    pvlMask = plink->value.pv_link.pvlMask;
 	    if (pvlMask&pvlOptPP) ppind=1;
@@ -2007,8 +2018,8 @@ char * dbGetString(DBENTRY *pdbentry)
 	    case PV_LINK:
 	    case CA_LINK:
 	    case DB_LINK: {
-		int	ppind;
-		short	pvlMask;
+                int     ppind;
+                short   pvlMask;
 
 		pvlMask = plink->value.pv_link.pvlMask;
 		if (pvlMask&pvlOptCA) ppind=2;
@@ -2031,15 +2042,19 @@ char * dbGetString(DBENTRY *pdbentry)
 
 char *dbGetStringNum(DBENTRY *pdbentry)
 {
-    dbFldDes	*pflddes = pdbentry->pflddes;
-    void	*pfield = pdbentry->pfield;
-    char	*message;
+    dbFldDes    *pflddes = pdbentry->pflddes;
+    void        *pfield = pdbentry->pfield;
+    char        *message = getpMessage(pdbentry);
     unsigned char cvttype;
+
+    if (!pfield) {
+        dbMsgCpy(pdbentry, "Field not found");
+        return message;
+    }
 
     /* the following assumes that messagesize is large enough
      * to hold the base 10 encoded value of a 32-bit integer.
      */
-    message = getpMessage(pdbentry);
     cvttype = pflddes->base;
     switch (pflddes->field_type) {
     case DBF_CHAR:
@@ -2101,37 +2116,34 @@ char *dbGetStringNum(DBENTRY *pdbentry)
         {
             dbMenu *pdbMenu = (dbMenu *)pflddes->ftPvt;
             epicsEnum16 choice_ind;
-            char *pchoice;
 
-            if (!pfield) {
-                dbMsgCpy(pdbentry, "Field not found");
-                return message;
-            }
-            choice_ind = *((epicsEnum16 *) pdbentry->pfield);
-            if (!pdbMenu || choice_ind < 0 || choice_ind >= pdbMenu->nChoice)
+            if (!pdbMenu)
                 return NULL;
-            pchoice = pdbMenu->papChoiceValue[choice_ind];
-            dbMsgCpy(pdbentry, pchoice);
+
+            choice_ind = *((epicsEnum16 *) pdbentry->pfield);
+            if (choice_ind >= pdbMenu->nChoice) {
+                dbMsgPrint(pdbentry, "%u", choice_ind);
+            }
+            else {
+                dbMsgCpy(pdbentry, pdbMenu->papChoiceValue[choice_ind]);
+            }
         }
         break;
     case DBF_DEVICE:
         {
-            dbDeviceMenu *pdbDeviceMenu;
+            dbDeviceMenu *pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
             epicsEnum16 choice_ind;
-            char *pchoice;
 
-            if (!pfield) {
-                dbMsgCpy(pdbentry, "Field not found");
-                return message;
+            if (!pdbDeviceMenu) {
+                dbMsgCpy(pdbentry, "");
+                break;
             }
-            pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
-            if (!pdbDeviceMenu)
-                return NULL;
+
             choice_ind = *((epicsEnum16 *) pdbentry->pfield);
-            if (choice_ind<0 || choice_ind>=pdbDeviceMenu->nChoice)
+            if (choice_ind>=pdbDeviceMenu->nChoice)
                 return NULL;
-            pchoice = pdbDeviceMenu->papChoice[choice_ind];
-            dbMsgCpy(pdbentry, pchoice);
+
+            dbMsgCpy(pdbentry, pdbDeviceMenu->papChoice[choice_ind]);
         }
         break;
     default:
@@ -2192,11 +2204,11 @@ long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
              */
 
         } else if(dbCanSetLink(plink, &link_info, devsup)!=0) {
-            errlogPrintf("Error: %s.%s: can't initialize link type %d with \"%s\" (type %d)\n",
+            errlogPrintf(ERL_ERROR ": %s.%s: can't initialize link type %d with \"%s\" (type %d)\n",
                          prec->name, pflddes->name, plink->type, plink->text, link_info.ltype);
 
         } else if(dbSetLink(plink, &link_info, devsup)) {
-            errlogPrintf("Error: %s.%s: failed to initialize link type %d with \"%s\" (type %d)\n",
+            errlogPrintf(ERL_ERROR ": %s.%s: failed to initialize link type %d with \"%s\" (type %d)\n",
                          prec->name, pflddes->name, plink->type, plink->text, link_info.ltype);
         }
         free(plink->text);
@@ -2269,8 +2281,8 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
             len -= (parm - pstr);
         }
 
-        /* generalized extraction of ID charactor and integer pairs (eg. "#C15 S14") */
-        ret = sscanf(pinfo->target, "# %c%d %c%d %c%d %c%d %c%d %c",
+        /* generalized extraction of ID character and integer pairs (eg. "#C15 S14") */
+        ret = sscanf(pinfo->target, "# %c%i %c%i %c%i %c%i %c%i %c",
                      &pinfo->hwid[0], &pinfo->hwnums[0],
                      &pinfo->hwid[1], &pinfo->hwnums[1],
                      &pinfo->hwid[2], &pinfo->hwnums[2],
@@ -2322,18 +2334,17 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
     }
 
     /* Link may be an array constant */
-    if (pstr[0] == '[' && pstr[len-1] == ']' &&
-        (strchr(pstr, ',') || strchr(pstr, '"'))) {
+    if (pstr[0] == '[' && pstr[len-1] == ']') {
         pinfo->ltype = CONSTANT;
         return 0;
     }
 
     pinfo->ltype = PV_LINK;
-    pstr = strchr(pstr, ' '); /* find start of link modifiers (can't be seperated by tabs) */
+    pstr = strchr(pstr, ' '); /* find start of link modifiers (can't be separated by tabs) */
     if (pstr) {
         *pstr++ = '\0'; /* isolate modifiers. pinfo->target is PV name only for re-use in struct pv_link */
 
-        /* Space seperation of modifiers isn't required, and other chars are ignored.
+        /* Space separation of modifiers isn't required, and other chars are ignored.
          * Order of comparisons resolves ambiguity by checking for
          * longer matches first.
          * eg. "QQCPPXMSITT" is pvlOptCPP|pvlOptMSI
@@ -2536,11 +2547,11 @@ fail:
 
 long dbPutString(DBENTRY *pdbentry,const char *pstring)
 {
-    dbFldDes  	*pflddes = pdbentry->pflddes;
-    void	*pfield = pdbentry->pfield;
-    long	status=0;
-    int		macroIsOk;
-    int		stringHasMacro=FALSE;
+    dbFldDes    *pflddes = pdbentry->pflddes;
+    void        *pfield = pdbentry->pfield;
+    long        status=0;
+    int         macroIsOk;
+    int         stringHasMacro=FALSE;
 
     if(!pflddes) return(S_dbLib_flddesNotFound);
     macroIsOk = dbIsMacroOk(pdbentry);
@@ -2616,7 +2627,7 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
     }
 
     if (!status && strcmp(pflddes->name, "VAL") == 0) {
-	DBENTRY	dbentry;
+        DBENTRY dbentry;
 
 	dbCopyEntryContents(pdbentry, &dbentry);
 	if (!dbFindField(&dbentry, "UDF")) {
@@ -2625,6 +2636,52 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
 	dbFinishEntry(&dbentry);
     }
     return(status);
+}
+
+void dbPutStringSuggest(DBENTRY *pdbentry, const char *pstring)
+{
+    dbFldDes    *pflddes = pdbentry->pflddes;
+
+    switch (pflddes->field_type) {
+    case DBF_MENU:
+    case DBF_DEVICE: {
+        int i, nchoices = 0;
+        char** choices = NULL;
+        const char *best = NULL;
+        double maxdist = 0.0; /* don't offer suggestions which have no similarity */
+
+        if(pflddes->field_type==DBF_MENU) {
+            dbMenu  *pdbMenu = (dbMenu *)pflddes->ftPvt;
+            if(!pdbMenu)
+                return;
+
+            choices = pdbMenu->papChoiceValue;
+            nchoices = pdbMenu->nChoice;
+
+        } else {
+            dbDeviceMenu *pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
+            if(!pdbDeviceMenu)
+                return;
+
+            choices = pdbDeviceMenu->papChoice;
+            nchoices = pdbDeviceMenu->nChoice;
+        }
+
+        for(i=0; i<nchoices; i++) {
+            double dist = epicsStrSimilarity(pstring, choices[i]);
+            if(dist>maxdist) {
+                best = choices[i];
+                maxdist = dist;
+            }
+        }
+        if(best) {
+            epicsPrintf("    Did you mean \"%s\"?\n", best);
+        }
+    }
+        break;
+    default:
+        break;
+    }
 }
 
 char * dbVerify(DBENTRY *pdbentry, const char *pstring)
@@ -2877,8 +2934,8 @@ long dbFindInfo(DBENTRY *pdbentry,const char *name)
 
 long dbDeleteInfo(DBENTRY *pdbentry)
 {
-    dbRecordNode	*precnode = pdbentry->precnode;
-    dbInfoNode		*pinfo = pdbentry->pinfonode;
+    dbRecordNode    *precnode = pdbentry->precnode;
+    dbInfoNode      *pinfo = pdbentry->pinfonode;
 
     if (!precnode) return (S_dbLib_recNotFound);
     if (!pinfo) return (S_dbLib_infoNotFound);
@@ -3012,12 +3069,12 @@ dbMenu * dbFindMenu(dbBase *pdbbase,const char *name)
 
 char   ** dbGetMenuChoices(DBENTRY *pdbentry)
 {
-    dbFldDes  	*pflddes = pdbentry->pflddes;
+    dbFldDes    *pflddes = pdbentry->pflddes;
 
     if(!pflddes) return(NULL);
     switch (pflddes->field_type) {
     case DBF_MENU: {
-	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
+            dbMenu  *pdbMenu = (dbMenu *)pflddes->ftPvt;
 
 	    if(!pdbMenu) return(NULL);
 	    return(pdbMenu->papChoiceValue);
@@ -3036,12 +3093,12 @@ char   ** dbGetMenuChoices(DBENTRY *pdbentry)
 
 int dbGetNMenuChoices(DBENTRY *pdbentry)
 {
-    dbFldDes  	*pflddes = pdbentry->pflddes;
+    dbFldDes    *pflddes = pdbentry->pflddes;
 
     if(!pflddes) return(-1);
     switch (pflddes->field_type) {
     case DBF_MENU: {
-	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
+            dbMenu  *pdbMenu = (dbMenu *)pflddes->ftPvt;
 
 	    if(!pdbMenu) return(0);
 	    return(pdbMenu->nChoice);
@@ -3061,12 +3118,12 @@ int dbGetNMenuChoices(DBENTRY *pdbentry)
 
 char * dbGetMenuStringFromIndex(DBENTRY *pdbentry, int index)
 {
-    dbFldDes  	*pflddes = pdbentry->pflddes;
+    dbFldDes    *pflddes = pdbentry->pflddes;
 
     if(!pflddes) return(NULL);
     switch (pflddes->field_type) {
     case DBF_MENU: {
-	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
+            dbMenu  *pdbMenu = (dbMenu *)pflddes->ftPvt;
 
 	    if(!pdbMenu) return(NULL);
 	    if(index<0 || index>=pdbMenu->nChoice) return(NULL);
@@ -3088,15 +3145,15 @@ char * dbGetMenuStringFromIndex(DBENTRY *pdbentry, int index)
 
 int dbGetMenuIndexFromString(DBENTRY *pdbentry, const char *choice)
 {
-    dbFldDes  	*pflddes = pdbentry->pflddes;
-    int		ind;
-    int		nChoice = 0;
-    char	**papChoice = NULL;
+    dbFldDes    *pflddes = pdbentry->pflddes;
+    int         ind;
+    int         nChoice = 0;
+    char        **papChoice = NULL;
 
     if(!pflddes) return(-1);
     switch (pflddes->field_type) {
     case DBF_MENU: {
-	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
+            dbMenu  *pdbMenu = (dbMenu *)pflddes->ftPvt;
 
 	    if(!pdbMenu) return(-1);
 	    papChoice = pdbMenu->papChoiceValue;
@@ -3130,11 +3187,11 @@ drvSup * dbFindDriver(dbBase *pdbbase, const char *name) {
 
 char * dbGetRelatedField(DBENTRY *psave)
 {
-    DBENTRY	dbEntry;
-    DBENTRY	*pdbentry= &dbEntry;
-    dbFldDes	*pflddes;
-    char	*rtnval = NULL;
-    long	status;
+    DBENTRY     dbEntry;
+    DBENTRY     *pdbentry= &dbEntry;
+    dbFldDes    *pflddes;
+    char        *rtnval = NULL;
+    long        status;
 
     pflddes = psave->pflddes;
     if(pflddes->field_type !=DBF_DEVICE) return(NULL);
@@ -3155,7 +3212,7 @@ linkSup* dbFindLinkSup(dbBase *pdbbase, const char *name) {
 
 int  dbGetNLinks(DBENTRY *pdbentry)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
+    dbRecordType    *precordType = pdbentry->precordType;
 
     if(!precordType) return(S_dbLib_recordTypeNotFound);
     return((int)precordType->no_links);
@@ -3180,8 +3237,8 @@ long  dbGetLinkField(DBENTRY *pdbentry, int index)
 
 void  dbDumpPath(DBBASE *pdbbase)
 {
-    ELLLIST	*ppathList;
-    dbPathNode	*pdbPathNode;
+    ELLLIST     *ppathList;
+    dbPathNode  *pdbPathNode;
 
     if(!pdbbase) {
 	fprintf(stderr,"pdbbase not specified\n");
@@ -3222,10 +3279,10 @@ void  dbDumpMenu(dbBase *pdbbase,const char *menuName)
 
 void dbDumpRecordType(DBBASE *pdbbase,const char *recordTypeName)
 {
-    dbRecordType *pdbRecordType;
-    dbFldDes	*pdbFldDes;
-    int		gotMatch;
-    int		i;
+    dbRecordType    *pdbRecordType;
+    dbFldDes        *pdbFldDes;
+    int             gotMatch;
+    int             i;
 
     if(!pdbbase) {
 	fprintf(stderr,"pdbbase not specified\n");
@@ -3233,43 +3290,43 @@ void dbDumpRecordType(DBBASE *pdbbase,const char *recordTypeName)
     }
     for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
     pdbRecordType; pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
-	if(recordTypeName) {
-	    gotMatch = (strcmp(recordTypeName,pdbRecordType->name)==0)
-		? TRUE : FALSE;
-	}else {
-	    gotMatch=TRUE;
-	}
-	if(!gotMatch) continue;
-	printf("name(%s) no_fields(%hd) no_prompt(%hd) no_links(%hd)\n",
-	    pdbRecordType->name,pdbRecordType->no_fields,
-	    pdbRecordType->no_prompt,pdbRecordType->no_links);
-	printf("index name\tsortind sortname\n");
-	for(i=0; i<pdbRecordType->no_fields; i++) {
-	    pdbFldDes = pdbRecordType->papFldDes[i];
-	    printf("%5d %s\t%7d %s\n",
-		i,pdbFldDes->name,
-		pdbRecordType->sortFldInd[i],pdbRecordType->papsortFldName[i]);
-	}
-	printf("link_ind ");
-	for(i=0; i<pdbRecordType->no_links; i++)
-	    printf(" %hd",pdbRecordType->link_ind[i]);
-	printf("\n");
-	printf("indvalFlddes %d name %s\n",pdbRecordType->indvalFlddes,
-	    pdbRecordType->pvalFldDes->name);
-    printf("rset * %p rec_size %d\n",
-	    (void *)pdbRecordType->prset,pdbRecordType->rec_size);
-	if(recordTypeName) break;
+        if(recordTypeName) {
+            gotMatch = (strcmp(recordTypeName,pdbRecordType->name)==0)
+                ? TRUE : FALSE;
+        }else {
+            gotMatch=TRUE;
+        }
+        if(!gotMatch) continue;
+        printf("name(%s) no_fields(%hd) no_prompt(%hd) no_links(%hd)\n",
+            pdbRecordType->name,pdbRecordType->no_fields,
+            pdbRecordType->no_prompt,pdbRecordType->no_links);
+        printf("index offset size name\tsortind sortname\n");
+        for(i=0; i<pdbRecordType->no_fields; i++) {
+            pdbFldDes = pdbRecordType->papFldDes[i];
+            printf("%5d %6u %4u %s\t%7d %s\n",
+                i,pdbFldDes->offset,pdbFldDes->size, pdbFldDes->name,
+                pdbRecordType->sortFldInd[i],pdbRecordType->papsortFldName[i]);
+        }
+        printf("link_ind ");
+        for(i=0; i<pdbRecordType->no_links; i++)
+            printf(" %hd",pdbRecordType->link_ind[i]);
+        printf("\n");
+        printf("indvalFlddes %d name %s\n",pdbRecordType->indvalFlddes,
+            pdbRecordType->pvalFldDes->name);
+        printf("rset * %p rec_size %d\n",
+            (void *)pdbRecordType->prset,pdbRecordType->rec_size);
+        if(recordTypeName) break;
     }
 }
 
 void  dbDumpField(
     DBBASE *pdbbase,const char *recordTypeName,const char *fname)
 {
-    dbRecordType *pdbRecordType;
-    dbFldDes	*pdbFldDes;
-    int		gotMatch;
-    int		i;
-    dbRecordAttribute *pAttribute;
+    dbRecordType        *pdbRecordType;
+    dbFldDes            *pdbFldDes;
+    int                 gotMatch;
+    int                 i;
+    dbRecordAttribute   *pAttribute;
 
     if(!pdbbase) {
 	fprintf(stderr,"pdbbase not specified\n");
@@ -3286,7 +3343,7 @@ void  dbDumpField(
 	if(!gotMatch) continue;
 	printf("recordtype(%s) \n",pdbRecordType->name);
 	for(i=0; i<pdbRecordType->no_fields; i++) {
-	    int	j;
+            int j;
 
 	    pdbFldDes = pdbRecordType->papFldDes[i];
 	    if(fname && strcmp(fname,pdbFldDes->name)!=0) continue;
@@ -3347,9 +3404,9 @@ void  dbDumpField(
 
 void  dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
 {
-    dbRecordType *pdbRecordType;
-    devSup	*pdevSup;
-    int		gotMatch;
+    dbRecordType    *pdbRecordType;
+    devSup          *pdevSup;
+    int             gotMatch;
 
     if (recordTypeName) {
         if (*recordTypeName == 0 || *recordTypeName == '*')
@@ -3453,7 +3510,7 @@ void  dbDumpBreaktable(DBBASE *pdbbase,const char *name)
 {
     brkTable *pbrkTable;
     brkInt   *pbrkInt;
-    int	     ind;
+    int      ind;
 
     if(!pdbbase) {
 	fprintf(stderr,"pdbbase not specified\n");

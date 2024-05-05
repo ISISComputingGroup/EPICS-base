@@ -3,16 +3,33 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/*
- * Compiler specific key words to set up external symbols and entry points
+/**
+ * \file shareLib.h
+ * \brief Mark external symbols and entry points for shared libraries.
  *
- * USAGE:
+ * This is the header file for the "decorated names" that appear in
+ * header files, e.g.
+ *
+ *     #define epicsExportSharedSymbols
+ *     epicsShareFunc int epicsShareAPI a_func(int arg);
+ *
+ * These are needed to properly create DLLs on MS Windows.
+ *
+ * \note This header file is deprecated. A newer mechanism is available that
+ * automatically handles the differences in shared libraries between Linux and
+ * Windows while avoiding the pitfalls of the `epicsExportSharedSymbols` macro.
+ * If you are implementing a library, refer to the documentation within
+ * [**makeAPIheader.pl**](makeAPIheader.html) or run `makeAPIheader.pl -h`.
+ *
+ * ### USAGE
+ *
  * There are two distinct classes of keywords in this file:
  *
- * 1) epicsShareAPI - specifies a multi-language calling mechanism. On windows 
+ * -# epicsShareAPI - specifies a multi-language calling mechanism. On windows
  * this is the pascal calling convention which is used by visual basic and other
  * high level tools. This is only necessary if a C/C++ function needs to be called
  * from other languages or from high level tools. The epicsShareAPI keyword
@@ -22,14 +39,14 @@
  * keyword because __stdcall (pascal) calling convention cannot support variable
  * length ed argument lists.
  *
- * int epicsShareAPI myExtFunc ( int arg );
- * int epicsShareAPI myExtFunc ( int arg ) {}
+ *     int epicsShareAPI myExtFunc ( int arg );
+ *     int epicsShareAPI myExtFunc ( int arg ) {}
  *
- * ** NOTE **  The epicsShareAPI attribute is deprecated and has been removed
+ *   \note  The epicsShareAPI attribute is deprecated and has been removed
  *             from all IOC-specific APIs.  Most libCom APIs still use it, but
  *             it may get removed from these at some point in the future.
  *
- * 2) epicsShare{Func,Class,Extern,Def} - specifies shareable library (DLL) 
+ * -# epicsShare{Func,Class,Extern,Def} - specifies shareable library (DLL)
  * export/import related information in the source code. On windows these keywords 
  * allow faster dispatching of calls to DLLs because more is known at compile time. 
  * It is also not necessary to maintain a linker input files specifying the DLL
@@ -46,53 +63,61 @@
  * In header files declare references to externally visible variables, classes and 
  * functions like this:
  *
- * #include "shareLib.h"
- * epicsShareFunc int myExtFunc ( int arg );
- * epicsShareExtern int myExtVar;
- * class epicsShareClass myClass { int func ( void ); };
+ *     #include "shareLib.h"
+ *     epicsShareFunc int myExtFunc ( int arg );
+ *     epicsShareExtern int myExtVar;
+ *     class epicsShareClass myClass { int func ( void ); };
  *
  * In the implementation file, however, you write:
  *
- * #include <interfaces_imported_from_other_shareable_libraries.h>
- * #define epicsExportSharedSymbols
- * #include <interfaces_implemented_in_this_shareable_library.h>
+ *     #include <interfaces_imported_from_other_shareable_libraries.h>
+ *     #define epicsExportSharedSymbols
+ *     #include <interfaces_implemented_in_this_shareable_library.h>
  *
- * epicsShareDef int myExtVar = 4;
- * int myExtFunc ( int arg ) {}
- * int myClass::func ( void ) {}
+ *     epicsShareDef int myExtVar = 4;
+ *     int myExtFunc ( int arg ) {}
+ *     int myClass::func ( void ) {}
  *
  * By default shareLib.h sets the DLL import / export keywords to import from
  * a DLL so that, for DLL consumers (users), nothing special must be done. However,
- * DLL implementors must set epicsExportSharedSymbols as above to specify
+ * DLL implementers must set epicsExportSharedSymbols as above to specify
  * which functions are exported from the DLL and which of them are imported
  * from other DLLs.
  *
- * You must first #include what you import and then define epicsExportSharedSymbols 
- * only right before you #include the prototypes for what you implement! You must 
- * include shareLib.h again each time that the state of the import/ export keywords 
- * changes, but this usually occurs as a side effect of including the shareable
- * libraries header file(s).
+ * You must first \c \#include what you import and then \c \#define
+ * \c epicsExportSharedSymbols only right before you \c \#include the
+ * prototypes for what you implement! You must include shareLib.h again each
+ * time that the state of the import/export keywords changes, but this
+ * usually occurs as a side effect of including the shareable libraries header
+ * file(s).
  *
- * Frequently a header file for a shareable library exported interface will
+ * ### Deprecated Usage
+ *
+ * The construct described below is used in some EPICS header files bit is
+ * no longer recommended as it makes it difficult to diagnose the incorrect
+ * inclusion of headers that are the wrong side of an \c epicsExportSharedSymbols
+ * marker.
+ *
+ * Sometimes a header file for a shareable library exported interface will
  * have some preprocessor switches like this if this header file must also  
  * include header files describing interfaces to other shareable libraries.
  *
- * #ifdef epicsExportSharedSymbols
- * #   define interfacePDQ_epicsExportSharedSymbols
- * #   undef epicsExportSharedSymbols
- * #endif
+ *     #ifdef epicsExportSharedSymbols
+ *     #   define interfacePDQ_epicsExportSharedSymbols
+ *     #   undef epicsExportSharedSymbols
+ *     #endif
  *
- * #include "epicsTypes.h"
- * #include "epicsTime.h"
+ *     #include "epicsTypes.h"
+ *     #include "epicsTime.h"
  *
- * #ifdef interfacePDQ_epicsExportSharedSymbols
- * #   define epicsExportSharedSymbols
- * #   include "shareLib.h"
- * #endif
+ *     #ifdef interfacePDQ_epicsExportSharedSymbols
+ *     #   define epicsExportSharedSymbols
+ *     #   include "shareLib.h"
+ *     #endif
  *
- * epicsShareFunc int myExtFunc ( int arg );
- * epicsShareExtern int myExtVar;
- * class epicsShareClass myClass {};
+ *     epicsShareFunc int myExtFunc ( int arg );
+ *     epicsShareExtern int myExtVar;
+ *     class epicsShareClass myClass {};
  *
  * Fortunately, the above is only the concern of library authors and will have no 
  * impact on persons using functions and or external data from a library.

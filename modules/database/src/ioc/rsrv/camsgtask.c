@@ -51,7 +51,7 @@ void camsgtask ( void *pParm )
         int status;
 
         /*
-         * allow message to batch up if more are comming
+         * allow message to batch up if more are coming
          */
         status = socket_ioctl (client->sock, FIONREAD, &check_nchars);
         if (status < 0) {
@@ -59,7 +59,7 @@ void camsgtask ( void *pParm )
 
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAS: FIONREAD error: %s\n",
+            errlogPrintf("CAS: FIONREAD " ERL_ERROR ": %s\n",
                 sockErrBuf);
             cas_send_bs_msg(client, TRUE);
         }

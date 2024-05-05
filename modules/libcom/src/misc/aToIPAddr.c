@@ -3,6 +3,7 @@
 *     Los Alamos National Laboratory.
 * Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -14,13 +15,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#define epicsExportSharedSymbols
+#include "dbDefs.h"
 #include "epicsTypes.h"
 #include "osiSock.h"
-
-#ifndef NELEMENTS
-#define NELEMENTS(A) (sizeof(A)/sizeof(A[0]))
-#endif /*NELEMENTS*/
 
 /*
  * addrArrayToUL ()
@@ -75,7 +72,7 @@ static int initIPAddr ( struct in_addr ipAddr, unsigned port,
  * "pAddrString" does not contain an address of the form
  * "n.n.n.n:p or host:p"
  */
-epicsShareFunc int epicsShareAPI 
+LIBCOM_API int epicsStdCall 
 aToIPAddr( const char *pAddrString, unsigned short defaultPort, 
                 struct sockaddr_in *pIP )
 {
@@ -89,6 +86,10 @@ aToIPAddr( const char *pAddrString, unsigned short defaultPort,
     char dummy[8]; 
     unsigned port;
     struct in_addr ina;
+
+    if ( pAddrString == NULL ) {
+        return -1;
+    }
 
     /*
      * dotted ip addresses

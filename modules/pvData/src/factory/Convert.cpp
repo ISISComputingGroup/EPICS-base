@@ -24,10 +24,10 @@ using std::tr1::static_pointer_cast;
 using std::size_t;
 using std::string;
 
-namespace epics { namespace pvData { 
+namespace epics { namespace pvData {
 
 
-static std::vector<string> split(string commaSeparatedList) {
+static std::vector<string> split(const string& commaSeparatedList) {
     string::size_type numValues = 1;
     string::size_type index=0;
     while(true) {

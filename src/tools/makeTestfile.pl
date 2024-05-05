@@ -20,6 +20,14 @@
 #     target.t is the name of the Perl script to generate
 #     executable is the name of the file the script runs
 
+# Test programs that need more than 500 seconds to run should have the
+# EPICS_UNITTEST_TIMEOUT environment variable set in their Makefile:
+#   longRunningTest.t: export EPICS_UNITTEST_TIMEOUT=3600
+# That embeds the timeout into the .t file. The timeout variable can also
+# be set at runtime, which will override any compiled-in setting but the
+# 'make runtests' command can't give a different timeout for each test.
+
+use 5.10.1;   # This script uses the defined-or operator //
 use strict;
 
 my ($TA, $HA, $target, $exe) = @ARGV;

@@ -3,12 +3,18 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/*
- *      Author:          Marty Kraimer
- *      Date:            6-1-90
+
+/**
+ * \file dbDefs.h
+ * \author Marty Kraimer
+ *
+ * \brief Miscellaneous macro definitions.
+ *
+ * This file defines several miscellaneous macros.
  */
 
 #ifndef INC_dbDefs_H
@@ -41,7 +47,16 @@
 #   define OFFSET(structure, member) offsetof(structure, member)
 #endif
 
-/* Subtract member byte offset, returning pointer to parent object */
+/** \brief Find parent object from a member pointer
+ *
+ * Subtracts the byte offset of the member in the structure from the
+ * pointer to the member itself, giving a pointer to parent structure.
+ * \param ptr Pointer to a member data field of a structure
+ * \param structure Type name of the parent structure
+ * \param member Field name of the data member
+ * \return Pointer to the parent structure
+ * \note Both GCC and Clang will type-check this macro.
+ */
 #ifndef CONTAINER
 # ifdef __GNUC__
 #   define CONTAINER(ptr, structure, member) ({                     \
@@ -55,11 +70,12 @@
 #endif
 
 /*Process Variable Name Size */
-/* PVNAME_STRINGSZ includes the nil terminator */
 #define PVNAME_STRINGSZ 61
+/* PVNAME_STRINGSZ includes the nil terminator */
 #define PVNAME_SZ (PVNAME_STRINGSZ - 1)
 
-/* Buffer size for the string representation of a DBF_*LINK field */
+/** \brief Buffer size for the string representation of a DBF_*LINK field
+ */
 #define PVLINK_STRINGSZ 1024
 
 /* dbAccess enums/menus can have up to this many choices */

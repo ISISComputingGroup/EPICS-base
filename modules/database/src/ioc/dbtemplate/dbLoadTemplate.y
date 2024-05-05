@@ -15,6 +15,7 @@
 #include "osiUnistd.h"
 #include "macLib.h"
 #include "dbmf.h"
+#include "errlog.h"
 
 #include "epicsExport.h"
 #include "dbAccess.h"
@@ -336,7 +337,7 @@ int dbLoadTemplate(const char *sub_file, const char *cmd_collect)
 
     if (dbTemplateMaxVars < 1)
     {
-        fprintf(stderr,"Error: dbTemplateMaxVars = %d, must be +ve\n",
+        fprintf(stderr,ERL_ERROR ": dbTemplateMaxVars = %d, must be +ve\n",
                 dbTemplateMaxVars);
         return -1;
     }

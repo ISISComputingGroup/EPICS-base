@@ -63,11 +63,31 @@ sub readRelease {
         s/ \s+ $//x;            # Remove trailing whitespace
         next if m/^ \s* $/x;    # Skip blank lines
 
-        # Handle "<macro> = <path>" plus the := and ?= variants
-        my ($macro, $op, $val) = m/^ \s* (\w+) \s* ([?:]?=) \s* (.*) /x;
-        if ($macro ne '') {
-            $macro = 'TOP' if $macro =~ m/^ INSTALL_LOCATION /x;
-            if (exists $Rmacros->{$macro}) {
+        # Handle "undefine <variable>"
+        my ($uvar) = m/^ undefine \s+ ($MVAR)/x;
+        if ($uvar ne '') {
+            delete $Rmacros->{$uvar};
+            @$Rapps = grep($_ ne $uvar, @$Rapps);
+            next;
+        }
+
+        # Handle "include <path>" and "-include <path>" syntax
+        my ($op, $path) = m/^ (-? include) \s+ (.*)/x;
+        if ($op ne '') {
+            $path = expandMacros($path, $Rmacros);
+            if (-e $path) {
+                &readRelease($path, $Rmacros, $Rapps, $Ractive);
+            } elsif ($op eq "include") {
+                warn "EPICS/Release.pm: Include file '$path' not found\n";
+            }
+            next;
+        }
+
+        # Handle "<variable> = <path>" plus the := and ?= variants
+        my ($var, $op, $val) = m/^ ($MVAR) \s* ([?:]?=) \s* (.*) /x;
+        if ($var ne '') {
+            $var = 'TOP' if $var =~ m/^ INSTALL_LOCATION /x;
+            if (exists $Rmacros->{$var}) {
                 next if $op eq '?=';
             } else {
                 push @$Rapps, $macro;

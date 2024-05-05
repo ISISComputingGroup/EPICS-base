@@ -22,7 +22,7 @@
 #endif
 
 /*
- * truncate to specified size (we dont use truncate()
+ * truncate to specified size (we don't use truncate()
  * because it is not portable)
  */
 epicsShareFunc enum TF_RETURN  truncateFile (const char *pFileName, unsigned long size)

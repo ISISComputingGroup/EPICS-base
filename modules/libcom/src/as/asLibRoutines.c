@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -14,7 +15,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#define epicsExportSharedSymbols
 #include "osiSock.h"
 #include "epicsTypes.h"
 #include "epicsStdio.h"
@@ -29,6 +29,8 @@
 #include "postfix.h"
 #include "asLib.h"
 
+#undef ECHO /* from termios.h */
+
 int asCheckClientIP;
 
 static epicsMutexId asLock;
@@ -36,9 +38,9 @@ static epicsMutexId asLock;
 #define UNLOCK epicsMutexUnlock(asLock)
 
 /*following must be global because asCa nneeds it*/
-epicsShareDef ASBASE volatile *pasbase=NULL;
+ASBASE volatile *pasbase=NULL;
 static ASBASE *pasbasenew=NULL;
-epicsShareDef int   asActive = FALSE;
+int   asActive = FALSE;
 
 static void         *freeListPvt = NULL;
 
@@ -82,16 +84,16 @@ static void asInitializeOnce(void *arg)
     osiSockAttach();
     asLock  = epicsMutexMustCreate();
 }
-long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
+long epicsStdCall asInitialize(ASINPUTFUNCPTR inputfunction)
 {
-    ASG		*pasg;
-    long	status;
-    ASBASE 	*pasbaseold;
-    GPHENTRY	*pgphentry;
-    UAG		*puag;
-    UAGNAME	*puagname;
-    HAG		*phag;
-    HAGNAME	*phagname;
+    ASG         *pasg;
+    long        status;
+    ASBASE      *pasbaseold;
+    GPHENTRY    *pgphentry;
+    UAG         *puag;
+    UAGNAME     *puagname;
+    HAG         *phag;
+    HAGNAME     *phagname;
     static epicsThreadOnceId asInitializeOnceFlag = EPICS_THREAD_ONCE_INIT;
 
     epicsThreadOnce(&asInitializeOnceFlag,asInitializeOnce,(void *)0);
@@ -145,9 +147,9 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
     pasbaseold = (ASBASE *)pasbase;
     pasbase = (ASBASE volatile *)pasbasenew;
     if(pasbaseold) {
-	ASG		*poldasg;
-	ASGMEMBER	*poldmem;
-	ASGMEMBER	*pnextoldmem;
+        ASG             *poldasg;
+        ASGMEMBER       *poldmem;
+        ASGMEMBER       *pnextoldmem;
 
 	poldasg = (ASG *)ellFirst(&pasbaseold->asgList);
 	while(poldasg) {
@@ -167,20 +169,20 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
     return(0);
 }
 
-long epicsShareAPI asInitFile(const char *filename,const char *substitutions)
+long epicsStdCall asInitFile(const char *filename,const char *substitutions)
 {
     FILE *fp;
     long status;
 
     fp = fopen(filename,"r");
     if(!fp) {
-	errlogPrintf("asInitFile: Can't open file '%s'\n", filename);
-	return(S_asLib_badConfig);
+        fprintf(stderr, ERL_ERROR " asInitFile: Can't open file '%s'\n", filename);
+        return(S_asLib_badConfig);
     }
     status = asInitFP(fp,substitutions);
     if(fclose(fp)==EOF) {
-	errMessage(0,"asInitFile: fclose failed!");
-	if(!status) status = S_asLib_badConfig;
+        fprintf(stderr, ERL_ERROR " asInitFile: fclose failed!");
+        if(!status) status = S_asLib_badConfig;
     }
     return(status);
 }
@@ -194,7 +196,7 @@ static MAC_HANDLE *macHandle = NULL;
 
 static int myInputFunction(char *buf, int max_size)
 {
-    int	l,n;
+    int l,n;
     char *fgetsRtn;
     
     if(*my_buffer_ptr==0) {
@@ -222,12 +224,12 @@ static int myInputFunction(char *buf, int max_size)
     return(n);
 }
 
-long epicsShareAPI asInitFP(FILE *fp,const char *substitutions)
+long epicsStdCall asInitFP(FILE *fp,const char *substitutions)
 {
-    char	buffer[BUF_SIZE];
-    char	mac_buffer[BUF_SIZE];
-    long	status;
-    char	**macPairs;
+    char        buffer[BUF_SIZE];
+    char        mac_buffer[BUF_SIZE];
+    long        status;
+    char        **macPairs;
 
     buffer[0] = 0;
     my_buffer = buffer;
@@ -272,7 +274,7 @@ static int memInputFunction(char *buf, int max_size)
     return ret;
 }
 
-long epicsShareAPI asInitMem(const char *acf, const char *substitutions)
+long epicsStdCall asInitMem(const char *acf, const char *substitutions)
 {
     long ret = S_asLib_InitFailed;
     if(!acf) return ret;
@@ -284,9 +286,9 @@ long epicsShareAPI asInitMem(const char *acf, const char *substitutions)
     return ret;
 }
 
-long epicsShareAPI asAddMember(ASMEMBERPVT *pasMemberPvt,const char *asgName)
+long epicsStdCall asAddMember(ASMEMBERPVT *pasMemberPvt,const char *asgName)
 {
-    long	status;
+    long        status;
 
     if(!asActive) return(S_asLib_asNotActive);
     LOCK;
@@ -295,9 +297,9 @@ long epicsShareAPI asAddMember(ASMEMBERPVT *pasMemberPvt,const char *asgName)
     return(status);
 }
 
-long epicsShareAPI asRemoveMember(ASMEMBERPVT *asMemberPvt)
+long epicsStdCall asRemoveMember(ASMEMBERPVT *asMemberPvt)
 {
-    ASGMEMBER	*pasgmember;
+    ASGMEMBER   *pasgmember;
 
     if(!asActive) return(S_asLib_asNotActive);
     pasgmember = *asMemberPvt;
@@ -320,10 +322,10 @@ long epicsShareAPI asRemoveMember(ASMEMBERPVT *asMemberPvt)
     return(0);
 }
 
-long epicsShareAPI asChangeGroup(ASMEMBERPVT *asMemberPvt,const char *newAsgName)
+long epicsStdCall asChangeGroup(ASMEMBERPVT *asMemberPvt,const char *newAsgName)
 {
-    ASGMEMBER	*pasgmember;
-    long	status;
+    ASGMEMBER   *pasgmember;
+    long        status;
 
     if(!asActive) return(S_asLib_asNotActive);
     pasgmember = *asMemberPvt;
@@ -341,33 +343,32 @@ long epicsShareAPI asChangeGroup(ASMEMBERPVT *asMemberPvt,const char *newAsgName
     return(status);
 }
 
-void * epicsShareAPI asGetMemberPvt(ASMEMBERPVT asMemberPvt)
+void * epicsStdCall asGetMemberPvt(ASMEMBERPVT asMemberPvt)
 {
-    ASGMEMBER	*pasgmember = asMemberPvt;
+    ASGMEMBER   *pasgmember = asMemberPvt;
 
     if(!asActive) return(NULL);
     if(!pasgmember) return(NULL);
     return(pasgmember->userPvt);
 }
 
-void epicsShareAPI asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt)
+void epicsStdCall asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt)
 {
-    ASGMEMBER	*pasgmember = asMemberPvt;
+    ASGMEMBER   *pasgmember = asMemberPvt;
 
     if(!asActive) return;
     if(!pasgmember) return;
     pasgmember->userPvt = userPvt;
-    return;
 }
 
-long epicsShareAPI asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
+long epicsStdCall asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
 	int asl,const char *user,char *host)
 {
-    ASGMEMBER	*pasgmember = asMemberPvt;
-    ASGCLIENT	*pasgclient;
-    int		len, i;
+    ASGMEMBER   *pasgmember = asMemberPvt;
+    ASGCLIENT   *pasgclient;
+    int         len, i;
 
-    long	status;
+    long        status;
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgmember) return(S_asLib_badMember);
     pasgclient = freeListCalloc(freeListPvt);
@@ -388,12 +389,12 @@ long epicsShareAPI asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt
     return(status);
 }
 
-long epicsShareAPI asChangeClient(
+long epicsStdCall asChangeClient(
     ASCLIENTPVT asClientPvt,int asl,const char *user,char *host)
 {
-    ASGCLIENT	*pasgclient = asClientPvt;
-    long	status;
-    int		len, i;
+    ASGCLIENT   *pasgclient = asClientPvt;
+    long        status;
+    int         len, i;
 
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgclient) return(S_asLib_badClient);
@@ -410,10 +411,10 @@ long epicsShareAPI asChangeClient(
     return(status);
 }
 
-long epicsShareAPI asRemoveClient(ASCLIENTPVT *asClientPvt)
+long epicsStdCall asRemoveClient(ASCLIENTPVT *asClientPvt)
 {
-    ASGCLIENT	*pasgclient = *asClientPvt;
-    ASGMEMBER	*pasgMember;
+    ASGCLIENT   *pasgclient = *asClientPvt;
+    ASGMEMBER   *pasgMember;
 
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgclient) return(S_asLib_badClient);
@@ -431,10 +432,10 @@ long epicsShareAPI asRemoveClient(ASCLIENTPVT *asClientPvt)
     return(0);
 }
 
-long epicsShareAPI asRegisterClientCallback(ASCLIENTPVT asClientPvt,
+long epicsStdCall asRegisterClientCallback(ASCLIENTPVT asClientPvt,
 	ASCLIENTCALLBACK pcallback)
 {
-    ASGCLIENT	*pasgclient = asClientPvt;
+    ASGCLIENT   *pasgclient = asClientPvt;
 
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgclient) return(S_asLib_badClient);
@@ -445,18 +446,18 @@ long epicsShareAPI asRegisterClientCallback(ASCLIENTPVT asClientPvt,
     return(0);
 }
 
-void * epicsShareAPI asGetClientPvt(ASCLIENTPVT asClientPvt)
+void * epicsStdCall asGetClientPvt(ASCLIENTPVT asClientPvt)
 {
-    ASGCLIENT	*pasgclient = asClientPvt;
+    ASGCLIENT   *pasgclient = asClientPvt;
 
     if(!asActive) return(NULL);
     if(!pasgclient) return(NULL);
     return(pasgclient->userPvt);
 }
 
-void epicsShareAPI asPutClientPvt(ASCLIENTPVT asClientPvt,void *userPvt)
+void epicsStdCall asPutClientPvt(ASCLIENTPVT asClientPvt,void *userPvt)
 {
-    ASGCLIENT	*pasgclient = asClientPvt;
+    ASGCLIENT   *pasgclient = asClientPvt;
     if(!asActive) return;
     if(!pasgclient) return;
     LOCK;
@@ -464,7 +465,7 @@ void epicsShareAPI asPutClientPvt(ASCLIENTPVT asClientPvt,void *userPvt)
     UNLOCK;
 }
 
-long epicsShareAPI asComputeAllAsg(void)
+long epicsStdCall asComputeAllAsg(void)
 {
     long status;
 
@@ -475,7 +476,7 @@ long epicsShareAPI asComputeAllAsg(void)
     return(status);
 }
 
-long epicsShareAPI asComputeAsg(ASG *pasg)
+long epicsStdCall asComputeAsg(ASG *pasg)
 {
     long status;
 
@@ -486,7 +487,7 @@ long epicsShareAPI asComputeAsg(ASG *pasg)
     return(status);
 }
 
-long epicsShareAPI asCompute(ASCLIENTPVT asClientPvt)
+long epicsStdCall asCompute(ASCLIENTPVT asClientPvt)
 {
     long status;
 
@@ -497,12 +498,12 @@ long epicsShareAPI asCompute(ASCLIENTPVT asClientPvt)
     return(status);
 }
 
-/*The dump routines do not lock. Thus they may get inconsistant data.*/
+/*The dump routines do not lock. Thus they may get inconsistent data.*/
 /*HOWEVER if they did lock and a user interrupts one of then then BAD BAD*/
 static const char *asAccessName[] = {"NONE","READ","WRITE"};
 static const char *asTrapOption[] = {"NOTRAPWRITE","TRAPWRITE"};
 static const char *asLevelName[] = {"ASL0","ASL1"};
-int epicsShareAPI asDump(
+int epicsStdCall asDump(
 	void (*memcallback)(struct asgMember *,FILE *),
 	void (*clientcallback)(struct asgClient *,FILE *),
 	int verbose)
@@ -510,23 +511,23 @@ int epicsShareAPI asDump(
     return asDumpFP(stdout,memcallback,clientcallback,verbose);
 }
 
-int epicsShareAPI asDumpFP(
+int epicsStdCall asDumpFP(
 	FILE *fp,
 	void (*memcallback)(struct asgMember *,FILE *),
 	void (*clientcallback)(struct asgClient *,FILE *),
 	int verbose)
 {
-    UAG		*puag;
-    UAGNAME	*puagname;
-    HAG		*phag;
-    HAGNAME	*phagname;
-    ASG		*pasg;
-    ASGINP	*pasginp;
-    ASGRULE	*pasgrule;
-    ASGHAG	*pasghag;
-    ASGUAG	*pasguag;
-    ASGMEMBER	*pasgmember;
-    ASGCLIENT	*pasgclient;
+    UAG         *puag;
+    UAGNAME     *puagname;
+    HAG         *phag;
+    HAGNAME     *phagname;
+    ASG         *pasg;
+    ASGINP      *pasginp;
+    ASGRULE     *pasgrule;
+    ASGHAG      *pasghag;
+    ASGUAG      *pasguag;
+    ASGMEMBER   *pasgmember;
+    ASGCLIENT   *pasgclient;
 
     if(!asActive) return(0);
     puag = (UAG *)ellFirst(&pasbase->uagList);
@@ -584,7 +585,7 @@ int epicsShareAPI asDumpFP(
 	    pasginp = (ASGINP *)ellNext(&pasginp->node);
 	}
 	while(pasgrule) {
-	    int	print_end_brace;
+            int print_end_brace;
 
 	    fprintf(fp,"\tRULE(%d,%s,%s)",
 		pasgrule->level,asAccessName[pasgrule->access],
@@ -655,15 +656,15 @@ int epicsShareAPI asDumpFP(
     return(0);
 }
 
-int epicsShareAPI asDumpUag(const char *uagname)
+int epicsStdCall asDumpUag(const char *uagname)
 {
     return asDumpUagFP(stdout,uagname);
 }
 
-int epicsShareAPI asDumpUagFP(FILE *fp,const char *uagname)
+int epicsStdCall asDumpUagFP(FILE *fp,const char *uagname)
 {
-    UAG		*puag;
-    UAGNAME	*puagname;
+    UAG         *puag;
+    UAGNAME     *puagname;
 
     if(!asActive) return(0);
     puag = (UAG *)ellFirst(&pasbase->uagList);
@@ -686,15 +687,15 @@ int epicsShareAPI asDumpUagFP(FILE *fp,const char *uagname)
     return(0);
 }
 
-int epicsShareAPI asDumpHag(const char *hagname)
+int epicsStdCall asDumpHag(const char *hagname)
 {
     return asDumpHagFP(stdout,hagname);
 }
 
-int epicsShareAPI asDumpHagFP(FILE *fp,const char *hagname)
+int epicsStdCall asDumpHagFP(FILE *fp,const char *hagname)
 {
-    HAG		*phag;
-    HAGNAME	*phagname;
+    HAG         *phag;
+    HAGNAME     *phagname;
 
     if(!asActive) return(0);
     phag = (HAG *)ellFirst(&pasbase->hagList);
@@ -717,18 +718,18 @@ int epicsShareAPI asDumpHagFP(FILE *fp,const char *hagname)
     return(0);
 }
 
-int epicsShareAPI asDumpRules(const char *asgname)
+int epicsStdCall asDumpRules(const char *asgname)
 {
     return asDumpRulesFP(stdout,asgname);
 }
 
-int epicsShareAPI asDumpRulesFP(FILE *fp,const char *asgname)
+int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
 {
-    ASG		*pasg;
-    ASGINP	*pasginp;
-    ASGRULE	*pasgrule;
-    ASGHAG	*pasghag;
-    ASGUAG	*pasguag;
+    ASG         *pasg;
+    ASGINP      *pasginp;
+    ASGRULE     *pasgrule;
+    ASGHAG      *pasghag;
+    ASGUAG      *pasguag;
 
     if(!asActive) return(0);
     pasg = (ASG *)ellFirst(&pasbase->asgList);
@@ -760,7 +761,7 @@ int epicsShareAPI asDumpRulesFP(FILE *fp,const char *asgname)
 	    pasginp = (ASGINP *)ellNext(&pasginp->node);
 	}
 	while(pasgrule) {
-	    int	print_end_brace;
+            int print_end_brace;
 
 	    fprintf(fp,"\tRULE(%d,%s,%s)",
 		pasgrule->level,asAccessName[pasgrule->access],
@@ -801,18 +802,18 @@ int epicsShareAPI asDumpRulesFP(FILE *fp,const char *asgname)
     return(0);
 }
 
-int epicsShareAPI asDumpMem(const char *asgname,void (*memcallback)(ASMEMBERPVT,FILE *),
+int epicsStdCall asDumpMem(const char *asgname,void (*memcallback)(ASMEMBERPVT,FILE *),
   int clients)
 {
     return asDumpMemFP(stdout,asgname,memcallback,clients);
 }
 
-int epicsShareAPI asDumpMemFP(FILE *fp,const char *asgname,
+int epicsStdCall asDumpMemFP(FILE *fp,const char *asgname,
   void (*memcallback)(ASMEMBERPVT,FILE *),int clients)
 {
-    ASG		*pasg;
-    ASGMEMBER	*pasgmember;
-    ASGCLIENT	*pasgclient;
+    ASG         *pasg;
+    ASGMEMBER   *pasgmember;
+    ASGCLIENT   *pasgclient;
 
     if(!asActive) return(0);
     pasg = (ASG *)ellFirst(&pasbase->asgList);
@@ -858,12 +859,12 @@ int epicsShareAPI asDumpMemFP(FILE *fp,const char *asgname,
     return(0);
 }
 
-epicsShareFunc int epicsShareAPI asDumpHash(void)
+LIBCOM_API int epicsStdCall asDumpHash(void)
 {
     return asDumpHashFP(stdout);
 }
 
-epicsShareFunc int epicsShareAPI asDumpHashFP(FILE *fp)
+LIBCOM_API int epicsStdCall asDumpHashFP(FILE *fp)
 {
     if(!asActive) return(0);
     gphDumpFP(fp,pasbase->phash);
@@ -872,14 +873,14 @@ epicsShareFunc int epicsShareAPI asDumpHashFP(FILE *fp)
 
 /*Start of private routines*/
 /* asCalloc is "friend" function */
-epicsShareFunc void * epicsShareAPI asCalloc(size_t nobj,size_t size)
+LIBCOM_API void * epicsStdCall asCalloc(size_t nobj,size_t size)
 {
     void *p;
 
     p=callocMustSucceed(nobj,size,"asCalloc");
     return(p);
 }
-epicsShareFunc char * epicsShareAPI asStrdup(unsigned char *str)
+LIBCOM_API char * epicsStdCall asStrdup(unsigned char *str)
 {
 	size_t len = strlen((char *) str);
 	char *buf = asCalloc(1, len + 1);
@@ -889,9 +890,9 @@ epicsShareFunc char * epicsShareAPI asStrdup(unsigned char *str)
 
 static long asAddMemberPvt(ASMEMBERPVT *pasMemberPvt,const char *asgName)
 {
-    ASGMEMBER	*pasgmember;
-    ASG		*pgroup;
-    ASGCLIENT	*pasgclient;
+    ASGMEMBER   *pasgmember;
+    ASG         *pgroup;
+    ASGCLIENT   *pasgclient;
 
     if(*pasMemberPvt) {
 	pasgmember = *pasMemberPvt;
@@ -940,15 +941,15 @@ static long asComputeAllAsgPvt(void)
 
 static long asComputeAsgPvt(ASG *pasg)
 {
-    ASGRULE	*pasgrule;
-    ASGMEMBER	*pasgmember;
-    ASGCLIENT	*pasgclient;
+    ASGRULE     *pasgrule;
+    ASGMEMBER   *pasgmember;
+    ASGCLIENT   *pasgclient;
 
     if(!asActive) return(S_asLib_asNotActive);
     pasgrule = (ASGRULE *)ellFirst(&pasg->ruleList);
     while(pasgrule) {
-	double	result = pasgrule->result;  /* set for VAL */
-	long	status;
+        double  result = pasgrule->result;  /* set for VAL */
+        long    status;
 
 	if(pasgrule->calc && (pasg->inpChanged & pasgrule->inpUsed)) {
 	    status = calcPerform(pasg->pavalue,&result,pasgrule->rpcl);
@@ -976,14 +977,14 @@ static long asComputeAsgPvt(ASG *pasg)
 
 static long asComputePvt(ASCLIENTPVT asClientPvt)
 {
-    asAccessRights	access=asNOACCESS;
-    int			trapMask=0;
-    ASGCLIENT		*pasgclient = asClientPvt;
-    ASGMEMBER		*pasgMember;
-    ASG			*pasg;
-    ASGRULE		*pasgrule;
-    asAccessRights	oldaccess;
-    GPHENTRY		*pgphentry;
+    asAccessRights      access=asNOACCESS;
+    int                 trapMask=0;
+    ASGCLIENT           *pasgclient = asClientPvt;
+    ASGMEMBER           *pasgMember;
+    ASG                 *pasg;
+    ASGRULE             *pasgrule;
+    asAccessRights      oldaccess;
+    GPHENTRY            *pgphentry;
 
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgclient) return(S_asLib_badClient);
@@ -999,8 +1000,8 @@ static long asComputePvt(ASCLIENTPVT asClientPvt)
 	if(pasgclient->level > pasgrule->level) goto next_rule;
 	/*if uagList is empty then no need to check uag*/
 	if(ellCount(&pasgrule->uagList)>0){
-	    ASGUAG	*pasguag;
-	    UAG		*puag;
+            ASGUAG      *pasguag;
+            UAG         *puag;
 
 	    pasguag = (ASGUAG *)ellFirst(&pasgrule->uagList);
 	    while(pasguag) {
@@ -1015,8 +1016,8 @@ static long asComputePvt(ASCLIENTPVT asClientPvt)
 check_hag:
 	/*if hagList is empty then no need to check hag*/
 	if(ellCount(&pasgrule->hagList)>0) {
-	    ASGHAG	*pasghag;
-	    HAG		*phag;
+            ASGHAG      *pasghag;
+            HAG         *phag;
 
 	    pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
 	    while(pasghag) {
@@ -1047,16 +1048,16 @@ next_rule:
 
 void asFreeAll(ASBASE *pasbase)
 {
-    UAG		*puag;
-    UAGNAME	*puagname;
-    HAG		*phag;
-    HAGNAME	*phagname;
-    ASG		*pasg;
-    ASGINP	*pasginp;
-    ASGRULE	*pasgrule;
-    ASGHAG	*pasghag;
-    ASGUAG	*pasguag;
-    void	*pnext;
+    UAG         *puag;
+    UAGNAME     *puagname;
+    HAG         *phag;
+    HAGNAME     *phagname;
+    ASG         *pasg;
+    ASGINP      *pasginp;
+    ASGRULE     *pasgrule;
+    ASGHAG      *pasghag;
+    ASGUAG      *pasguag;
+    void        *pnext;
 
     puag = (UAG *)ellFirst(&pasbase->uagList);
     while(puag) {
@@ -1131,11 +1132,11 @@ void asFreeAll(ASBASE *pasbase)
 /*Beginning of routines called by lex code*/
 static UAG *asUagAdd(const char *uagName)
 {
-    UAG		*pprev;
-    UAG		*pnext;
-    UAG		*puag;
-    int		cmpvalue;
-    ASBASE	*pasbase = (ASBASE *)pasbasenew;
+    UAG         *pprev;
+    UAG         *pnext;
+    UAG         *puag;
+    int         cmpvalue;
+    ASBASE      *pasbase = (ASBASE *)pasbasenew;
 
     /*Insert in alphabetic order*/
     pnext = (UAG *)ellFirst(&pasbase->uagList);
@@ -1163,7 +1164,7 @@ static UAG *asUagAdd(const char *uagName)
 
 static long asUagAddUser(UAG *puag,const char *user)
 {
-    UAGNAME	*puagname;
+    UAGNAME     *puagname;
 
     if(!puag) return(0);
     puagname = asCalloc(1,sizeof(UAGNAME)+strlen(user)+1);
@@ -1175,11 +1176,11 @@ static long asUagAddUser(UAG *puag,const char *user)
 
 static HAG *asHagAdd(const char *hagName)
 {
-    HAG		*pprev;
-    HAG		*pnext;
-    HAG		*phag;
-    int		cmpvalue;
-    ASBASE	*pasbase = (ASBASE *)pasbasenew;
+    HAG         *pprev;
+    HAG         *pnext;
+    HAG         *phag;
+    int         cmpvalue;
+    ASBASE      *pasbase = (ASBASE *)pasbasenew;
 
     /*Insert in alphabetic order*/
     pnext = (HAG *)ellFirst(&pasbase->hagList);
@@ -1212,7 +1213,7 @@ static long asHagAddHost(HAG *phag,const char *host)
     if (!phag) return 0;
     if(!asCheckClientIP) {
         size_t i, len = strlen(host);
-        phagname = asCalloc(1, sizeof(HAGNAME) + len);
+        phagname = asCalloc(1, sizeof(*phagname) + len);
         for (i = 0; i < len; i++) {
             phagname->host[i] = (char)tolower((int)host[i]);
         }
@@ -1226,13 +1227,13 @@ static long asHagAddHost(HAG *phag,const char *host)
 
             errlogPrintf("ACF: Unable to resolve host '%s'\n", host);
 
-            phagname = asCalloc(1, sizeof(HAGNAME) + sizeof(unresolved)-1+strlen(host));
+            phagname = asCalloc(1, sizeof(*phagname) + sizeof(unresolved)-1+strlen(host));
             strcpy(phagname->host, unresolved);
             strcat(phagname->host, host);
 
         } else {
             ip = ntohl(addr.sin_addr.s_addr);
-            phagname = asCalloc(1, sizeof(HAGNAME) + 24);
+            phagname = asCalloc(1, sizeof(*phagname) + 24);
             epicsSnprintf(phagname->host, 24,
                           "%u.%u.%u.%u",
                           (ip>>24)&0xff,
@@ -1247,11 +1248,11 @@ static long asHagAddHost(HAG *phag,const char *host)
 
 static ASG *asAsgAdd(const char *asgName)
 {
-    ASG		*pprev;
-    ASG		*pnext;
-    ASG		*pasg;
-    int		cmpvalue;
-    ASBASE	*pasbase = (ASBASE *)pasbasenew;
+    ASG         *pprev;
+    ASG         *pnext;
+    ASG         *pasg;
+    int         cmpvalue;
+    ASBASE      *pasbase = (ASBASE *)pasbasenew;
 
     /*Insert in alphabetic order*/
     pnext = (ASG *)ellFirst(&pasbase->asgList);
@@ -1286,7 +1287,7 @@ static ASG *asAsgAdd(const char *asgName)
 
 static long asAsgAddInp(ASG *pasg,const char *inp,int inpIndex)
 {
-    ASGINP	*pasginp;
+    ASGINP      *pasginp;
 
     if(!pasg) return(0);
     pasginp = asCalloc(1,sizeof(ASGINP)+strlen(inp)+1);
@@ -1300,7 +1301,7 @@ static long asAsgAddInp(ASG *pasg,const char *inp,int inpIndex)
 
 static ASGRULE *asAsgAddRule(ASG *pasg,asAccessRights access,int level)
 {
-    ASGRULE	*pasgrule;
+    ASGRULE     *pasgrule;
 
     if(!pasg) return(0);
     pasgrule = asCalloc(1,sizeof(ASGRULE));
@@ -1322,9 +1323,9 @@ static long asAsgAddRuleOptions(ASGRULE *pasgrule,int trapMask)
 
 static long asAsgRuleUagAdd(ASGRULE *pasgrule, const char *name)
 {
-    ASGUAG	*pasguag;
-    UAG		*puag;
-    ASBASE	*pasbase = (ASBASE *)pasbasenew;
+    ASGUAG      *pasguag;
+    UAG         *puag;
+    ASBASE      *pasbase = (ASBASE *)pasbasenew;
 
     if (!pasgrule)
         return 0;
@@ -1348,9 +1349,9 @@ static long asAsgRuleUagAdd(ASGRULE *pasgrule, const char *name)
 
 static long asAsgRuleHagAdd(ASGRULE *pasgrule, const char *name)
 {
-    ASGHAG	*pasghag;
-    HAG		*phag;
-    ASBASE	*pasbase = (ASBASE *)pasbasenew;
+    ASGHAG      *pasghag;
+    HAG         *phag;
+    ASBASE      *pasbase = (ASBASE *)pasbasenew;
 
     if (!pasgrule)
         return 0;

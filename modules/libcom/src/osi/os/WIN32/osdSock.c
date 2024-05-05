@@ -3,16 +3,16 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* SPDX-License-Identifier: EPICS
+* EPICS Base is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 /*
- *	    WIN32 specific initialisation for bsd sockets,
- *	    based on Chris Timossi's base/src/ca/windows_depend.c,
+ *      WIN32 specific initialization for bsd sockets,
+ *      based on Chris Timossi's base/src/ca/windows_depend.c,
  *      and also further additions by Kay Kasemir when this was in
- *	    dllmain.cc
+ *      dllmain.cc
  *
  *      7-1-97  -joh-
  *
@@ -31,7 +31,6 @@
 #define STRICT
 #include <winsock2.h>
 
-#define epicsExportSharedSymbols
 #include "osiSock.h"
 #include "errlog.h"
 #include "epicsVersion.h"
@@ -39,7 +38,7 @@
 static unsigned nAttached = 0;
 static WSADATA WsaData; /* version of winsock */
 
-epicsShareFunc unsigned epicsShareAPI wsaMajorVersion ()
+LIBCOM_API unsigned epicsStdCall wsaMajorVersion ()
 {
 	return (unsigned) LOBYTE( WsaData.wVersion );
 }
@@ -47,7 +46,7 @@ epicsShareFunc unsigned epicsShareAPI wsaMajorVersion ()
 /*
  * osiSockAttach()
  */
-epicsShareFunc int epicsShareAPI osiSockAttach()
+LIBCOM_API int epicsStdCall osiSockAttach()
 {
 	int status;
 
@@ -64,10 +63,10 @@ epicsShareFunc int epicsShareAPI osiSockAttach()
 		DWORD titleLength = GetConsoleTitle(title, sizeof(title));
 		if (titleLength) {
 			titleLength = strlen (title);
-			strncat (title, " " EPICS_VERSION_STRING, sizeof(title));
+            strncat (title, " " EPICS_VERSION_STRING, sizeof(title)-1);
 		}
 		else {
-			strncpy(title, EPICS_VERSION_STRING, sizeof(title));	
+            strncpy(title, EPICS_VERSION_STRING, sizeof(title)-1);
 		}
 		title[sizeof(title)-1]= '\0';
 		SetConsoleTitle(title);
@@ -89,9 +88,9 @@ epicsShareFunc int epicsShareAPI osiSockAttach()
 		return FALSE;
 	}
 
-#	if defined ( _DEBUG ) && 0	  
+#   if defined ( _DEBUG ) && 0
 		fprintf(stderr, "EPICS attached to winsock version %s\n", WsaData.szDescription);
-#	endif	
+#   endif
 	
 	nAttached = 1u;
 
@@ -101,32 +100,32 @@ epicsShareFunc int epicsShareAPI osiSockAttach()
 /*
  * osiSockRelease()
  */
-epicsShareFunc void epicsShareAPI osiSockRelease()
+LIBCOM_API void epicsStdCall osiSockRelease()
 {
 	if (nAttached) {
 		if (--nAttached==0u) {
 			WSACleanup();
-#			if defined ( _DEBUG ) && 0			  
+#           if defined ( _DEBUG ) && 0
 				fprintf(stderr, "EPICS released winsock version %s\n", WsaData.szDescription);
-#			endif
+#           endif
 			memset (&WsaData, '\0', sizeof(WsaData));
 		}
 	}
 }
 
-epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate ( 
+LIBCOM_API SOCKET epicsStdCall epicsSocketCreate ( 
     int domain, int type, int protocol )
 {
     return socket ( domain, type, protocol );
 }
 
-epicsShareFunc SOCKET epicsShareAPI epicsSocketAccept ( 
-    SOCKET sock, struct sockaddr * pAddr, osiSocklen_t * addrlen )
+LIBCOM_API int epicsStdCall epicsSocketAccept ( 
+    int sock, struct sockaddr * pAddr, osiSocklen_t * addrlen )
 {
     return accept ( sock, pAddr, addrlen );
 }
 
-epicsShareFunc void epicsShareAPI epicsSocketDestroy ( SOCKET s )
+LIBCOM_API void epicsStdCall epicsSocketDestroy ( SOCKET s )
 {
     int status = closesocket ( s );
     if ( status < 0 ) {
@@ -141,10 +140,10 @@ epicsShareFunc void epicsShareAPI epicsSocketDestroy ( SOCKET s )
 /*
  * ipAddrToHostName
  */
-epicsShareFunc unsigned epicsShareAPI ipAddrToHostName 
+LIBCOM_API unsigned epicsStdCall ipAddrToHostName 
             (const struct in_addr *pAddr, char *pBuf, unsigned bufSize)
 {
-	struct hostent	*ent;
+    struct hostent  *ent;
 
 	if (bufSize<1) {
 		return 0;
@@ -162,7 +161,7 @@ epicsShareFunc unsigned epicsShareAPI ipAddrToHostName
 /*
  * hostToIPAddr ()
  */
-epicsShareFunc int epicsShareAPI hostToIPAddr 
+LIBCOM_API int epicsStdCall hostToIPAddr 
 				(const char *pHostName, struct in_addr *pIPA)
 {
 	struct hostent *phe;

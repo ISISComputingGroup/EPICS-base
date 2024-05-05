@@ -3,11 +3,12 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* 
- * Archictecture dependent support for common device driver resources 
+/*
+ * Architecture dependent support for common device driver resources
  *
  *      Author: Jeff Hill 
  *      Date: 10-30-98  
@@ -97,14 +98,14 @@ static long vxDevMapAddr (epicsAddressType addrType, unsigned options,
         size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress);
 
 /*
- * a bus error safe "wordSize" read at the specified address which returns 
- * unsuccessful status if the device isnt present
+ * a bus error safe "wordSize" read at the specified address which returns
+ * unsuccessful status if the device isn't present
  */
 static long vxDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue);
 
 /*
- * a bus error safe "wordSize" write at the specified address which returns 
- * unsuccessful status if the device isnt present
+ * a bus error safe "wordSize" write at the specified address which returns
+ * unsuccessful status if the device isn't present
  */
 static long vxDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue);
 

@@ -1,12 +1,3 @@
-/*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
-\*************************************************************************/
-
 #include "defs.h"
 
 short *itemset;
@@ -54,7 +45,7 @@ set_EFF(void)
 
     reflexive_transitive_closure(EFF, nvars);
 
-#ifdef	DEBUG
+#ifdef  DEBUG
     print_EFF();
 #endif
 }
@@ -94,21 +85,21 @@ set_first_derives(void)
 		k = 0;
 	    }
 
-	    if (cword & (1 << k))
-	    {
-		rp = derives[j];
-		while ((rule = *rp++) >= 0)
-		{
-		    SETBIT(rrow, rule);
-		}
-	    }
-	}
+            if (cword & (1u << k))
+            {
+                rp = derives[j];
+                while ((rule = *rp++) >= 0)
+                {
+                    SETBIT(rrow, rule);
+                }
+            }
+        }
 
 	vrow += varsetsize;
 	rrow += rulesetsize;
     }
 
-#ifdef	DEBUG
+#ifdef  DEBUG
     print_first_derives();
 #endif
 
@@ -156,29 +147,29 @@ closure(short int *nucleus, int n)
     csp = nucleus;
     for (rsp = ruleset; rsp < rsend; ++rsp)
     {
-	word = *rsp;
-	if (word)
-	{
-	    for (i = 0; i < BITS_PER_WORD; ++i)
-	    {
-		if (word & (1 << i))
-		{
-		    itemno = rrhs[ruleno+i];
-		    while (csp < csend && *csp < itemno)
-			*itemsetend++ = *csp++;
-		    *itemsetend++ = itemno;
-		    while (csp < csend && *csp == itemno)
-			++csp;
-		}
-	    }
-	}
-	ruleno += BITS_PER_WORD;
+        word = *rsp;
+        if (word)
+        {
+            for (i = 0; i < BITS_PER_WORD; ++i)
+            {
+                if (word & (1u << i))
+                {
+                    itemno = rrhs[ruleno+i];
+                    while (csp < csend && *csp < itemno)
+                        *itemsetend++ = *csp++;
+                    *itemsetend++ = itemno;
+                    while (csp < csend && *csp == itemno)
+                        ++csp;
+                }
+            }
+        }
+        ruleno += BITS_PER_WORD;
     }
 
     while (csp < csend)
 	*itemsetend++ = *csp++;
 
-#ifdef	DEBUG
+#ifdef  DEBUG
   print_closure(n);
 #endif
 }

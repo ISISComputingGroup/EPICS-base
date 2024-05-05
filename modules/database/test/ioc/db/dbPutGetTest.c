@@ -1,4 +1,6 @@
 
+#define EPICS_PRIVATE_API
+
 #include <string.h>
 
 #include <errlog.h>

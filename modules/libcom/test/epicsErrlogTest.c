@@ -27,6 +27,12 @@
 #include "envDefs.h"
 #include "osiSock.h"
 #include "fdmgr.h"
+#include "epicsString.h"
+#include "errSymTbl.h"
+
+/* private between errlog.c and this test */
+LIBCOM_API
+void errlogStripANSI(char *msg);
 
 #define LOGBUFSIZE 2048
 
@@ -166,13 +172,88 @@ void logClient(void* raw, const char* msg)
     epicsEventSignal(pvt->done);
 }
 
+static
+void testANSIStrip(void)
+{
+    char scratch[64];
+    char actual[128];
+    char input[128];
+#define testEscape(INP, EXPECT) \
+    strcpy(scratch, INP); \
+    epicsStrnEscapedFromRaw(input, sizeof(input), INP, sizeof(INP)); \
+    errlogStripANSI(scratch); \
+    epicsStrnEscapedFromRaw(actual, sizeof(actual), scratch, epicsStrnLen(scratch, sizeof(scratch))); \
+    testOk(strcmp(scratch, EXPECT)==0, "input \"%s\" expect \"%s\" actual \"%s\"", input, EXPECT, actual)
+
+    testEscape("", "");
+    testEscape("hello", "hello");
+    testEscape("he\033[31;1mllo", "hello");
+    testEscape("\033[31;1mhello", "hello");
+    testEscape("hello\033[31;1m", "hello");
+    testEscape("hello\033[31;1", "hello");
+    testEscape("hello\033[", "hello");
+    testEscape("hello\033", "hello");
+
+#undef testEscape
+}
+
+static void testErrorMessageMatches(long status, const char *expected)
+{
+    const char *msg = errSymMsg(status);
+    testOk(strcmp(msg, expected) == 0,
+           "Error code %ld returns \"%s\", expected message \"%s\"", status,
+           msg, expected
+          );
+}
+
+static void testGettingExistingErrorSymbol()
+{
+    testErrorMessageMatches(S_err_invCode, "Invalid error symbol code");
+}
+
+static void testGettingNonExistingErrorSymbol()
+{
+    long invented_code = (0x7999 << 16) | 0x9998;
+    testErrorMessageMatches(invented_code, "<Unknown code>");
+}
+
+static void testAddingErrorSymbol()
+{
+    long invented_code = (0x7999 << 16) | 0x9999;
+    errSymbolAdd(invented_code, "Invented Error Message");
+    testErrorMessageMatches(invented_code, "Invented Error Message");
+}
+
+static void testAddingInvalidErrorSymbol()
+{
+    long invented_code = (500 << 16) | 0x1;
+    testOk(errSymbolAdd(invented_code, "No matter"),
+           "Adding error symbol with module code < 501 should fail");
+}
+
+static void testAddingExistingErrorSymbol()
+{
+    testOk(errSymbolAdd(S_err_invCode, "Duplicate"),
+           "Adding an error symbol with an existing error code should fail");
+}
+
+static void testAddingExistingErrorSymbolWithSameMessage()
+{
+    long invented_code = (0x7999 << 16) | 0x9997;
+    errSymbolAdd(invented_code, "Invented Error Message");
+    testOk(!errSymbolAdd(invented_code, "Invented Error Message"),
+           "Adding identical error symbol shouldn't fail");
+}
+
 MAIN(epicsErrlogTest)
 {
     size_t mlen, i, N;
     char msg[256];
     clientPvt pvt, pvt2;
 
-    testPlan(40);
+    testPlan(54);
+
+    testANSIStrip();
 
     strcpy(msg, truncmsg);
 
@@ -210,10 +291,11 @@ MAIN(epicsErrlogTest)
 
     errlogAddListener(&logClient, &pvt2);
 
+    /* logClient will not see ANSI escape sequences */
     pvt2.expect = pvt.expect = "Testing2";
     pvt2.checkLen = pvt.checkLen = strlen(pvt.expect);
 
-    errlogPrintfNoConsole("%s", pvt.expect);
+    errlogPrintfNoConsole("%s", ANSI_RED("Testing2"));
     errlogFlush();
 
     epicsEventMustWait(pvt.done);
@@ -369,13 +451,23 @@ MAIN(epicsErrlogTest)
 
     testDiag("Logged %u messages", pvt.count);
     epicsEventMustWait(pvt.done);
-    testEqInt(pvt.count, N+1);
+    /* Expect N+1 messages +- 1 depending on impl */
+    testOk(pvt.count >= N && pvt.count<=N+2, "Logged %u messages, expected %zu", pvt.count, N+1);
 
     /* Clean up */
     testOk(1 == errlogRemoveListeners(&logClient, &pvt),
         "Removed 1 listener");
 
+    osiSockAttach();
     testLogPrefix();
+    osiSockRelease();
+
+    testGettingExistingErrorSymbol();
+    testGettingNonExistingErrorSymbol();
+    testAddingErrorSymbol();
+    testAddingInvalidErrorSymbol();
+    testAddingExistingErrorSymbol();
+    testAddingExistingErrorSymbolWithSameMessage();
 
     return testDone();
 }

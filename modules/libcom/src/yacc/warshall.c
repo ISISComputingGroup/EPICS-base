@@ -1,11 +1,3 @@
-/*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
-\*************************************************************************/
 #include "defs.h"
 
 static void
@@ -32,19 +24,19 @@ transitive_closure(unsigned int *R, int n)
 	ccol = cword;
 	rowj = R;
 
-	while (rowj < relend)
-	{
-	    if (*ccol & (1 << i))
-	    {
-		rp = rowi;
-		rend = rowj + rowsize;
-		while (rowj < rend)
-		    *rowj++ |= *rp++;
-	    }
-	    else
-	    {
-		rowj += rowsize;
-	    }
+        while (rowj < relend)
+        {
+            if (*ccol & (1u << i))
+            {
+                rp = rowi;
+                rend = rowj + rowsize;
+                while (rowj < rend)
+                    *rowj++ |= *rp++;
+            }
+            else
+            {
+                rowj += rowsize;
+            }
 
 	    ccol += rowsize;
 	}
@@ -76,12 +68,12 @@ reflexive_transitive_closure(unsigned int *R, int n)
     rp = R;
     while (rp < relend)
     {
-	*rp |= (1 << i);
-	if (++i >= BITS_PER_WORD)
-	{
-	    i = 0;
-	    rp++;
-	}
+        *rp |= (1u << i);
+        if (++i >= BITS_PER_WORD)
+        {
+            i = 0;
+            rp++;
+        }
 
 	rp += rowsize;
     }

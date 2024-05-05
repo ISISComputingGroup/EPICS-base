@@ -72,7 +72,7 @@ static double measureSleepQuantum (
     for ( unsigned i = 0u; i < iterations; i++ ) {
         // try to guarantee a uniform probability density function
         // by intentionally burning some CPU until we are less
-        // likely to be aligned with the schedualing clock
+        // likely to be aligned with the scheduling clock
         double interval = rand ();
         interval /= RAND_MAX;
         interval *= testInterval;
@@ -215,6 +215,42 @@ static void timeEpicsThreadPrivateGet ()
     printf("epicsThreadPrivateGet() takes %f microseconds\n", delay);
 }
 
+static void onceAction(void*) {}
+
+static void timeOnce ()
+{
+#define NITER 100
+    epicsThreadOnceId once[NITER];
+    double tSlow = 0.0, tFast = 0.0,
+           tSlow2= 0.0, tFast2= 0.0;
+    unsigned i;
+
+    for(i=0; i<NITER; i++) {
+        epicsUInt64 t0, t1, t2;
+
+        once[i] = EPICS_THREAD_ONCE_INIT;
+        t0 = epicsMonotonicGet();
+        epicsThreadOnce(&once[i], &onceAction, NULL);
+        t1 = epicsMonotonicGet();
+        epicsThreadOnce(&once[i], &onceAction, NULL);
+        t2 = epicsMonotonicGet();
+
+        tSlow += t1 - t0;
+        tSlow2 += (t1 - t0)*(t1 - t0);
+        tFast += t2 - t1;
+        tFast2 += (t2 - t1)*(t2 - t1);
+    }
+
+    tSlow /= NITER;
+    tSlow2 /= NITER;
+    tFast /= NITER;
+    tFast2 /= NITER;
+
+    printf("epicsThreadOnce(), slow path %.0f +- %.0f ns, fast path %.0f +- %.0f ns\n",
+           tSlow, sqrt(tSlow2 - tSlow*tSlow),
+           tFast, sqrt(tFast2 - tFast*tFast));
+#undef NITER
+}
 
 MAIN(epicsThreadPerform)
 {
@@ -223,5 +259,6 @@ MAIN(epicsThreadPerform)
     threadSleepTest ();
     epicsThreadGetIdSelfPerfTest ();
     timeEpicsThreadPrivateGet ();
+    timeOnce ();
     return 0;
 }

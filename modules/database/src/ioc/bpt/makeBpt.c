@@ -3,14 +3,14 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* SPDX-License-Identifier: EPICS
+* EPICS Base is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *	Author: Marty Kraimer
- *	Date:	9/28/95
- *	Replacement for old bldCvtTable
+ *  Author: Marty Kraimer
+ *  Date:   9/28/95
+ *  Replacement for old bldCvtTable
  */
 
 #include <stdlib.h>
@@ -21,29 +21,30 @@
 #include <ctype.h>
 
 #include "dbDefs.h"
+#include "errlog.h"
 #include "ellLib.h"
 #include "cvtTable.h"
 
 #define MAX_LINE_SIZE 160
 #define MAX_BREAKS 100
 struct brkCreateInfo {
-    double           engLow;	/* Lowest value desired: engineering units */
-    double           engHigh;	/* Highest value desired: engineering units */
-    double            rawLow;	/* Raw value for EngLow			 */
-    double            rawHigh;	/* Raw value for EngHigh		 */
-    double           accuracy;	/* accuracy desired in engineering units */
-    double           tblEngFirst;/* First table value: engineering units */
-    double           tblEngLast;	/* Last table value: engineering units	 */
-    double           tblEngDelta;/* Change per table entry: eng units	 */
-    long            nTable;	/* number of table entries 		 */
+    double      engLow;         /* Lowest value desired: engineering units  */
+    double      engHigh;        /* Highest value desired: engineering units */
+    double      rawLow;         /* Raw value for EngLow                     */
+    double      rawHigh;        /* Raw value for EngHigh                    */
+    double      accuracy;       /* accuracy desired in engineering units    */
+    double      tblEngFirst;    /* First table value: engineering units     */
+    double      tblEngLast;     /* Last table value: engineering units      */
+    double      tblEngDelta;    /* Change per table entry: eng units        */
+    long        nTable;         /* number of table entries                  */
     /* (last-first)/delta + 1		 */
-    double          *pTable;	/* addr of data table			 */
+    double      *pTable;        /* addr of data table                       */
 } brkCreateInfo;
 
-typedef struct brkInt {	/* breakpoint interval */
-    double	raw;	/* raw value for beginning of interval */
-    double	slope;	/* slope for interval */
-    double	eng;	/* converted value for beginning of interval */
+typedef struct brkInt { /* breakpoint interval */
+    double      raw;    /* raw value for beginning of interval */
+    double      slope;  /* slope for interval */
+    double      eng;    /* converted value for beginning of interval */
 } brkInt;
 
 brkInt brkint[MAX_BREAKS];
@@ -55,12 +56,12 @@ static int linenum=0;
 
 typedef struct dataList{
 	struct dataList *next;
-	double		value;
+        double          value;
 }dataList;
 
 static int getNumber(char **pbeg, double *value)
 {
-    int	 nchars=0;
+    int  nchars=0;
 
     while(isspace((int)**pbeg) && **pbeg!= '\0') (*pbeg)++;
     if(**pbeg == '!' || **pbeg == '\0') return(-1);
@@ -78,22 +79,22 @@ static void errExit(char *pmessage)
 
 int main(int argc, char **argv)
 {
-    char	*pbeg;
-    char	*pend;
-    double	value;
-    char	*pname = NULL;
-    dataList	*phead;
-    dataList	*pdataList;
-    dataList	*pnext;
-    double	*pdata;
-    long	ndata;
-    int		nBreak,n;
-    size_t  len;
-    char	*outFilename;
-    char	*pext;
-    FILE	*outFile;
-    FILE	*inFile;
-    char	*plastSlash;
+    char        *pbeg;
+    char        *pend;
+    double      value;
+    char        *pname = NULL;
+    dataList    *phead;
+    dataList    *pdataList;
+    dataList    *pnext;
+    double      *pdata;
+    long        ndata;
+    int         nBreak,n;
+    size_t      len;
+    char        *outFilename;
+    char        *pext;
+    FILE        *outFile;
+    FILE        *inFile;
+    char        *plastSlash;
     
 
     if(argc<2) {
@@ -125,13 +126,13 @@ int main(int argc, char **argv)
     }
     inFile = fopen(argv[1],"r");
     if(!inFile) {
-	fprintf(stderr,"Error opening %s\n",argv[1]);
-	exit(-1);
+        fprintf(stderr,ERL_ERROR " opening %s\n",argv[1]);
+        exit(-1);
     }
     outFile = fopen(outFilename,"w");
     if(!outFile) {
-	fprintf(stderr,"Error opening %s\n",outFilename);
-	exit(-1);
+        fprintf(stderr,ERL_ERROR " opening %s\n",outFilename);
+        exit(-1);
     }
     while(fgets(inbuf,MAX_LINE_SIZE,inFile)) {
 	linenum++;
@@ -177,7 +178,7 @@ got_header:
     ndata = 0;
     errno = 0;
     while(fgets(inbuf,MAX_LINE_SIZE,inFile)) {
-	double	value;
+        double  value;
 
 	linenum++;
 	pbeg = inbuf;
@@ -312,7 +313,7 @@ static int create_break( struct brkCreateInfo *pbci, brkInt *pabrkInt,
 	table[i] = table[i] * slope + offset;
 
 /*****************************************************************************
- *		Now create break point table
+ *              Now create break point table
  *
  * The algorithm does the following:
  *
@@ -320,11 +321,11 @@ static int create_break( struct brkCreateInfo *pbci, brkInt *pabrkInt,
  *
  * 1) Use a relatively large portion of the remaining table as an interval
  * 2) It attempts to use the entire interval as a breakpoint interval
- *	Success is determined by the following algorithm:
- *	  a) compute the slope using the entire interval
+ *      Success is determined by the following algorithm:
+ *        a) compute the slope using the entire interval
  *        b) for each table entry in the interval determine the eng value
- *	     using the slope just determined.
- *	  c) compare the computed value with eng value associated with table
+ *           using the slope just determined.
+ *        c) compare the computed value with eng value associated with table
  *        d) if all table entries are within the accuracy desired then success.
  * 3) If successful then attempt to expand the interval and try again.
  *    Note that it is expanded by up to 1/10 of the table size.
@@ -358,7 +359,7 @@ static int create_break( struct brkCreateInfo *pbci, brkInt *pabrkInt,
 	    inc = 1;
 	valid = TRUE;
 	/* keep trying intervals until cant do better */
-	expanding = TRUE;	/* originally we are trying larger and larger
+        expanding = TRUE;       /* originally we are trying larger and larger
 				 * intervals */
 	while (valid) {
 	    imax = iend + inc;
@@ -368,14 +369,14 @@ static int create_break( struct brkCreateInfo *pbci, brkInt *pabrkInt,
 		inc = ntable - iend - 1;
 		expanding = FALSE;
 	    }
-	    if (imax > (int) (ihigh + 1.0)) {	/* Don't go to far past
+            if (imax > (int) (ihigh + 1.0)) {   /* Don't go to far past
 						 * engHigh */
 		imax = (int) (ihigh + 1.0);
 		inc = (int) (ihigh + 1.0) - iend;
 		expanding = FALSE;
 	    }
 	    if (imax <= ibeg)
-		break;		/* failure */
+                break;          /* failure */
 	    rawEnd = table[imax];
 	    engEnd = pbci->tblEngFirst + (double) imax *(pbci->tblEngDelta);
 	    slope = (engEnd - engBeg) / (rawEnd - rawBeg);
@@ -394,7 +395,7 @@ static int create_break( struct brkCreateInfo *pbci, brkInt *pabrkInt,
 		    all_ok = FALSE;
 		    break;
 		}
-	    }			/* end for */
+            }                   /* end for */
 	    if (all_ok) {
 		iend = imax;
 		/* if not expanding we found interval */
@@ -402,7 +403,7 @@ static int create_break( struct brkCreateInfo *pbci, brkInt *pabrkInt,
 		    break;
 		/* will automatically try larger interval */
 	    }
-	}			/* end while(valid) */
+        }                       /* end while(valid) */
 	/* either we failed or optimal interval has been found */
 	if ((iend <= ibeg) && (iend < (int) ihigh)) {
 	    errExit("Could not meet accuracy criteria");

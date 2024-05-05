@@ -3,36 +3,38 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* iocLogServer.c */
 
 /*
- *	archive logMsg() from several IOC's to a common rotating file
+ *  archive logMsg() from several IOC's to a common rotating file
  *
  *
- * 	    Author: 	Jeffrey O. Hill 
+ *      Author:     Jeffrey O. Hill
  *      Date:       080791 
  */
-#include	<stdlib.h>
-#include	<string.h>
-#include	<errno.h>
-#include 	<stdio.h>
-#include	<limits.h>
-#include	<time.h>
+
+#include    <stdlib.h>
+#include    <string.h>
+#include    <errno.h>
+#include    <stdio.h>
+#include    <limits.h>
+#include    <time.h>
 
 #ifdef UNIX
-#include 	<unistd.h>
-#include	<signal.h>
+#include    <unistd.h>
+#include    <signal.h>
 #endif
 
-#include        "dbDefs.h"
-#include	"epicsAssert.h"
-#include 	"fdmgr.h"
-#include 	"envDefs.h"
-#include 	"osiSock.h"
-#include	"epicsStdio.h"
+#include    "dbDefs.h"
+#include    "epicsAssert.h"
+#include    "fdmgr.h"
+#include    "envDefs.h"
+#include    "osiSock.h"
+#include    "epicsStdio.h"
 
 static unsigned short ioc_log_port;
 static long ioc_log_file_limit;
@@ -127,6 +129,7 @@ int main(void)
     pserver->pfdctx = (void *) fdmgr_init();
     if (!pserver->pfdctx) {
         fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
+        free(pserver);
         return IOCLS_ERROR;
     }
 
@@ -161,6 +164,7 @@ int main(void)
         fprintf (stderr,
             "iocLogServer: a server is already installed on port %u?\n", 
             (unsigned)ioc_log_port);
+        free(pserver);
         return IOCLS_ERROR;
     }
 
@@ -170,6 +174,7 @@ int main(void)
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf(stderr, "iocLogServer: listen err %s\n", sockErrBuf);
+        free(pserver);
         return IOCLS_ERROR;
     }
 
@@ -186,6 +191,7 @@ int main(void)
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf(stderr, "iocLogServer: ioctl FIONBIO err %s\n", sockErrBuf);
+        free(pserver);
         return IOCLS_ERROR;
     }
 
@@ -202,6 +208,7 @@ int main(void)
             "File access problems to `%s' because `%s'\n", 
 		    ioc_log_file_name_ex,
             strerror(errno));
+        free(pserver);
         return IOCLS_ERROR;
     }
 
@@ -214,6 +221,7 @@ int main(void)
     if (status < 0) {
         fprintf(stderr,
             "iocLogServer: failed to add read callback\n");
+        free(pserver);
         return IOCLS_ERROR;
     }
 
@@ -273,7 +281,7 @@ static int seekLatestLine (struct ioc_log_server *pserver)
                 static const int tm_epoch_year = 1900;
                 if (theDate.tm_year>tm_epoch_year) {
                     theDate.tm_year -= tm_epoch_year;
-                    theDate.tm_isdst = -1; /* dont know */
+                    theDate.tm_isdst = -1; /* don't know */
                     lineTime = mktime (&theDate);
                     if ( lineTime != invalidTime ) {
                         if (theLatestTime == invalidTime || 
@@ -354,7 +362,7 @@ static int seekLatestLine (struct ioc_log_server *pserver)
 
 
 /*
- *	openLogFile()
+ *  openLogFile()
  *
  */
 static int openLogFile (struct ioc_log_server *pserver)
@@ -402,7 +410,7 @@ static int openLogFile (struct ioc_log_server *pserver)
 
 
 /*
- *	handleLogFileError()
+ *  handleLogFileError()
  *
  */
 static void handleLogFileError(void)
@@ -416,13 +424,13 @@ static void handleLogFileError(void)
 
 
 /*
- *	acceptNewClient()
+ *  acceptNewClient()
  *
  */
 static void acceptNewClient ( void *pParam )
 {
 	struct ioc_log_server *pserver = (struct ioc_log_server *) pParam;
-	struct iocLogClient	*pclient;
+    struct iocLogClient *pclient;
 	osiSocklen_t addrSize;
 	struct sockaddr_in addr;
 	int status;
@@ -509,8 +517,7 @@ static void acceptNewClient ( void *pParam )
 			fprintf(stderr, "Keepalive option set failed\n");
 		}
 	}
-/* remove as per http://aps.anl.gov/epics/tech-talk/2013/msg01118.php / https://bugs.launchpad.net/epics-base/+bug/1188026 */
-/*
+
 	status = shutdown(pclient->insock, SHUT_WR);
 	if(status<0){
         char sockErrBuf[64];
@@ -522,7 +529,7 @@ static void acceptNewClient ( void *pParam )
 
 		return;
 	}
-*/
+
 	status = fdmgr_add_callback(
 			pserver->pfdctx, 
 			pclient->insock, 
@@ -548,9 +555,9 @@ static void acceptNewClient ( void *pParam )
 
 static void readFromClient(void *pParam)
 {
-	struct iocLogClient	*pclient = (struct iocLogClient *)pParam;
-	int             	recvLength;
-	int			size;
+    struct iocLogClient *pclient = (struct iocLogClient *)pParam;
+    int                 recvLength;
+    int                 size;
 
 	logTime(pclient);
 
@@ -628,13 +635,13 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 		 * find the first carrage return and create
 		 * an entry in the log for the message associated
 		 * with it. If a carrage return does not exist and 
-		 * the buffer isnt full then move the partial message 
-		 * to the front of the buffer and wait for a carrage 
-		 * return to arrive. If the buffer is full and there
-		 * is no carrage return then force the message out and 
-		 * insert an artificial carrage return.
-		 */
-		nchar = pclient->nChar - lineIndex;
+         * the buffer isn't full then move the partial message
+         * to the front of the buffer and wait for a carrage
+         * return to arrive. If the buffer is full and there
+         * is no carrage return then force the message out and
+         * insert an artificial carrage return.
+         */
+        nchar = pclient->nChar - lineIndex;
         for ( crIndex = lineIndex; crIndex < pclient->nChar; crIndex++ ) {
             if ( pclient->recvbuf[crIndex] == '\n' ) {
                 break;
@@ -677,10 +684,10 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 				}
 			}
 
-#			ifdef DEBUG
+#           ifdef DEBUG
 				fprintf ( stderr,
 					"ioc log server: resetting the file pointer\n" );
-#			endif
+#           endif
 			fflush ( pclient->pserver->poutfile );
 			rewind ( pclient->pserver->poutfile );
 			pclient->pserver->filePos = ftell ( pclient->pserver->poutfile );
@@ -717,13 +724,7 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
  */
 static void freeLogClient(struct iocLogClient     *pclient)
 {
-	int		status;
-
-#	ifdef	DEBUG
-	if(length == 0){
-		fprintf(stderr, "iocLogServer: nil message disconnect\n");
-	}
-#	endif
+    int     status;
 
 	/*
 	 * flush any left overs
@@ -735,8 +736,8 @@ static void freeLogClient(struct iocLogClient     *pclient)
 		if (pclient->nChar<sizeof(pclient->recvbuf)) {
 			pclient->recvbuf[pclient->nChar] = '\n';
 		}
-		writeMessagesToLog (pclient);
-	}
+        writeMessagesToLog (pclient);
+    }
 
 	status = fdmgr_clear_callback(
 		       pclient->pserver->pfdctx,
@@ -749,22 +750,20 @@ static void freeLogClient(struct iocLogClient     *pclient)
 
 	epicsSocketDestroy ( pclient->insock );
 
-	free (pclient);
-
-	return;
+    free (pclient);
 }
 
 
 /*
  *
- *	logTime()
+ *  logTime()
  *
  */
 static void logTime(struct iocLogClient *pclient)
 {
-	time_t		sec;
-	char		*pcr;
-	char		*pTimeString;
+    time_t      sec;
+    char        *pcr;
+    char        *pTimeString;
 
 	sec = time (NULL);
 	pTimeString = ctime (&sec);
@@ -781,16 +780,16 @@ static void logTime(struct iocLogClient *pclient)
 
 /*
  *
- *	getConfig()
- *	Get Server Configuration
+ *  getConfig()
+ *  Get Server Configuration
  *
  *
  */
 static int getConfig(void)
 {
-	int	status;
-	char	*pstring;
-	long	param;
+    int     status;
+    char    *pstring;
+    long    param;
 
 	status = envGetLongConfigParam(
 			&EPICS_IOC_LOG_PORT, 
@@ -838,7 +837,7 @@ static int getConfig(void)
 
 /*
  *
- *	failureNotify()
+ *  failureNotify()
  *
  *
  */
@@ -900,7 +899,7 @@ static int setupSIGHUP(struct ioc_log_server *pserver)
 
 /*
  *
- *	sighupHandler()
+ *  sighupHandler()
  *
  *
  */
@@ -917,14 +916,14 @@ static void sighupHandler(int signo)
 
 
 /*
- *	serviceSighupRequest()
+ *  serviceSighupRequest()
  *
  */
 static void serviceSighupRequest(void *pParam)
 {
-	struct ioc_log_server	*pserver = (struct ioc_log_server *)pParam;
-	char			buff[256];
-	int			status;
+    struct ioc_log_server   *pserver = (struct ioc_log_server *)pParam;
+    char                    buff[256];
+    int                     status;
 
 	/*
 	 * Read and discard message from pipe.
@@ -980,15 +979,15 @@ static void serviceSighupRequest(void *pParam)
 
 /*
  *
- *	getDirectory()
+ *  getDirectory()
  *
  *
  */
 static int getDirectory(void)
 {
-	FILE		*pipe;
-	char		dir[256];
-	int		i;
+    FILE        *pipe;
+    char        dir[256];
+    int         i;
 
 	if (ioc_log_file_command[0] != '\0') {
 

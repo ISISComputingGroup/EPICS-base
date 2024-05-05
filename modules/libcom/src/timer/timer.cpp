@@ -3,8 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* SPDX-License-Identifier: EPICS
+* EPICS Base is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
@@ -19,7 +19,6 @@
 #include <stdexcept>
 #include <stdio.h>
 
-#define epicsExportSharedSymbols
 #include "epicsGuard.h"
 #include "timerPrivate.h"
 #include "errlog.h"
@@ -54,7 +53,7 @@ void timer::destroy ()
 
 void timer::start ( epicsTimerNotify & notify, double delaySeconds )
 {
-    this->start ( notify, epicsTime::getMonotonic () + delaySeconds );
+    this->start ( notify, epicsTime::getCurrent () + delaySeconds );
 }
 
 void timer::start ( epicsTimerNotify & notify, const epicsTime & expire )
@@ -127,9 +126,9 @@ void timer::privateStart ( epicsTimerNotify & notify, const epicsTime & expire )
         this->queue.show ( 10u );
 #   endif
 
-    debugPrintf ( ("Start of \"%s\" with delay %f at %p preempting %u\n", 
-        typeid ( this->notify ).name (), 
-        expire - epicsTime::getMonotonic (), 
+    debugPrintf ( ("Start of \"%s\" with delay %f at %p preempting %u\n",
+        typeid ( this->pNotify ).name (),
+        expire - epicsTime::getCurrent (), 
         this, preemptCount ) );
 }
 
@@ -190,7 +189,7 @@ void timer::show ( unsigned int level ) const
     double delay;
     if ( this->curState == statePending || this->curState == stateActive ) {
         try {
-            delay = this->exp - epicsTime::getMonotonic();
+            delay = this->exp - epicsTime::getCurrent();
         }
         catch ( ... ) {
             delay = - DBL_MAX;

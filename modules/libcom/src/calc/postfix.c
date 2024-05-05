@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -17,7 +18,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "epicsAssert.h"
 #include "epicsStdlib.h"
@@ -25,8 +25,12 @@
 #include "epicsTypes.h"
 #include "postfix.h"
 #include "postfixPvt.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 
+#ifdef RTEMS_HAS_ALTIVEC
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+#endif
 
 /* declarations for postfix */
 
@@ -50,12 +54,12 @@ typedef enum {
  * structure of an element
  */
 typedef struct expression_element{
-    char *name; 	 /* character representation of an element */
-    char in_stack_pri;	 /* priority on translation stack */
+    char *name;          /* character representation of an element */
+    char in_stack_pri;   /* priority on translation stack */
     char in_coming_pri;  /* priority in input string */
     signed char runtime_effect; /* stack change, positive means push */
-    element_type type;	 /* element type */
-    rpn_opcode code;	 /* postfix opcode */
+    element_type type;   /* element type */
+    rpn_opcode code;     /* postfix opcode */
 } ELEMENT;
 
 /*
@@ -66,102 +70,104 @@ typedef struct expression_element{
  *  routine at the end of this file.
  */
 static const ELEMENT operands[] = {
-/* name 	prio's	stack	element type	opcode */
-{"!",		7, 8,	0,	UNARY_OPERATOR, REL_NOT},
-{"(",		0, 8,	0,	UNARY_OPERATOR,	NOT_GENERATED},
-{"-",		7, 8,	0,	UNARY_OPERATOR,	UNARY_NEG},
-{".",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
-{"0",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
-{"0X",		0, 0,	1,	LITERAL_OPERAND,LITERAL_INT},
-{"1",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
-{"2",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
-{"3",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
-{"4",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
-{"5",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
-{"6",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
-{"7",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
-{"8",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
-{"9",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
-{"A",		0, 0,	1,	OPERAND,	FETCH_A},
-{"ABS",		7, 8,	0,	UNARY_OPERATOR,	ABS_VAL},
-{"ACOS",	7, 8,	0,	UNARY_OPERATOR,	ACOS},
-{"ASIN",	7, 8,	0,	UNARY_OPERATOR,	ASIN},
-{"ATAN",	7, 8,	0,	UNARY_OPERATOR,	ATAN},
-{"ATAN2",	7, 8,	-1,	UNARY_OPERATOR,	ATAN2},
-{"B",		0, 0,	1,	OPERAND,	FETCH_B},
-{"C",		0, 0,	1,	OPERAND,	FETCH_C},
-{"CEIL",	7, 8,	0,	UNARY_OPERATOR,	CEIL},
-{"COS",		7, 8,	0,	UNARY_OPERATOR,	COS},
-{"COSH",	7, 8,	0,	UNARY_OPERATOR,	COSH},
-{"D",		0, 0,	1,	OPERAND,	FETCH_D},
-{"D2R",		0, 0,	1,	OPERAND,	CONST_D2R},
-{"E",		0, 0,	1,	OPERAND,	FETCH_E},
-{"EXP",		7, 8,	0,	UNARY_OPERATOR,	EXP},
-{"F",		0, 0,	1,	OPERAND,	FETCH_F},
-{"FINITE",	7, 8,	0,	VARARG_OPERATOR,FINITE},
-{"FLOOR",	7, 8,	0,	UNARY_OPERATOR,	FLOOR},
-{"G",		0, 0,	1,	OPERAND,	FETCH_G},
-{"H",		0, 0,	1,	OPERAND,	FETCH_H},
-{"I",		0, 0,	1,	OPERAND,	FETCH_I},
-{"INF",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
-{"ISINF",	7, 8,	0,	UNARY_OPERATOR,	ISINF},
-{"ISNAN",	7, 8,	0,	VARARG_OPERATOR,ISNAN},
-{"J",		0, 0,	1,	OPERAND,	FETCH_J},
-{"K",		0, 0,	1,	OPERAND,	FETCH_K},
-{"L",		0, 0,	1,	OPERAND,	FETCH_L},
-{"LN",		7, 8,	0,	UNARY_OPERATOR,	LOG_E},
-{"LOG",		7, 8,	0,	UNARY_OPERATOR,	LOG_10},
-{"LOGE",	7, 8,	0,	UNARY_OPERATOR,	LOG_E},
-{"MAX",		7, 8,	0,	VARARG_OPERATOR,MAX},
-{"MIN",		7, 8,	0,	VARARG_OPERATOR,MIN},
-{"NINT",	7, 8,	0,	UNARY_OPERATOR,	NINT},
-{"NAN",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
-{"NOT",		7, 8,	0,	UNARY_OPERATOR,	BIT_NOT},
-{"PI",		0, 0,	1,	OPERAND,	CONST_PI},
-{"R2D",		0, 0,	1,	OPERAND,	CONST_R2D},
-{"RNDM",	0, 0,	1,	OPERAND,	RANDOM},
-{"SIN",		7, 8,	0,	UNARY_OPERATOR,	SIN},
-{"SINH",	7, 8,	0,	UNARY_OPERATOR,	SINH},
-{"SQR",		7, 8,	0,	UNARY_OPERATOR,	SQU_RT},
-{"SQRT",	7, 8,	0,	UNARY_OPERATOR,	SQU_RT},
-{"TAN",		7, 8,	0,	UNARY_OPERATOR,	TAN},
-{"TANH",	7, 8,	0,	UNARY_OPERATOR,	TANH},
-{"VAL",		0, 0,	1,	OPERAND,	FETCH_VAL},
-{"~",		7, 8,	0,	UNARY_OPERATOR, BIT_NOT},
+/* name         prio's  stack   element type    opcode */
+{"!",           7, 8,   0,      UNARY_OPERATOR, REL_NOT},
+{"(",           0, 8,   0,      UNARY_OPERATOR, NOT_GENERATED},
+{"-",           7, 8,   0,      UNARY_OPERATOR, UNARY_NEG},
+{".",           0, 0,   1,      LITERAL_OPERAND,LITERAL_DOUBLE},
+{"0",           0, 0,   1,      LITERAL_OPERAND,LITERAL_DOUBLE},
+{"0X",          0, 0,   1,      LITERAL_OPERAND,LITERAL_INT},
+{"1",           0, 0,   1,      LITERAL_OPERAND,LITERAL_DOUBLE},
+{"2",           0, 0,   1,      LITERAL_OPERAND,LITERAL_DOUBLE},
+{"3",           0, 0,   1,      LITERAL_OPERAND,LITERAL_DOUBLE},
+{"4",           0, 0,   1,      LITERAL_OPERAND,LITERAL_DOUBLE},
+{"5",           0, 0,   1,      LITERAL_OPERAND,LITERAL_DOUBLE},
+{"6",           0, 0,   1,      LITERAL_OPERAND,LITERAL_DOUBLE},
+{"7",           0, 0,   1,      LITERAL_OPERAND,LITERAL_DOUBLE},
+{"8",           0, 0,   1,      LITERAL_OPERAND,LITERAL_DOUBLE},
+{"9",           0, 0,   1,      LITERAL_OPERAND,LITERAL_DOUBLE},
+{"A",           0, 0,   1,      OPERAND,        FETCH_A},
+{"ABS",         7, 8,   0,      UNARY_OPERATOR, ABS_VAL},
+{"ACOS",        7, 8,   0,      UNARY_OPERATOR, ACOS},
+{"ASIN",        7, 8,   0,      UNARY_OPERATOR, ASIN},
+{"ATAN",        7, 8,   0,      UNARY_OPERATOR, ATAN},
+{"ATAN2",       7, 8,   -1,     UNARY_OPERATOR, ATAN2},
+{"B",           0, 0,   1,      OPERAND,        FETCH_B},
+{"C",           0, 0,   1,      OPERAND,        FETCH_C},
+{"CEIL",        7, 8,   0,      UNARY_OPERATOR, CEIL},
+{"COS",         7, 8,   0,      UNARY_OPERATOR, COS},
+{"COSH",        7, 8,   0,      UNARY_OPERATOR, COSH},
+{"D",           0, 0,   1,      OPERAND,        FETCH_D},
+{"D2R",         0, 0,   1,      OPERAND,        CONST_D2R},
+{"E",           0, 0,   1,      OPERAND,        FETCH_E},
+{"EXP",         7, 8,   0,      UNARY_OPERATOR, EXP},
+{"F",           0, 0,   1,      OPERAND,        FETCH_F},
+{"FINITE",      7, 8,   0,      VARARG_OPERATOR,FINITE},
+{"FLOOR",       7, 8,   0,      UNARY_OPERATOR, FLOOR},
+{"FMOD",        7, 8,   -1,     UNARY_OPERATOR, FMOD},
+{"G",           0, 0,   1,      OPERAND,        FETCH_G},
+{"H",           0, 0,   1,      OPERAND,        FETCH_H},
+{"I",           0, 0,   1,      OPERAND,        FETCH_I},
+{"INF",         0, 0,   1,      LITERAL_OPERAND,LITERAL_DOUBLE},
+{"ISINF",       7, 8,   0,      UNARY_OPERATOR, ISINF},
+{"ISNAN",       7, 8,   0,      VARARG_OPERATOR,ISNAN},
+{"J",           0, 0,   1,      OPERAND,        FETCH_J},
+{"K",           0, 0,   1,      OPERAND,        FETCH_K},
+{"L",           0, 0,   1,      OPERAND,        FETCH_L},
+{"LN",          7, 8,   0,      UNARY_OPERATOR, LOG_E},
+{"LOG",         7, 8,   0,      UNARY_OPERATOR, LOG_10},
+{"LOGE",        7, 8,   0,      UNARY_OPERATOR, LOG_E},
+{"MAX",         7, 8,   0,      VARARG_OPERATOR,MAX},
+{"MIN",         7, 8,   0,      VARARG_OPERATOR,MIN},
+{"NINT",        7, 8,   0,      UNARY_OPERATOR, NINT},
+{"NAN",         0, 0,   1,      LITERAL_OPERAND,LITERAL_DOUBLE},
+{"NOT",         7, 8,   0,      UNARY_OPERATOR, BIT_NOT},
+{"PI",          0, 0,   1,      OPERAND,        CONST_PI},
+{"R2D",         0, 0,   1,      OPERAND,        CONST_R2D},
+{"RNDM",        0, 0,   1,      OPERAND,        RANDOM},
+{"SIN",         7, 8,   0,      UNARY_OPERATOR, SIN},
+{"SINH",        7, 8,   0,      UNARY_OPERATOR, SINH},
+{"SQR",         7, 8,   0,      UNARY_OPERATOR, SQU_RT},
+{"SQRT",        7, 8,   0,      UNARY_OPERATOR, SQU_RT},
+{"TAN",         7, 8,   0,      UNARY_OPERATOR, TAN},
+{"TANH",        7, 8,   0,      UNARY_OPERATOR, TANH},
+{"VAL",         0, 0,   1,      OPERAND,        FETCH_VAL},
+{"~",           7, 8,   0,      UNARY_OPERATOR, BIT_NOT},
 };
 
 static const ELEMENT operators[] = {
 /* name 	prio's	stack	element type	opcode */
-{"!=",		3, 3,	-1,	BINARY_OPERATOR,NOT_EQ},
-{"#",		3, 3,	-1,	BINARY_OPERATOR,NOT_EQ},
-{"%",		5, 5,	-1,	BINARY_OPERATOR,MODULO},
-{"&",		2, 2,	-1,	BINARY_OPERATOR,BIT_AND},
-{"&&",		2, 2,	-1,	BINARY_OPERATOR,REL_AND},
-{")",		0, 0,	0,	CLOSE_PAREN,	NOT_GENERATED},
-{"*",		5, 5,	-1,	BINARY_OPERATOR,MULT},
-{"**",		6, 6,	-1,	BINARY_OPERATOR,POWER},
-{"+",		4, 4,	-1,	BINARY_OPERATOR,ADD},
-{",",		0, 0,	0,	SEPERATOR,	NOT_GENERATED},
-{"-",		4, 4,	-1,	BINARY_OPERATOR,SUB},
-{"/",		5, 5,	-1,	BINARY_OPERATOR,DIV},
-{":",		0, 0,	-1,	CONDITIONAL,	COND_ELSE},
-{":=",		0, 0,	-1,	STORE_OPERATOR, STORE_A},
-{";",		0, 0,	0,	EXPR_TERMINATOR,NOT_GENERATED},
-{"<",		3, 3,	-1,	BINARY_OPERATOR,LESS_THAN},
-{"<<",		2, 2,	-1,	BINARY_OPERATOR,LEFT_SHIFT},
-{"<=",		3, 3,	-1,	BINARY_OPERATOR,LESS_OR_EQ},
-{"=",		3, 3,	-1,	BINARY_OPERATOR,EQUAL},
-{"==",		3, 3,	-1,	BINARY_OPERATOR,EQUAL},
-{">",		3, 3,	-1,	BINARY_OPERATOR,GR_THAN},
-{">=",		3, 3,	-1,	BINARY_OPERATOR,GR_OR_EQ},
-{">>",		2, 2,	-1,	BINARY_OPERATOR,RIGHT_SHIFT},
-{"?",		0, 0,	-1,	CONDITIONAL,	COND_IF},
-{"AND",		2, 2,	-1,	BINARY_OPERATOR,BIT_AND},
-{"OR",		1, 1,	-1,	BINARY_OPERATOR,BIT_OR},
-{"XOR",		1, 1,	-1,	BINARY_OPERATOR,BIT_EXCL_OR},
-{"^",		6, 6,	-1,	BINARY_OPERATOR,POWER},
-{"|",		1, 1,	-1,	BINARY_OPERATOR,BIT_OR},
-{"||",		1, 1,	-1,	BINARY_OPERATOR,REL_OR},
+{"!=",          3, 3,   -1,     BINARY_OPERATOR,NOT_EQ},
+{"#",           3, 3,   -1,     BINARY_OPERATOR,NOT_EQ},
+{"%",           5, 5,   -1,     BINARY_OPERATOR,MODULO},
+{"&",           2, 2,   -1,     BINARY_OPERATOR,BIT_AND},
+{"&&",          2, 2,   -1,     BINARY_OPERATOR,REL_AND},
+{")",           0, 0,   0,      CLOSE_PAREN,    NOT_GENERATED},
+{"*",           5, 5,   -1,     BINARY_OPERATOR,MULT},
+{"**",          6, 6,   -1,     BINARY_OPERATOR,POWER},
+{"+",           4, 4,   -1,     BINARY_OPERATOR,ADD},
+{",",           0, 0,   0,      SEPERATOR,      NOT_GENERATED},
+{"-",           4, 4,   -1,     BINARY_OPERATOR,SUB},
+{"/",           5, 5,   -1,     BINARY_OPERATOR,DIV},
+{":",           0, 0,   -1,     CONDITIONAL,    COND_ELSE},
+{":=",          0, 0,   -1,     STORE_OPERATOR, STORE_A},
+{";",           0, 0,   0,      EXPR_TERMINATOR,NOT_GENERATED},
+{"<",           3, 3,   -1,     BINARY_OPERATOR,LESS_THAN},
+{"<<",          2, 2,   -1,     BINARY_OPERATOR,LEFT_SHIFT_ARITH},
+{"<=",          3, 3,   -1,     BINARY_OPERATOR,LESS_OR_EQ},
+{"=",           3, 3,   -1,     BINARY_OPERATOR,EQUAL},
+{"==",          3, 3,   -1,     BINARY_OPERATOR,EQUAL},
+{">",           3, 3,   -1,     BINARY_OPERATOR,GR_THAN},
+{">=",          3, 3,   -1,     BINARY_OPERATOR,GR_OR_EQ},
+{">>",          2, 2,   -1,     BINARY_OPERATOR,RIGHT_SHIFT_ARITH},
+{">>>",         2, 2,   -1,     BINARY_OPERATOR,RIGHT_SHIFT_LOGIC},
+{"?",           0, 0,   -1,     CONDITIONAL,    COND_IF},
+{"AND",         2, 2,   -1,     BINARY_OPERATOR,BIT_AND},
+{"OR",          1, 1,   -1,     BINARY_OPERATOR,BIT_OR},
+{"XOR",         1, 1,   -1,     BINARY_OPERATOR,BIT_EXCL_OR},
+{"^",           6, 6,   -1,     BINARY_OPERATOR,POWER},
+{"|",           1, 1,   -1,     BINARY_OPERATOR,BIT_OR},
+{"||",          1, 1,   -1,     BINARY_OPERATOR,REL_OR},
 };
 
 
@@ -205,7 +211,7 @@ static int
  *
  * convert an infix expression to a postfix expression
  */
-epicsShareFunc long
+LIBCOM_API long
     postfix(const char *psrc, char *pout, short *perror)
 {
     ELEMENT stack[80];
@@ -328,51 +334,59 @@ epicsShareFunc long
 	    operand_needed = TRUE;
 	    break;
 
-	case SEPERATOR:
-	    /* Move operators to the output until open paren */
-	    while (pstacktop->name[0] != '(') {
-		if (pstacktop <= stack+1) {
-		    *perror = CALC_ERR_BAD_SEPERATOR;
-		    goto bad;
-		}
-		*pout++ = pstacktop->code;
-		if (pstacktop->type == VARARG_OPERATOR) {
-		    *pout++ = 1 - pstacktop->runtime_effect;
-		}
-		runtime_depth += pstacktop->runtime_effect;
-		pstacktop--;
-	    }
-	    operand_needed = TRUE;
-	    pstacktop->runtime_effect -= 1;
-	    break;
+        case SEPERATOR:
+            if (pstacktop == stack) {
+                *perror = CALC_ERR_BAD_SEPERATOR;
+                goto bad;
+            }
+            /* Move operators to the output until open paren */
+            while (pstacktop->name[0] != '(') {
+                if (pstacktop <= stack+1) {
+                    *perror = CALC_ERR_BAD_SEPERATOR;
+                    goto bad;
+                }
+                *pout++ = pstacktop->code;
+                if (pstacktop->type == VARARG_OPERATOR) {
+                    *pout++ = 1 - pstacktop->runtime_effect;
+                }
+                runtime_depth += pstacktop->runtime_effect;
+                pstacktop--;
+            }
+            operand_needed = TRUE;
+            pstacktop->runtime_effect -= 1;
+            break;
 
-	case CLOSE_PAREN:
-	    /* Move operators to the output until matching paren */
-	    while (pstacktop->name[0] != '(') {
-		if (pstacktop <= stack+1) {
-		    *perror = CALC_ERR_PAREN_NOT_OPEN;
-		    goto bad;
-		}
-		*pout++ = pstacktop->code;
-		if (pstacktop->type == VARARG_OPERATOR) {
-		    *pout++ = 1 - pstacktop->runtime_effect;
-		}
-		runtime_depth += pstacktop->runtime_effect;
-		pstacktop--;
-	    }
-	    pstacktop--;	/* remove ( from stack */
-	    /* if there is a vararg operator before the opening paren,
-	       it inherits the (opening) paren's stack effect */
-	    if ((pstacktop > stack) &&
-		pstacktop->type == VARARG_OPERATOR) {
-		pstacktop->runtime_effect = (pstacktop+1)->runtime_effect;
-		/* check for no arguments */
-		if (pstacktop->runtime_effect > 0) {
-		    *perror = CALC_ERR_INCOMPLETE;
-		    goto bad;
-		}
-	    }
-	    break;
+        case CLOSE_PAREN:
+            if (pstacktop == stack) {
+                *perror = CALC_ERR_PAREN_NOT_OPEN;
+                goto bad;
+            }
+            /* Move operators to the output until matching paren */
+            while (pstacktop->name[0] != '(') {
+                if (pstacktop <= stack+1) {
+                    *perror = CALC_ERR_PAREN_NOT_OPEN;
+                    goto bad;
+                }
+                *pout++ = pstacktop->code;
+                if (pstacktop->type == VARARG_OPERATOR) {
+                    *pout++ = 1 - pstacktop->runtime_effect;
+                }
+                runtime_depth += pstacktop->runtime_effect;
+                pstacktop--;
+            }
+            pstacktop--;        /* remove ( from stack */
+            /* if there is a vararg operator before the opening paren,
+               it inherits the (opening) paren's stack effect */
+            if ((pstacktop > stack) &&
+                pstacktop->type == VARARG_OPERATOR) {
+                pstacktop->runtime_effect = (pstacktop+1)->runtime_effect;
+                /* check for no arguments */
+                if (pstacktop->runtime_effect > 0) {
+                    *perror = CALC_ERR_INCOMPLETE;
+                    goto bad;
+                }
+            }
+            break;
 
 	case CONDITIONAL:
 	    /* Move operators of > priority to the output */
@@ -489,7 +503,7 @@ bad:
  *
  * Return a message string appropriate for the given error code
  */
-epicsShareFunc const char *
+LIBCOM_API const char *
     calcErrorStr(short error)
 {
     static const char *errStrs[] = {
@@ -519,7 +533,7 @@ epicsShareFunc const char *
  *
  * Disassemble the given postfix instructions to stdout
  */
-epicsShareFunc void
+LIBCOM_API void
     calcExprDump(const char *pinst)
 {
     static const char *opcodes[] = {
@@ -579,8 +593,9 @@ epicsShareFunc void
 	"BIT_AND",
 	"BIT_EXCL_OR",
 	"BIT_NOT",
-	"RIGHT_SHIFT",
-	"LEFT_SHIFT",
+        "RIGHT_SHIFT_ARITH",
+        "LEFT_SHIFT_ARITH",
+        "RIGHT_SHIFT_LOGIC",
     /* Relationals */
 	"NOT_EQ",
 	"LESS_THAN",
@@ -624,3 +639,6 @@ epicsShareFunc void
 	}
     }
 }
+#ifdef RTEMS_HAS_ALTIVEC
+#pragma GCC pop_options
+#endif

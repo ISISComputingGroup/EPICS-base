@@ -1,11 +1,3 @@
-/*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
-\*************************************************************************/
 /* gen - actual generation (writing) of flex scanners */
 
 /*-
@@ -177,7 +169,7 @@ void genctbl(void)
 
 	chk[base[i]] = EOB_POSITION;
 	chk[base[i] - 1] = ACTION_POSITION;
-	nxt[base[i] - 1] = anum;	/* action number */
+        nxt[base[i] - 1] = anum;        /* action number */
 	}
 
     for ( i = 0; i <= tblend; ++i )
@@ -189,9 +181,9 @@ void genctbl(void)
 	    transition_struct_out( 0, nxt[i] );
 
 	else if ( chk[i] > numecs || chk[i] == 0 )
-	    transition_struct_out( 0, 0 );		/* unused slot */
+            transition_struct_out( 0, 0 );              /* unused slot */
 
-	else	/* verify, transition */
+        else    /* verify, transition */
 	    transition_struct_out( chk[i], base[nxt[i]] - (i - chk[i]) );
 	}
 
@@ -225,7 +217,6 @@ void genecs(void)
     int i, j;
     static char C_char_decl[] = "static const %s %s[%d] =\n    {   0,\n";
     int numrows;
-    Char clower();
 
     if ( numecs < csize )
 	printf( C_char_decl, "YY_CHAR", "yy_ec", csize );
@@ -245,8 +236,6 @@ void genecs(void)
 
     if ( trace )
 	{
-	char *readable_form();
-
 	fputs( "\n\nEquivalence Classes:\n\n", stderr );
 
 	numrows = csize / 8;
@@ -765,7 +754,7 @@ void gentabs(void)
 
 	printf( C_short_decl, "yy_acclist", max( numas, 1 ) + 1 );
 
-	j = 1;	/* index into "yy_acclist" array */
+        j = 1;  /* index into "yy_acclist" array */
 
 	for ( i = 1; i <= lastdfa; ++i )
 	    {
@@ -938,7 +927,7 @@ void gentabs(void)
     for ( i = 1; i <= tblend; ++i )
 	{
 	if ( nxt[i] == 0 || chk[i] == 0 )
-	    nxt[i] = jamstate;	/* new state is the JAM state */
+            nxt[i] = jamstate;  /* new state is the JAM state */
 
 	mkdata( nxt[i] );
 	}

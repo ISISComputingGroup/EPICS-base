@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -11,7 +12,7 @@
 #define epicsMathh
 
 #include <math.h>
-#include <shareLib.h>
+#include <libComAPI.h>
 
 #define finite(x) isfinite(x)
 
@@ -19,8 +20,8 @@
 extern "C" {
 #endif
 
-epicsShareExtern float epicsNAN;
-epicsShareExtern float epicsINF;
+LIBCOM_API extern const float epicsNAN;
+LIBCOM_API extern const float epicsINF;
 
 #ifdef __cplusplus
 }

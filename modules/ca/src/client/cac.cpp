@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <string> // vxWorks 6.0 requires this include
 
+#include "epicsStdio.h"
 #include "dbDefs.h"
 #include "epicsGuard.h"
 #include "epicsVersion.h"
@@ -285,7 +286,7 @@ cac::~cac ()
     // this blocks until the UDP thread exits so that
     // it will not sneak in any new clients
     //
-    // lock intentionally not held here so that we dont deadlock
+    // lock intentionally not held here so that we don't deadlock
     // waiting for the UDP thread to exit while it is waiting to
     // get the lock.
     {
@@ -312,7 +313,7 @@ cac::~cac ()
     //
     // wait for all tcp threads to exit
     //
-    // this will block for oustanding sends to go out so dont
+    // this will block for outstanding sends to go out so don't
     // hold a lock while waiting
     //
     {
@@ -411,7 +412,7 @@ void cac::show (
 
     ::printf ( "Channel Access Client Context at %p for user %s\n",
         static_cast <const void *> ( this ), this->pUserName );
-    // this also supresses the "defined, but not used"
+    // this also suppresses the "defined, but not used"
     // warning message
     ::printf ( "\trevision \"%s\"\n", pVersionCAC );
 
@@ -1008,7 +1009,7 @@ bool cac::defaultExcep (
     char buf[512];
     char hostName[64];
     iiu.getHostName ( guard, hostName, sizeof ( hostName ) );
-    sprintf ( buf, "host=%s ctx=%.400s", hostName, pCtx );
+    epicsSnprintf( buf, sizeof(buf), "host=%s ctx=%.400s", hostName, pCtx );
     this->notify.exception ( guard, status, buf, 0, 0u );
     return true;
 }
@@ -1312,7 +1313,7 @@ void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
     const char * pChannelName, const char * pAcc, const char * pRej )
 {
     char buf[256];
-    sprintf ( buf, "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
+    epicsSnprintf( buf, sizeof(buf), "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
             pChannelName, pAcc, pRej );
     {
         callbackManager mgr ( this->notify, this->cbMutex );

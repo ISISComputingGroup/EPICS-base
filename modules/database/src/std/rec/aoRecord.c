@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -36,7 +37,7 @@
 #include "recGbl.h"
 #include "menuConvert.h"
 #include "menuOmsl.h"
-#include "menuYesNo.h"
+#include "menuSimm.h"
 #include "menuIvoa.h"
 
 #define GEN_SIZE_OFFSET
@@ -81,19 +82,9 @@ rset aoRSET={
 	put_enum_str,
 	get_graphic_double,
 	get_control_double,
-	get_alarm_double };
-
-struct aodset { /* analog input dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (0,2)=>(success,success no convert)*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_ao;/*(0)=>(success ) */
-	DEVSUPFUN	special_linconv;
+    get_alarm_double
 };
 epicsExportAddress(rset,aoRSET);
-
 
 static void checkAlarms(aoRecord *);
 static long fetch_value(aoRecord *, double *);
@@ -104,16 +95,16 @@ static long writeValue(aoRecord *);
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct aoRecord *prec = (struct aoRecord *)pcommon;
-    struct aodset  *pdset;
-    double 	eoff = prec->eoff, eslo = prec->eslo;
-    double	value;
-    long    status = 0;
+    aodset *pdset;
+    double          eoff = prec->eoff, eslo = prec->eslo;
+    double          value;
+    long            status = 0;
 
     if (pass == 0) return 0;
 
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
 
-    if(!(pdset = (struct aodset *)(prec->dset))) {
+    if(!(pdset = (aodset *)(prec->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)prec,"ao: init_record");
 	return(S_dev_noDSET);
     }
@@ -122,7 +113,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         prec->udf = isnan(prec->val);
 
     /* must have write_ao function defined */
-    if ((pdset->number < 6) || (pdset->write_ao ==NULL)) {
+    if ((pdset->common.number < 6) || (pdset->write_ao ==NULL)) {
 	recGblRecordError(S_dev_missingSup,(void *)prec,"ao: init_record");
 	return(S_dev_missingSup);
     }
@@ -132,8 +123,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
 	prec->eoff = prec->egul;
     }
 
-    if (pdset->init_record) {
-        status = (*pdset->init_record)(prec);
+    if (pdset->common.init_record) {
+        status = pdset->common.init_record(pcommon);
 	if (prec->linr == menuConvertSLOPE) {
 	    prec->eoff = eoff;
 	    prec->eslo = eslo;
@@ -174,10 +165,10 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct aoRecord *prec = (struct aoRecord *)pcommon;
-    struct aodset  *pdset = (struct aodset *)(prec->dset);
-	long		 status=0;
-	unsigned char    pact=prec->pact;
-	double		value;
+    aodset      *pdset = (aodset *)(prec->dset);
+    long            status=0;
+    unsigned char   pact=prec->pact;
+    double          value;
 
 	if ((pdset==NULL) || (pdset->write_ao==NULL)) {
 		prec->pact=TRUE;
@@ -194,9 +185,12 @@ static long process(struct dbCommon *pcommon)
                 else {
                     value = prec->val;
                 }
-		if(!status) convert(prec, value);
-		prec->udf = isnan(prec->val);
-	}
+        if(!status) convert(prec, value);
+        prec->udf = isnan(prec->val);
+        /* Update the timestamp before writing output values so it
+         * will be up to date if any downstream records fetch it via TSEL */
+        recGblGetTimeStampSimm(prec, prec->simm, NULL);
+    }
 
 	/* check for alarms */
 	checkAlarms(prec);
@@ -229,7 +223,10 @@ static long process(struct dbCommon *pcommon)
 	if ( !pact && prec->pact ) return(0);
 	prec->pact = TRUE;
 
+    if ( pact ) {
+        /* Update timestamp again for asynchronous devices */
     recGblGetTimeStampSimm(prec, prec->simm, NULL);
+    }
 
 	/* check event list */
 	monitor(prec);
@@ -245,12 +242,12 @@ static long process(struct dbCommon *pcommon)
 static long special(DBADDR *paddr, int after)
 {
     aoRecord     *prec = (aoRecord *)(paddr->precord);
-    struct aodset       *pdset = (struct aodset *) (prec->dset);
+    aodset       *pdset = (aodset *) (prec->dset);
     int                 special_type = paddr->special;
 
     switch(special_type) {
     case(SPC_LINCONV):
-        if(pdset->number<6 ) {
+        if(pdset->common.number<6 ) {
             recGblDbaddrError(S_db_noMod,paddr,"ao: special");
             return(S_db_noMod);
         }
@@ -286,7 +283,7 @@ static long special(DBADDR *paddr, int after)
 
 static long get_units(DBADDR * paddr,char *units)
 {
-    aoRecord	*prec=(aoRecord *)paddr->precord;
+    aoRecord    *prec=(aoRecord *)paddr->precord;
 
     if(paddr->pfldDes->field_type == DBF_DOUBLE) {
         switch (dbGetFieldIndex(paddr)) {
@@ -302,7 +299,7 @@ static long get_units(DBADDR * paddr,char *units)
 
 static long get_precision(const DBADDR *paddr,long *precision)
 {
-    aoRecord	*prec=(aoRecord *)paddr->precord;
+    aoRecord    *prec=(aoRecord *)paddr->precord;
 
     *precision = prec->prec;
     switch (dbGetFieldIndex(paddr)) {
@@ -318,7 +315,7 @@ static long get_precision(const DBADDR *paddr,long *precision)
 
 static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
-    aoRecord	*prec=(aoRecord *)paddr->precord;
+    aoRecord    *prec=(aoRecord *)paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
@@ -343,7 +340,7 @@ static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 
 static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
-    aoRecord	*prec=(aoRecord *)paddr->precord;
+    aoRecord    *prec=(aoRecord *)paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
@@ -366,7 +363,7 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 }
 static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
-    aoRecord	*prec=(aoRecord *)paddr->precord;
+    aoRecord    *prec=(aoRecord *)paddr->precord;
 
     if(dbGetFieldIndex(paddr) == indexof(VAL)){
         pad->upper_alarm_limit = prec->hhsv ? prec->hihi : epicsNAN;
@@ -435,8 +432,8 @@ static void checkAlarms(aoRecord *prec)
 
 static long fetch_value(aoRecord *prec,double *pvalue)
 {
-	short		save_pact;
-	long		status;
+    short       save_pact;
+    long        status;
 
 	save_pact = prec->pact;
 	prec->pact = TRUE;
@@ -555,7 +552,7 @@ static void monitor(aoRecord *prec)
 
 static long writeValue(aoRecord *prec)
 {
-    struct aodset *pdset = (struct aodset *) prec->dset;
+    aodset *pdset = (aodset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {
@@ -564,14 +561,20 @@ static long writeValue(aoRecord *prec)
     }
 
     switch (prec->simm) {
-    case menuYesNoNO:
+    case menuSimmNO:
         status = pdset->write_ao(prec);
         break;
 
-    case menuYesNoYES: {
+    case menuSimmYES:
+    case menuSimmRAW:
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
         if (prec->pact || (prec->sdly < 0.)) {
-            status = dbPutLink(&prec->siol, DBR_DOUBLE, &prec->oval, 1);
+            if (prec->simm == menuSimmYES)
+                /* don't convert */
+                status = dbPutLink(&prec->siol, DBR_DOUBLE, &prec->oval, 1);
+            else /* prec->simm == menuSimmRAW*/
+                /* convert */
+                status = dbPutLink(&prec->siol, DBR_LONG, &prec->rval, 1);
             prec->pact = FALSE;
         } else { /* !prec->pact && delay >= 0. */
             epicsCallback *pvt = prec->simpvt;
@@ -583,7 +586,6 @@ static long writeValue(aoRecord *prec)
             prec->pact = TRUE;
         }
         break;
-    }
 
     default:
         recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);

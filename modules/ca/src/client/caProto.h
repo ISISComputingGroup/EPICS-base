@@ -3,8 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* SPDX-License-Identifier: EPICS
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
@@ -14,8 +14,11 @@
  *              505 665 1831
  */
 
-#ifndef __CAPROTO__
-#define __CAPROTO__ 
+#ifndef INC_caProto_H
+#define INC_caProto_H
+
+// Pick up definition of IPPORT_USERRESERVED
+#include <osiSock.h>
 
 #define capStrOf(A) #A
 #define capStrOfX(A) capStrOf ( A )
@@ -54,9 +57,9 @@
 #define CA_SERVER_PORT          (CA_PORT_BASE+CA_MAJOR_PROTOCOL_REVISION*2u)
 #define CA_REPEATER_PORT        (CA_PORT_BASE+CA_MAJOR_PROTOCOL_REVISION*2u+1u)
 
-/* 
- * 1500 (max of ethernet and 802.{2,3} MTU) - 20(IP) - 8(UDP) 
- * (the MTU of Ethernet is currently independent of its speed varient)
+/*
+ * 1500 (max of Ethernet and 802.{2,3} MTU) - 20(IP) - 8(UDP)
+ * (the MTU of Ethernet is currently independent of its speed variant)
  */
 #define ETHERNET_MAX_UDP        ( 1500u - 20u - 8u )
 #define MAX_UDP_RECV            ( 0xffff + 16u ) /* allow large frames to be received in the future */
@@ -114,7 +117,7 @@ typedef ca_uint32_t     caResId;
 
 /*
  * for use with search and not_found (if search fails and
- * its not a broadcast tell the client to look elesewhere)
+ * its not a broadcast tell the client to look elsewhere)
  */
 #define DOREPLY     10u
 #define DONTREPLY   5u
@@ -172,8 +175,8 @@ typedef struct ca_hdr {
  */
 struct  mon_info {
     ca_float32_t    m_lval;     /* low delta */
-    ca_float32_t    m_hval;     /* high delta */ 
-    ca_float32_t    m_toval;    /* period btween samples */
+    ca_float32_t    m_hval;     /* high delta */
+    ca_float32_t    m_toval;    /* period between samples */
     ca_uint16_t     m_mask;     /* event select mask */
     ca_uint16_t     m_pad;      /* extend to 32 bits */
 };

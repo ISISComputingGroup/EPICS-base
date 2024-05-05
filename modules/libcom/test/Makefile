@@ -259,6 +259,7 @@ TESTPROD_HOST += iocshTest
 iocshTest_SRCS += iocshTest.cpp
 TESTS += iocshTest
 TESTFILES += $(wildcard ../iocshTest*.cmd)
+TESTFILES += ../iocshTestHelpFunction1 ../iocshTestHelpFunctions
 
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunLibComTests.c

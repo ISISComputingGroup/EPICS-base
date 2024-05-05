@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -30,7 +31,6 @@
 #include "caerr.h" // this needs to be eliminated
 #include "db_access.h" // this needs to be eliminated
 
-#define epicsExportSharedSymbols
 #include "dbCAC.h"
 #include "dbChannelIO.h"
 #include "dbPutNotifyBlocker.h"
@@ -110,9 +110,9 @@ extern "C" void putNotifyCompletion ( processNotify *ppn )
     if ( pNtfy ) {
         pBlocker->pNotify = 0;
         // Its necessary to signal the initiators now before we call
-        // the user callback. This is less efficent, and potentially
-        // causes more thread context switching, but its probably 
-        // unavoidable because its possible that the use callback 
+        // the user callback. This is less efficient, and potentially
+        // causes more thread context switching, but its probably
+        // unavoidable because its possible that the use callback
         // might destroy this object.
         pBlocker->block.signal ();
         if ( pBlocker->pn.status != notifyOK ) {
@@ -144,12 +144,12 @@ void dbPutNotifyBlocker::initiatePutNotify (
             break;
         }
         if ( beginTimeInit ) {
-            if ( epicsTime::getMonotonic () - begin > 30.0 ) {
+            if ( epicsTime::getCurrent () - begin > 30.0 ) {
                 throw cacChannel::requestTimedOut ();
             }
         }
         else {
-            begin = epicsTime::getMonotonic ();
+            begin = epicsTime::getCurrent ();
             beginTimeInit = true;
         }
         {

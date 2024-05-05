@@ -13,6 +13,7 @@
 #include <stdio.h>
 
 #include "freeList.h"
+#include "caeventmask.h"
 #include "db_field_log.h"
 #include "chfPlugin.h"
 #include "dbState.h"
@@ -93,7 +94,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
     myStruct *my = (myStruct*) pvt;
     int actstate;
 
-    if (pfl->ctx == dbfl_context_read)
+    if (pfl->ctx == dbfl_context_read || (pfl->mask & DBE_PROPERTY))
         return pfl;
 
     actstate = dbStateGet(my->id);

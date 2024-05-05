@@ -12,7 +12,7 @@
 #include "epicsSignal.h"
 
 /*
- * All NOOPs if the os isnt POSIX
+ * All NOOPs if the os isn't POSIX
  */
 epicsShareFunc void epicsShareAPI epicsSignalInstallSigHupIgnore ( void ) {}
 epicsShareFunc void epicsShareAPI epicsSignalInstallSigPipeIgnore ( void ) {}

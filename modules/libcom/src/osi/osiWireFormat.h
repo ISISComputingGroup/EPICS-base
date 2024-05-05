@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -151,7 +152,7 @@ union WireAlias < epicsFloat32 > {
 //
 // Missaligned unsigned wire format get/set can be implemented generically 
 // w/o performance penalty. Attempts to improve this on architectures that
-// dont have alignement requirements will probably get into trouble with
+// don't have alignment requirements will probably get into trouble with
 // over-aggressive optimization under strict aliasing rules.
 //
 

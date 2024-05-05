@@ -1,5 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2002 The University of Saskatchewan
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -22,6 +23,7 @@
 #include <assert.h>
 #include <syslog.h>
 #include <limits.h>
+#include <pthread.h>
 
 #include <rtems.h>
 #include <rtems/error.h>
@@ -37,8 +39,8 @@
 #include "epicsExit.h"
 #include "epicsAtomic.h"
 
-epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
-epicsShareFunc void osdThreadHooksRunMain(epicsThreadId id);
+LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
+LIBCOM_API void osdThreadHooksRunMain(epicsThreadId id);
 
 /*
  * Per-task variables
@@ -51,6 +53,7 @@ struct taskVar {
     rtems_id             join_barrier; /* only valid if joinable */
     int                refcnt;
     int                joinable;
+    int                isRunning;
     EPICSTHREADFUNC              funptr;
     void                *parm;
     unsigned int        threadVariableCapacity;
@@ -107,7 +110,7 @@ int epicsThreadGetOssPriorityValue(unsigned int osiPriority)
 /*
  * epicsThreadLowestPriorityLevelAbove ()
  */
-epicsShareFunc epicsThreadBooleanStatus epicsThreadLowestPriorityLevelAbove 
+LIBCOM_API epicsThreadBooleanStatus epicsThreadLowestPriorityLevelAbove 
             (unsigned int priority, unsigned *pPriorityJustAbove)
 {
     unsigned newPriority = priority + 1;
@@ -123,7 +126,7 @@ epicsShareFunc epicsThreadBooleanStatus epicsThreadLowestPriorityLevelAbove
 /*
  * epicsThreadHighestPriorityLevelBelow ()
  */
-epicsShareFunc epicsThreadBooleanStatus epicsThreadHighestPriorityLevelBelow 
+LIBCOM_API epicsThreadBooleanStatus epicsThreadHighestPriorityLevelBelow 
             (unsigned int priority, unsigned *pPriorityJustBelow)
 {
     unsigned newPriority = priority - 1;
@@ -195,6 +198,7 @@ threadWrapper (rtems_task_argument arg)
     osdThreadHooksRun((epicsThreadId)v->id);
     (*v->funptr)(v->parm);
     epicsExitCallAtThreadExits ();
+    epicsAtomicSetIntT(&v->isRunning, 0);
     taskVarLock ();
     if (v->back)
         v->back->forw = v->forw;
@@ -217,6 +221,7 @@ threadWrapper (rtems_task_argument arg)
  */
 void epicsThreadExitMain (void)
 {
+    cantProceed("epicsThreadExitMain() must no longer be used.\n");
 }
 
 static rtems_status_code
@@ -236,6 +241,7 @@ setThreadInfo(rtems_id tid, const char *name, EPICSTHREADFUNC funptr,
     v->refcnt = joinable ? 2 : 1;
     v->threadVariableCapacity = 0;
     v->threadVariables = NULL;
+    v->isRunning = 1;
     if (joinable) {
         char c[3];
         strncpy(c, v->name, 3);
@@ -368,6 +374,9 @@ void epicsThreadMustJoin(epicsThreadId id)
     rtems_id target_tid = (rtems_id)id, self_tid;
     struct taskVar *v = 0;
 
+    if(!id)
+        return;
+
     rtems_task_ident (RTEMS_SELF, 0, &self_tid);
 
     {
@@ -382,7 +391,7 @@ void epicsThreadMustJoin(epicsThreadId id)
             errlogPrintf("Warning: %s thread self-join of unjoinable\n", v ? v->name : "non-EPICS thread");
 
         } else {
-            /* try to error nicely, however in all likelyhood de-ref of
+            /* try to error nicely, however in all likelihood de-ref of
              * 'id' has already caused SIGSEGV as we are racing thread exit,
              * which free's 'id'.
              */
@@ -736,6 +745,23 @@ showInternalTaskInfo (rtems_id tid)
     }
     thread = *the_thread;
     _Thread_Enable_dispatch();
+
+    /* This looks a bit weird, but it has to support RTEMS versions both before
+     * and after 4.10.2 when threads changed how their priorities are stored.
+     */
+    int policy;
+    struct sched_param sp;
+    rtems_task_priority real_priority, current_priority;
+    rtems_status_code sc = pthread_getschedparam(tid, &policy, &sp);
+    if (sc == RTEMS_SUCCESSFUL) {
+        real_priority = sp.sched_priority;
+        sc = rtems_task_set_priority(tid, RTEMS_CURRENT_PRIORITY, &current_priority);
+    }
+    if (sc != RTEMS_SUCCESSFUL) {
+        fprintf(epicsGetStdout(),"%-30s",  "  *** RTEMS task gone! ***");
+        return;
+    }
+
     /*
      * Show both real and current priorities if they differ.
      * Note that the epicsThreadGetOsiPriorityValue routine is not used here.
@@ -743,17 +769,17 @@ showInternalTaskInfo (rtems_id tid)
      * that priority should be displayed, not the value truncated to
      * the EPICS range.
      */
-    epicsPri = 199-thread.real_priority;
+    epicsPri = 199-real_priority;
     if (epicsPri < 0)
         fprintf(epicsGetStdout(),"   <0");
     else if (epicsPri > 99)
         fprintf(epicsGetStdout(),"  >99");
     else
         fprintf(epicsGetStdout()," %4d", epicsPri);
-    if (thread.current_priority == thread.real_priority)
-        fprintf(epicsGetStdout(),"%4d    ", (int)thread.current_priority);
+    if (current_priority == real_priority)
+        fprintf(epicsGetStdout(),"%4d    ", (int)current_priority);
     else
-        fprintf(epicsGetStdout(),"%4d/%-3d", (int)thread.real_priority, (int)thread.current_priority);
+        fprintf(epicsGetStdout(),"%4d/%-3d", (int)real_priority, (int)current_priority);
     showBitmap (bitbuf, thread.current_state, taskState);
     fprintf(epicsGetStdout(),"%8.8s", bitbuf);
     if (thread.current_state & (STATES_WAITING_FOR_SEMAPHORE |
@@ -774,7 +800,11 @@ epicsThreadShowInfo (struct taskVar *v, unsigned int level)
         fprintf(epicsGetStdout(),"+--------+-----------+--------+--------+---------------------+\n");
     } else {
         fprintf(epicsGetStdout(),"%9.8x", (int)v->id);
-        showInternalTaskInfo (v->id);
+        if(epicsAtomicGetIntT(&v->isRunning)) {
+            showInternalTaskInfo (v->id);
+        } else {
+            fprintf(epicsGetStdout(),"%-30s",  "  *** ZOMBIE task!     ***");
+        }
         fprintf(epicsGetStdout()," %s\n", v->name);
     }
 }
@@ -841,7 +871,7 @@ double epicsThreadSleepQuantum ( void )
     return 1.0 / rtemsTicksPerSecond_double;
 }
 
-epicsShareFunc int epicsThreadGetCPUs(void)
+LIBCOM_API int epicsThreadGetCPUs(void)
 {
 #if defined(RTEMS_SMP)
     return rtems_smp_get_number_of_processors();

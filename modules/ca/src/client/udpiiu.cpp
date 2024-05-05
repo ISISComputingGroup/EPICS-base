@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -35,7 +36,6 @@
 #include "errlog.h"
 #include "locationException.h"
 
-#define epicsExportSharedSymbols
 #include "addrList.h"
 #include "caerr.h" // for ECA_NOSEARCHADDR
 #include "udpiiu.h"
@@ -205,7 +205,7 @@ udpiiu::udpiiu (
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAC: failed to set mcast ttl %d\n", ttl);
+            errlogPrintf("CAC: failed to set mcast ttl %d\n", (int)ttl);
         }
     }
 #endif
@@ -269,7 +269,7 @@ udpiiu::udpiiu (
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             epicsSocketDestroy ( this->sock );
-            errlogPrintf ( "CAC: getsockname () error was \"%s\"\n", sockErrBuf );
+            errlogPrintf ( "CAC: getsockname () " ERL_ERROR " was \"%s\"\n", sockErrBuf );
             throwWithLocation ( noSocket () );
         }
         if ( tmpAddr.sa.sa_family != AF_INET) {
@@ -431,14 +431,14 @@ void udpRecvThread::run ()
                     char sockErrBuf[64];
                     epicsSocketConvertErrnoToString ( 
                         sockErrBuf, sizeof ( sockErrBuf ) );
-                    errlogPrintf ( "CAC: UDP recv error was \"%s\"\n", 
+                    errlogPrintf ( "CAC: UDP recv " ERL_ERROR " was \"%s\"\n",
                         sockErrBuf );
                 }
             }
         }
         else if ( status > 0 ) {
             this->iiu.postMsg ( src, this->iiu.recvBuf, 
-                (arrayElementCount) status, epicsTime::getMonotonic() );
+                (arrayElementCount) status, epicsTime::getCurrent() );
         }
 
     } while ( ! this->iiu.shutdownCmd );
@@ -465,7 +465,7 @@ void udpiiu :: M_repeaterTimerNotify :: repeaterRegistrationMessage ( unsigned a
  *
  *  register with the repeater 
  */
-void epicsShareAPI caRepeaterRegistrationMessage ( 
+void epicsStdCall caRepeaterRegistrationMessage ( 
            SOCKET sock, unsigned repeaterPort, unsigned attemptNumber )
 {
     osiSockAddr saddr;
@@ -539,9 +539,9 @@ void epicsShareAPI caRepeaterRegistrationMessage (
     if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;
         /*
-         * Different OS return different codes when the repeater isnt running.
-         * Its ok to supress these messages because I print another warning message
-         * if we time out registerring with the repeater.
+         * Different OS return different codes when the repeater isn't running.
+         * Its ok to suppress these messages because I print another warning message
+         * if we time out registering with the repeater.
          *
          * Linux returns SOCK_ECONNREFUSED
          * Windows 2000 returns SOCK_ECONNRESET
@@ -552,7 +552,7 @@ void epicsShareAPI caRepeaterRegistrationMessage (
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            fprintf ( stderr, "error sending registration message to CA repeater daemon was \"%s\"\n", 
+            fprintf ( stderr, ERL_ERROR " sending registration message to CA repeater daemon was \"%s\"\n",
                 sockErrBuf );
         }
     }
@@ -582,7 +582,7 @@ void epicsShareAPI caRepeaterRegistrationMessage (
  *
  *  072392 - problem solved by using SO_REUSEADDR
  */
-void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
+void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
 {
     bool installed = false;
     int status;
@@ -656,8 +656,8 @@ void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
 #endif /* _WIN32 */
 		   
         osiSpawnDetachedProcessReturn osptr = 
-            osiSpawnDetachedProcess ( "CA Repeater", carep_path );
-        if ( osptr == osiSpawnDetachedProcessNoSupport ) {
+            osiSpawnDetachedProcess ( "!CA Repeater", carep_path );
+        if ( osptr != osiSpawnDetachedProcessSuccess ) {
             epicsThreadId tid;
 
             tid = epicsThreadCreate ( "CAC-repeater", epicsThreadPriorityLow,
@@ -665,9 +665,6 @@ void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
             if ( tid == 0 ) {
                 fprintf ( stderr, "caStartRepeaterIfNotInstalled : unable to create CA repeater daemon thread\n" );
             }
-        }
-        else if ( osptr == osiSpawnDetachedProcessFail ) {
-            fprintf ( stderr, "caStartRepeaterIfNotInstalled (): unable to start CA repeater daemon detached process\n" );
         }
     }
 }
@@ -703,7 +700,7 @@ bool udpiiu :: searchRespAction (
     const epicsTime & currentTime )
 {
     /*
-     * we dont currently know what to do with channel's 
+     * we don't currently know what to do with channel's
      * found to be at non-IP type addresses
      */
     if ( addr.sa.sa_family != AF_INET ) {
@@ -792,7 +789,7 @@ bool udpiiu::beaconAction (
      *   always set this field to INADDR_ANY
      *
      * clients always assume that if this
-     * field is set to something that isnt INADDR_ANY
+     * field is set to something that isn't INADDR_ANY
      * then it is the overriding IP address of the server.
      */
     ina.sin_family = AF_INET;
@@ -802,7 +799,7 @@ bool udpiiu::beaconAction (
     }
     else {
         /*
-         * old servers dont supply this and the
+         * old servers don't supply this and the
          * default port must be assumed
          */
         ina.sin_port = htons ( this->serverPort );
@@ -842,14 +839,14 @@ bool udpiiu::exceptionRespAction (
     currentTime.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
 
     if ( msg.m_postsize > sizeof ( caHdr ) ){
-        errlogPrintf ( 
-            "error condition \"%s\" detected by %s with context \"%s\" at %s\n", 
-            ca_message ( msg.m_available ), 
+        errlogPrintf (
+            ERL_ERROR " condition \"%s\" detected by %s with context \"%s\" at %s\n",
+            ca_message ( msg.m_available ),
             name, reinterpret_cast <const char *> ( &reqMsg + 1 ), date );
     }
     else{
-        errlogPrintf ( 
-            "error condition \"%s\" detected by %s at %s\n", 
+        errlogPrintf (
+            ERL_ERROR " condition \"%s\" detected by %s at %s\n",
             ca_message ( msg.m_available ), name, date );
     }
 
@@ -904,7 +901,7 @@ void udpiiu::postMsg (
         size = pCurMsg->m_postsize + sizeof ( *pCurMsg );
 
         /*
-         * dont allow msg body extending beyond frame boundary
+         * don't allow msg body extending beyond frame boundary
          */
         if ( size > blockSize ) {
             char buf[64];
@@ -973,7 +970,7 @@ bool udpiiu::pushDatagramMsg ( epicsGuard < epicsMutex > & guard,
 
     caHdr * pbufmsg = ( caHdr * ) &this->xmitBuf[this->nBytesInXmitBuf];
     *pbufmsg = msg;
-    if ( extsize ) {
+    if ( extsize && pExt ) {
         memcpy ( pbufmsg + 1, pExt, extsize );
         if ( extsize != alignedExtSize ) {
             char *pDest = (char *) ( pbufmsg + 1 );
@@ -1074,7 +1071,7 @@ void udpiiu :: SearchRespCallback :: notify (
         const osiSockAddr & addr, const epicsTime & currentTime )
 {   
     /*
-     * we dont currently know what to do with channel's 
+     * we don't currently know what to do with channel's
      * found to be at non-IP type addresses
      */
     if ( addr.sa.sa_family != AF_INET ) {
@@ -1149,7 +1146,7 @@ bool udpiiu :: datagramFlush (
 {
     guard.assertIdenticalMutex ( cacMutex );
 
-    // dont send the version header by itself
+    // don't send the version header by itself
     if ( this->nBytesInXmitBuf <= sizeof ( caHdr ) ) {
         return false;
     }
@@ -1189,7 +1186,7 @@ void udpiiu :: show ( unsigned level ) const
         }
     }
     if ( level > 2u ) {
-        ::printf ("\tsocket identifier %d\n", this->sock );
+        ::printf ("\tsocket identifier %d\n", int(this->sock) );
         ::printf ("\tbytes in xmit buffer %u\n", this->nBytesInXmitBuf );
         ::printf ("\tshut down command bool %u\n", this->shutdownCmd );
         ::printf ( "\trecv thread exit signal:\n" );
@@ -1222,10 +1219,7 @@ bool udpiiu::wakeupMsg ()
     // send a wakeup msg so the UDP recv thread will exit
     int status = sendto ( this->sock, reinterpret_cast < char * > ( &msg ),  
             sizeof (msg), 0, &addr.sa, sizeof ( addr.sa ) );
-    if ( status == sizeof (msg) ) {
-        return true;
-    }
-    return false;
+    return status == sizeof (msg);
 }
 
 void udpiiu::beaconAnomalyNotify ( 

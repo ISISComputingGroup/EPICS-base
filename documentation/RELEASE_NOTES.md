@@ -1,18 +1,1292 @@
-# EPICS 7.0 Release Notes
+# EPICS 7.0 Release Notes    {#releasenotes}
 
 These release notes describe changes that have been made since the previous
 release of this series of EPICS Base. **Note that changes which were merged up
-from commits to new releases in an older Base series are not described at the
-top of this file but have entries that appear lower down, under the series to
-which they were originally committed.** Thus it is important to read more than
-just the first section to understand everything that has changed in each
-release.
+from commits to the 3.15 branch are described
+[further down this file](#changes-incorporated-from-the-315-branch)
+under the 3.15 release to which they were originally committed.** Thus it is
+important to read more than just the first section to understand everything that
+has changed in each release.
 
-The external PVA submodules each have their own separate set of release notes
-which should also be read to understand what has changed since an earlier
-release.
+The PVA submodules each have their own individual sets of release notes which
+should also be read to understand what has changed since earlier releases:
 
-# EPICS Release 7.0.3.1
+- [normativeTypes](https://github.com/epics-base/normativeTypesCPP/blob/master/documentation/RELEASE_NOTES.md)
+- [pvAccess](http://epics-base.github.io/pvAccessCPP/pvarelease_notes.html)
+- [pvData](http://epics-base.github.io/pvDataCPP/release_notes.html)
+- [pvDatabase](https://github.com/epics-base/pvDatabaseCPP/blob/master/documentation/RELEASE_NOTES.md)
+- [pva2pva](https://epics-base.github.io/pva2pva/release_notes.html)
+- [pvaClient](https://github.com/epics-base/pvaClientCPP/blob/master/documentation/RELEASE_NOTES.md)
+
+
+## EPICS Release 7.0.8
+
+### bi "Raw Soft Channel" use MASK
+
+If MASK is non-zero, The raw device support will now apply MASK to the
+value read into RVAL.
+eg. allows extraction of a bit from an input integer.
+
+```
+record(longin, "integer") {
+    field(VAL, "0xff")
+}
+record(bi, "bit1") {
+    field(DESC, "extract bit 1")
+    field(DTYP, "Raw Soft Channel")
+    field(INP , "integer")
+    field(MASK, "0x2")
+    field(ZNAM, "Clear")
+    field(ONAM, "Set")
+}
+```
+
+### ANSI escapes in stderr
+
+ANSI escape charactor sequences may now be printed to the stderr stream.
+These escapes will appear in logs captured from that stream.
+Tools which parse and/or render these logs may need to be adjusted to
+either strip out the escapes, or to translate them into markup.
+(see [ansi2html](https://pypi.org/project/ansi2html/) for example)
+
+### Allow explicit append with `dbRecordsOnceOnly!=0`
+
+Previously setting `dbRecordsOnceOnly!=0` prevented any further changes to a record via a .db file.  eg.
+
+```
+record(ai, "myrec") {}
+```
+
+`dbRecordsOnceOnly!=0` previously disallowed appending fields with either form:
+
+```
+record("*", "myrec") {} # error
+record(ai, "myrec") {}  # error
+```
+
+Beginning with this release, `dbRecordsOnceOnly!=0` allows appending when explicitly intended (when record type is `"*"`).
+
+```
+record("*", "myrec") {} # allowed
+record(ai, "myrec") {}  # error
+```
+
+### Add `$EPICS_CLI_TIMEOUT`
+
+Add support for CA tools timeout from environment variable `$EPICS_CLI_TIMEOUT`
+which sets the default the default timeout for `caget` et al.
+The `-w` argument continues to take precedence.
+
+### Fixed leak from a non-EPICS thread on WIN32
+
+On Windows targets, if a thread not created by `epicsThreadCreate*()` directly
+or indirectly calls an `epicsThread*()` function, a specific tracking struct
+is allocated.  Prior to this release the allocation would not be `free()`d,
+resulting in a memory leak.
+
+A similar issue on POSIX targets was previously fixed.
+
+### Change compiler for FreeBSD to clang
+
+The default compiler for FreeBSD targets changes from GCC to clang.
+
+### Expose `dbCreateAlias` in IOC shell
+
+Add a new IOC shell command `dbCreateAlias` allow record aliases to be added.
+Intended for use before `iocInit`.  eg. to add an alias "bar" for a record "foo".
+
+```
+dbLoadRecords("some.db") # includes: record(ai, "foo") { ...
+dbCreateAlias("foo", "bar")
+iocInit()
+```
+
+### dbEvent eventsRemaining missed on cancel
+
+In some cases, RSRV may queue a subscription update, but not flush it.
+This partially addresses this issue.
+
+### subRecord on bad INP links
+
+Previously, if a subRecord has an invalid `INP*` link, it was silently failing
+(and not running the proc function).  Now the the status code returned by the
+subroutine is returned from `dbProcess()`.
+
+### COMMANDLINE\_LIBRARY fallback to GNU\_DIR
+
+Fall back to the previous behavior when searching for `readline.h` with older compilers.
+
+### Search for readline installed via HomeBrew.
+
+Look for `/opt/local/include/readline` on OSX.
+
+### Always stop worker threads
+
+The SCAN and callback threads are now stopped during normal IOC shutdown.
+
+### Allow runtime bypass of free list allocator
+
+The environment variable `$EPICS_FREELIST_BYPASS` may be set to `YES` to cause the `freeListLib` functions to always call directly to `malloc()`/`free()`.  May be useful when troubleshooting some kinds of memory allocation bugs which would otherwise be "hidden".  eg. use-after-free data races.  This may also improve the results of dynamic analysis tools which are not aware of this internal free list.
+
+### `compress` record enhancement
+
+The compress record now supports the use of partially-filled buffers when using
+any of the N-to-one algorithms. This is achieved by setting the new field `PBUF`
+to `YES`.
+
+### Extended timestamp channel filter
+
+The `"ts"` filter can now retrieve the record's timestamp in several numeric
+and string formats, some of which support full nanosecond precision.
+
+    Hal$ caget -a test:channel
+    test:channel                   2021-03-11 18:23:48.265386 42
+    Hal$ caget -f9 'test:channel.{"ts": {"num": "dbl"}}'
+    test:channel.{"ts": {"num": "dbl"}} 984331428.265386105
+    Hal$ caget 'test:channel.{"ts": {"str": "iso"}}'
+    test:channel.{"ts": {"str": "iso"}} 2021-03-11T18:23:48.265386+0100
+    Hal$ caget -f1 'test:channel.{"ts": {"num": "ts"}}'
+    test:channel.{"ts": {"num": "ts"}} 2 984331428.0 265386163.0
+
+More information is included in the filters documentation, which can be found in
+the `html/filters.html` document that is generated during the build
+
+### Allow adding new error symbols at any time
+
+`errSymbolAdd` can now be called after early initialization.
+
+### Add conditional output (OOPT) to the longout record
+
+The longout record can now be configured using its new OOPT and OOCH fields
+to (not) write to its output link depending on the contents of VAL, in a
+similar manner to the calcout record. More information can be found on the
+reference page for the longout record type that accompanies this release.
+
+This functionality was suggested in
+[lp# 1398215](https://bugs.launchpad.net/epics-base/+bug/1398215) and may
+be added to other output record types if the community finds it useful,
+please send feedback about the feature to tech-talk.
+
+### IOC Shell
+
+#### Tab completion
+
+When built with optional GNU libreadline support, the interactive IOC shell
+will perform tab completion for command names as well as for some arguments
+of the built-in commands. For example, the record name argument of `dbpr`,
+and the path name argument of `cd`.
+
+Externally defined commands have a limited ability to opt into completion by
+using the new `iocshArgStringRecord` and `iocshArgStringPath` argument types.
+Both function identically to `iocshArgString` but indicate how to suggest
+completion strings.
+
+Builds on macOS (`darwin-x86` or `darwin-aarch64` targets) normally use Apple's
+libedit library in readline compatibility mode, which doesn't support the tab
+completion API that GNU readline provides. You can use Homebrew or some other
+third-party package manager to install the GNU readline package, then edit the
+`configure/os/CONFIG_SITE.darwinCommon.darwinCommon` file to have EPICS use the
+real thing to get tab completion in the IOC shell. The default settings in that
+file currently look for and use a Homebrew-installed readline if present.
+
+#### Persist history
+
+Attempt to read and write command to a file (`./.iocsh_history` by default).
+Name may be overwritten with by setting `$EPICS_IOCSH_HISTFILE` to an
+alternate path, or disabled by setting to an empty string.
+
+#### Changes to help output
+
+Rework the `help` command output to improve formatting and readability,
+and include a visual marker (a line of underlines) between different help commands.
+
+### Add FMOD as CALC Expression
+
+The floating point modulo function `FMOD(NUM,DEN)` has been added to the CALC
+expression engine and is available to all software using that (calc and calcout
+record types, access security library and some extensions).
+
+-----
+
+## EPICS Release 7.0.7
+
+### Doxygen Annotations
+
+Thanks to several attendees at the 2022 EPICS Codeathon the number of header
+files with Doxygen annotations in the EPICS Core has again increased.
+
+### Build System updates
+
+The top-level make targets `uninstall`, `archuninstall` and similar no
+longer trigger the `clean` target which empties build directories, this
+was a bug introduced in 7.0.5.
+
+The `make distclean` target now properly deletes the generated file(s)
+`modules/RELEASE.<host>.local` which are essential to build the external
+submodules under the `modules` directory, and should not crash if the
+build is configured with `INSTALL_LOCATION` pointing to an empty external directory (i.e. if you run `make distclean` twice in succession). When
+`INSTALL_LOCATION` is set in the files `configure/CONFIG_SITE` or
+`configure/CONFIG_SITE.local` the `modules/RELEASE.<host>.local` file
+will now be regenerated in case the install path has been modified.
+
+Note that passing `INSTALL_LOCATION=<path>` on the make command-line will
+only work if you have run `make distclean` immediately beforehand, as the
+`modules/RELEASE.<host>.local` file must be recreated using the new path.
+
+### Enhancements to `capr.pl`
+
+The `capr.pl` script can now display records from older Base versions to
+which fields have since been added, and shows long strings and array data
+up to 10 elements, use the new `-n` option to increase that number.
+The script is fully event-driven and prints all the field data received by
+the end of the CA wait time (`-w` option which defaults to 2 seconds).
+The interest level can now be specified using the `-l` option before the
+PV name, and the new `-D` flag outputs debugging information.
+
+### Time Synchronization on VxWorks
+
+VxWorks 6.9 can do its own OS clock time synchronization, if it has been
+configured by setting `SNTPC_PRIMARY_IPV4_ADDR`. Since EPICS 3.15.3 the
+IOC time support code has checked for the existence of the VxWorks time
+synchronization task and avoided starting the EPICS one if the OS task
+exists and the OS clock gives a "recent" time (i.e. after when EPICS was
+compiled), unless the environment variable `EPICS_TS_FORCE_NTPTIME` is
+also set. However a logic error in that code required the environment
+variable to be set in more cases than it should have.
+
+This error has been fixed and the IOC should work normally if the VxWorks
+task is configured and running. The `TIMEZONE` value for the year is also
+now calculated at initialization in this configuration, previously it was
+only done when the IOC synchronzation task was used. Setting the above
+environment variable will now cause the IOC support code to shut down the
+VxWorks synchronization thread (if running) before starting the EPICS one.
+
+Running the iocsh command `ClockTime_Report` now shows whether the VxWorks
+task is running as well as giving the state of the IOC synchronization task.
+The `ClockTime_Init` command can also be used to stop or restart the IOC
+time synchronization task while the IOC is running, depending on the `0` or
+`1` parameter passed to it. This last change also applies to RTEMS IOCs.
+
+### Incompatible change to `struct db_field_log`
+
+This change may cause channel filters which manipulate array updates
+to fail to compile.
+
+To avoid potential speculation issues arising from overlapping code pointers
+with data values, `union dbfl_ref` is modified to remove the `dtor` member.
+`dtor` is moved out into the enclosing `struct db_field_log`.
+
+So eg. using a `db_field_log* p`, the expression `p->u.r.dtor` must be
+changed to `(p)->dtor`.
+
+### Fix undef ts on first camonitor update of NORD from waveformRecord
+
+The order over operations when processing a waveformRecord is adjusted
+so that updates to NORD is posted with the correct timestamp.
+
+### Automatic COMMANDLINE_LIBRARY w/ newer compilers
+
+When built with a compiler supporting `__has_include<>`, the presence
+of the `<readline/readline.h>` will be used to automatically determine
+a default value for `COMMANDLINE_LIBRARY`.
+
+Mingw builds with readline support now link `-ltermcap` instead of `-lcurses`.
+
+This should not effect sites which set explicitly set `COMMANDLINE_LIBRARY`
+as the only definition in Base now has the form `COMMANDLINE_LIBRARY ?= ...`.
+
+### Perl CA support for empty long strings
+
+The Perl CA bindings have been fixed to handle zero-length long string data
+properly.
+
+### `aao` gains `OMSL` and `DOL`
+
+The `aao` record types gains the same `DOL` functionality found
+in other output record types (`ao`, `longout`, etc.)
+
+### Server exports `RSRV_SERVER_PORT`
+
+During `iocInit()`, the environment variable `RSRV_SERVER_PORT` is set
+with the TCP port number selected.
+
+### `dbdExpand.pl` sorts all items by name
+
+DBD files generated by the `dbdExpand.pl` script are now sorted within each
+item type by the primary name of the item. The result should resolve any
+issues with reproducable builds. No option is provided to prevent the sorting,
+previously the order was essentially random and varied each time.
+
+### `dbExpand.pl` sorts records by name
+
+Records are now output by this program in order, sorted by name. The new flag
+`-s` can be given to output the records in the same order they were read in,
+instead of sorting them.
+
+Note that there are currently no build rules provided with Base which make use
+of this program.
+
+### Simulation Mode RAW Support for Output Record Types
+
+SIMM=RAW support has been added for the relevant output record types
+(ao, bo, mbbo, mbboDirect).
+RAW simulation mode will have those records do the appropriate conversion
+and write RVAL to the location pointed to by SIOL.
+
+### Fixed leak from a non-EPICS thread
+
+On some targets, if a thread not created by `epicsThreadCreate*()` directly
+or indirectly calls an `epicsThread*()` function, a specific tracking struct
+is allocated.
+
+Prior to this release, on POSIX and WIN32 targets, this
+struct would not be `free()`d, resulting in a memory leak.
+
+This release fixed the leak on POSIX targets.
+
+See the associated github [issue 241](https://github.com/epics-base/epics-base/issues/241)
+for WIN32 status.
+
+### Fixed leak from a non-EPICS thread
+
+On some targets, if a thread not created by `epicsThreadCreate*()` directly
+or indirectly calls an `epicsThread*()` function, a specific tracking struct
+is allocated.
+
+Prior to this release, on POSIX and WIN32 targets, this
+allocation would not be `free()`d, resulting in a memory leak.
+
+This release fixed the leak on POSIX and WIN32 targets (excluding
+MSVC before vs2012, and the WINE runtime).
+
+### Fixed leak from a non-EPICS thread
+
+On some targets, if a thread not created by `epicsThreadCreate*()` directly
+or indirectly calls an `epicsThread*()` function, a specific tracking struct
+is allocated.
+
+Prior to this release, on POSIX and WIN32 targets, this
+struct would not be `free()`d, resulting in a memory leak.
+
+This release fixed the leak on POSIX targets.
+
+See the associated github [issue 241](https://github.com/epics-base/epics-base/issues/241)
+for WIN32 status.
+
+### Fix `CHECK_RELEASE = WARN`
+
+This now works again, it was broken in 2019 (7.0.3.1) by an errant commit.
+
+### Document `DISP` as design-time field
+
+The DISP field can be set to a non-zero value to prevent records being changed
+from outside the IOC (this is ancient behavior), but has never been documented
+as being usable at design-time (DCT=Yes in the Record Reference tables). This
+has now been changed.
+
+### Make `epicsInt8` signed on all architectures
+
+The `epicsInt8` and thus `DBF_CHAR` types have always been unsigned on
+architectures where `char` is unsigned, for example on many PowerPC CPU
+architectures. This was counter-intuitive, and resulted in IOC behavior
+differing between architectures when converting `DBF_CHAR` values into a
+signed integer or floating point type.
+
+**WARNING**: This fix may change behavior of existing databases on target
+architectures with unsigned `char` (mainly PowerPC) when using input links to
+read from `CHAR` arrays. Architectures with signed `char` (usually x86) should
+be unaffected, although some compilers might generate new warnings.
+
+### Allow hexadecimal and octal numbers in hardware links
+
+[GH:213](https://github.com/epics-base/epics-base/pull/213)
+
+Several types of hardware links (`VME_IO`, `CAMAC_IO`, etc) now accept
+hexadecimal and octal numbers. (Hexadecimal numbers had already been valid
+up to EPICS R3.15.) This change may introduce incompatibilities when using
+numbers with leading `0` as they will now be parsed as octal.
+
+### Fix embedded implementations of `epicsEvent`
+
+[GH:202](https://github.com/epics-base/epics-base/issues/202) and
+[GH:206](https://github.com/epics-base/epics-base/pull/206)
+
+Heinz Junkes provided a new implementation of the `epicsEvent` API suitable for
+RTEMS Posix targets (RTEMS 5.1 and later). In review a few issues related to
+overflow of timeout values surfaced in this and other embedded implementations,
+and these were also been fixed in this Pull Request. The API documentation for
+this and some other routines has also been updated.
+
+### Breakpoint Table Names
+
+The names of breakpoint tables were made unnecessarily strict when DBD file
+processing was moved to Perl for the 3.15 release series. Table names may now
+contain the special characters `_` `-` `:` `;` `.` `[` `]` `<` `>` in addition
+to letters and digits.
+
+### Fix for `undefined` in configure/RELEASE files
+
+Prevents `Use of uninitialized value` warnings from convertRelease.pl.
+
+### Colorized Messages for errlog
+
+Many internal error messages now emit ANSI escape sequences to highlight the
+words "ERROR" and "WARNING" in an attempt to make occurrences more noticeable
+during IOC startup.
+
+The macros `ERL_ERROR` and `ERL_WARNING` are defined for external usage,
+and expand as string constants.  eg.
+
+```c
+#include <errlog.h>
+#ifndef ERL_ERROR
+#  define ERL_ERROR "ERROR"
+#endif
+void fn() {
+   ...
+   errlogPrintf(ERL_ERROR ": something bad happens :(\n");
+```
+
+ANSI escapes are automatically removed from errlog output not destined
+for a terminal.  For example, for logClient, if stderr is redirected,
+or if unsupported (`$TERM` not set, or Windows < 10).
+
+### `dbnd` filter pass through `DBE_ALARM|DBE_PROPERTY`
+
+The `dbnd` server side filter now passes through alarm and property
+change events, even when not exceeding the deadband.
+
+-----
+
+## EPICS Release 7.0.6.1
+
+### `mbboDirectRecord` enhancements
+
+The bit fields `B0` - `B1F` of this record are now always updated and have a
+monitor posted when the `VAL` field is set and the record processed. It is now
+possible to initialize the record's value by setting the bit fields inside a
+database file as long as no other method was used to initialize it (suc as
+setting `VAL` directly, using `DOL`, or by an initial readback from device
+support). A new internal field `OBIT` was added to store information about
+monitors posted on the bit fields.
+
+### Minimum Perl Version is now 5.10.1
+
+Some scripts now make use of features that were introduced to this Perl version
+that was released in 2009.
+
+### DB Links to `DBF_MENU` fields fixed
+
+[GH:183](https://github.com/epics-base/epics-base/issues/183)
+These were broken in a previous release, but now work again.
+
+### Long String access to CALC fields fixed
+
+[GH:194](https://github.com/epics-base/epics-base/issues/194)
+This was broken in a previous release, but now works again.
+
+### Minor Changes
+
++ Many code comments have been spell-checked and corrected.
++ Passing a `-DDEBUG` compiler flag no longer breaks the build.
++ Parallel builds of RTEMS-mvme2100 and RTEMS-mvme2700 targets now work.
++ Illegal characters seen in JSON strings in a database file should now get a
+better error message.
+
+### Other Launchpad Bugs and GitHub Issues Fixed
+
++ [lp:1938459](https://bugs.launchpad.net/epics-base/+bug/1938459)
+  [GH:191](https://github.com/epics-base/epics-base/pull/191) int64in only
+  checks lower 32 bits for change
++ [lp:1941875](https://bugs.launchpad.net/epics-base/+bug/1941875) Buggy
+  warning message "Record/Alias name '...' should not contain non-printable ...
++ [GH:187](https://github.com/epics-base/epics-base/issues/187) waveformRecord
+  missing PACT=true?
++ [GH:189](https://github.com/epics-base/epics-base/pull/189) Fix a couple
+  memory leaks and a segfault
++ [GH:200](https://github.com/epics-base/epics-base/pull/200) and
+  [GH:201](https://github.com/epics-base/epics-base/pull/201) Fix timers on MS
+  Windows for non-EPICS threads
+
+### Compiler interface for epicsAtomic tidied up
+
+[GH:192](https://github.com/epics-base/epics-base/pull/192)
+Both GCC and CLANG compiler intrisics used for the epicsAtomic APIs have been revised; implementations using CLANG should now run faster as they now use the compiler's built-in atomic functions instead of taking a mutex.
+
+### The epicsTime code has been reimplemented
+
+[GH:185](https://github.com/epics-base/epics-base/pull/185)
+This was done to simplify the code and may have improved performance slightly for some uses. Support for the old NTP-specific `struct l_fp` has been dropped but all other routines and methods of the `class epicsTime` function as before.
+
+### Updates to Record Reference documentation
+
+Many of the built-in record types have had improvements to their documentation with additional fields added to the tables, rewrites of descriptions and links to other documents added or fixed.
+
+-----
+
+## EPICS Release 7.0.6
+
+### Support for obsolete architectures removed
+
+These target architectures have been removed:
+
++ darwin-ppc, darwin-ppcx86
++ linux-386, linux-486, linux-586, linux-686, linux-athlon (cross-build)
++ linux-cris, linux-cris_v10, linux-cris_v32 (cross-build)
++ RTEMS-at91rm9200ek, RTEMS-gen68360, RTEMS-mcp750, RTEMS-mvme167,
+RTEMS-psim (cross-build)
+
+### Experimental Support for RTEMS 5
+
+The new major release of the RTEMS real-time OS contains many changes
+including the ability to support SMP systems. This release of EPICS
+can still be built with RTEMS 4.9.x or 4.10.x and should work just
+the same as earlier releases, although due to code having moved around
+we recommend thorough testing before this release is first used in
+production systems.
+
+This release of EPICS comes with support for several new RTEMS targets
+running on RTEMS 5:
+
+- RTEMS-beagleboneblack
+- RTEMS-pc686
+- RTEMS-qoriq_e500 (MVME2500)
+- RTEMS-xilinx_zynq_a9_qemu
+- RTEMS-xilinx_zynq_zedboard
+
+The EPICS support for RTEMS 4 has always relied on RTEMS-specific
+kernel APIs which cannot be used on an SMP system, so a new port was
+created to use the Posix real-time APIs that are now recommended for
+RTEMS 5. Note that a single installation of EPICS cannot build both
+RTEMS 4 and RTEMS 5 targets, if you need to support targets running
+on both versions you must use a separate installation, and be sure
+to run `make distclean` if switching a single source tree from one
+to the other (both header files and dependency files are different
+between the two and must be cleaned out).
+
+The configuration variable RTEMS_VERSION in the EPICS config file
+`configure/os/CONFIG_SITE.Common.RTEMS` must be set to the full 3-
+part version number for RTEMS 4 releases, e.g. `4.9.1`, `4.10.2`
+but for RTEMS 5.1 and later it must only contain the major version
+number e.g. `5`.
+
+Some RTEMS BSPs can be built and may work with the newer libbsd
+network stack which RTEMS is moving over to, but most of the MVME
+boards (and the uC5282) still require the legacy network stack.
+
+The dependency on bspExt has been removed, EPICS now provides its
+own routine for VMEbus probing (or uses one built into the BSP).
+
+Anyone using this release on RTEMS is advised to discuss problems
+building or running it on either the tech-talk or core-talk email
+lists so the core developers can help with and find out about any
+problems with the old or new port.
+
+Known Issues:
+- MVME2100 and MVME2700 need changes to the RTEMS 5 BSP to build.
+- VMEBus support is not yet available for the MVME2500 BSP.
+- There are some known issues with floating point on MVME2500,
+  probably related to its newer e500 FPU.
+- Changed network driver for beatnik to work with libbsd.  Some
+  issues with DHCP, but network stack usable.  Can load env from
+  NVRAM.
+
+### `epicsEnvShow` accepts a glob pattern
+
+The optional argument to epicsEnvShow can now be a glob pattern.
+
+### New function `epicsStrnGlobMatch()`
+
+The function `epicsStrnGlobMatch(char* str, size_t len, char* pattern)`
+works exactly the same as `epicsStrGlobMatch()` but takes an additional
+length arguments which limits the number of characters of `str` to match.
+
+### Automatic fallback to thread when unable to exec caRepeater
+
+A process using libca which does not find an existing caRepeater process
+will attempt to start one by running the caRepeater executable.
+This is not always possible, usually when caRepeater is not in `$PATH`.
+Now, instead of printing a warning, an internal caRepeater thread
+will be started (as is done be RTEMS and vxWorks targets).
+
+If this fallback occurs, the lifetime of the caRepeater thread
+may be shorter than the lifetime of a separate caRepeater process
+would have been.
+
+It remains the recommended practice to explicitly start a caRepeater
+instance.  Examples of both systemd (`caRepeater.service`) and sysv
+(`S99caRepeater`) scripts may be found under `bin/`.
+
+### Glob pattern allowed in `var` command
+
+When used with one argument, the `var` command can be used with a glob pattern
+for printing matching variables.
+
+### Formalize/fix `FINAL_LOCATION`
+
+The `FINAL_LOCATION` make variable has for some time been an undocumented
+means of performing a staged build.  This is a build which "installs" to
+a temporary location, which will later be moved to a final location.
+
+This has now been added to `configure/CONFIG_SITE`.
+
+Usage analogous to the autotools recipe
+
+```sh
+./configure --prefix=/usr/lib/epics
+make install DESTDIR=/tmp/build
+```
+
+would be
+
+```sh
+make INSTALL_LOCATION=/tmp/build FINAL_LOCATION=/usr/lib/epics
+```
+
+`FINAL_LOCATION` is now correctly used in systemd and sysv init scripts
+`caRepeater.service`, `S99caRepeater`, and `S99logServer`.
+
+### IOCsh sets `${PWD}`
+
+IOC shell will now ensure `${PWD}` is set on startup,
+and updated by the `cd` iocsh function.
+
+### Add Alarm Message and Time Tag Fields
+
+Two new fields have been added to `dbCommon` so will be present in all
+records: `AMSG` and `UTAG`.
+
+#### `AMSG`
+
+`AMSG` can hold an arbitrary 40-character string, providing additional
+information about the alarm condition indicated in `STAT` and `SEVR`. With no
+alarm it will hold an empty string. The new `recGblSetSevrMsg()` function can
+be used in place of `recGblSetSevr()` to signal an alarm while providing a
+message.
+
+For example, a device support's `read_bi()` routine for a hypothetical
+multi-channel ethernet attached device might flag a communication error
+between the IOC and controller, or an error involving a certain channel like
+this:
+
+```c
+static long read_bi(biRecord* prec) {
+    ...
+    if (!priv->connected) {
+        recGblSetSevrMsg(prec, COMM_ALARM, INVALID_ALARM,
+            "No controller connected");
+        return S_dev_noDevice;
+    }
+    if (!priv->err) {
+        recGblSetSevrMsg(prec, READ_ALARM, INVALID_ALARM,
+            "Channel %u disconnexted", priv->chan);
+        return S_dev_noDevice;
+    }
+    return status;
+}
+```
+
+#### `UTAG`
+
+`UTAG` holds an `epicsUInt64` value which is semantically part of the record's
+timestamp (`TIME`). The value defaults to zero if not explicitly set. Device
+support or an event time provider which supports this feature may write a tag
+value directly to the `dbCommon::utag` field.
+
+`TSEL` links will copy both `TIME` and `UTAG` between records if the link type
+supports this (CA links do not).
+
+A `utag` server side channel filter has been added which can be configured to
+filter out monitor updates which don't pass the test `(UTAG & M) == V` where
+`M` and `V` are client specified integers. For example running the command
+`camonitor BPM0:X.{utag:{M:1,V:1}}` will only show updates for which
+`(UTAG & 1) == 1` i.e. the least significant bit of the `UTAG` field is set.
+
+This feature is intended for use by intelligent devices which can provide
+contextual information along with a value/alarm/time.  For example, a beam
+diagnostic device which is aware of whether a beam signal should be present
+(eg. from a global timing system).
+
+#### Link Support
+
+Two new optional methods have been added to the Link Support Entry Table
+(`struct lset`): `lset::getAlarmMsg()` and `lset::getTimeStampTag()`. See
+comments in dbLink.h for details on implementing these.
+
+Two new accessor functions have also been added which call these methods:
+`dbGetAlarmMsg()` and `dbGetTimeStampTag()`.
+
+#### Compatibility
+
+User code wishing to call these interfaces while maintaining compatibility with older
+versions of Base may add some of the following macro definitions, and ensure
+that the variables referenced by output pointers are initialized.
+
+```c
+#ifndef HAS_ALARM_MESSAGE
+#  define recGblSetSevrMsg(REC, STAT, SEVR, ...) recGblSetSevr(REC, STAT, SEVR)
+#endif
+#ifndef dbGetAlarmMsg
+#  define dbGetAlarmMsg(LINK, STAT, SEVR, BUF, BUFLEN) dbGetAlarm(LINK, STAT, SEVR)
+#endif
+#ifndef dbGetTimeStampTag
+#  define dbGetTimeStampTag(LINK, STAMP, TAG) dbGetTimeStamp(LINK, STAMP)
+#endif
+```
+
+
+### Timeouts for Unit Test Programs
+
+The unit test programs that are run by the `make runtests` or `make tapfiles`
+commands get executed by a `.t` wrapper script which is normally generated by
+the EPICS `makeTestfile.pl` program. Those generated wrapper scripts now
+impose a time-limit on the test program they execute, and will kill it if it
+runs for longer than 500 seconds (8 minutes 20) without exiting. That
+time-limit can be changed for any such test by modifying the Makefile which
+creates and runs the `.t` wrapper script.
+
+Setting the environment variable `EPICS_UNITTEST_TIMEOUT` to the desired
+number of seconds while the Makefile is generating the test script changes the
+timeout in that script. For example:
+
+```
+  TESTSCRIPTS_HOST += hourLongTest.t
+  hourLongTest.t: export EPICS_UNITTEST_TIMEOUT=3600
+```
+
+When selecting such a timeout remember that different Continuous Integration
+systems such as GitHub Actions and Appveyor run on processors with different
+speeds, so allow enough head-room for slower systems to complete the test.
+
+Test programs written directly in Perl as a `.plt` script should implement a
+similar timeout for themselves. The "netget" test in Base does this in a way
+that works on Windows as well as Unix-like hosts.
+
+-----
+
+## EPICS Release 7.0.5
+
+### Fix aai's Device Support Initialization
+
+Krisztian Loki [reported](https://github.com/epics-base/epics-base/issues/97)
+segfaults occurring when a Soft Channel aai record INP field was a DB link to
+an array field of a compress record. This was caused by the aai record's
+pass-0 device support initialization clashing with the semantics of the new
+link support API.
+
+The aai record
+[has been modified](https://github.com/epics-base/epics-base/pull/114) to
+allow the Soft Channel device support to request a pass-1 initialization
+callback. See the Device Support section of the Array Analogue Input Record
+Reference pages in this release for the API changes, which are fully backwards
+compatible for existing aai device support.
+
+### Prevent default DTYPs from changing
+
+[Kay Kasemir reported](https://bugs.launchpad.net/epics-base/+bug/1908305) that
+it is possible to change the Base record type's default DTYP if a `device()`
+entry is seen before the `recordtype()` definition to which it refers. The
+default DTYP is the first device loaded, which is normally the `Soft Channel`
+support from Base. A warning was being displayed by dbdExpand when a `device()`
+entry was see first, but that was easily missed.
+
+The DBD file parser in dbdExpand.pl has now been modified to make this an error,
+although the registerRecordDeviceDriver.pl script will still accept `device()`
+entries without having their `recordtype()` loaded since this is necessary to
+compile device supports as loadable modules.
+
+
+### Priority inversion safe Posix mutexes
+
+On Posix systems, epicsMutex now support priority inheritance if available.
+The IOC needs to run with SCHED_FIFO engaged to use these.
+Support for Posix implementations before POSIX.1-2001 (`_XOPEN_SOURCE < 500`,
+glibc version &lt; 2.3.3) has been dropped.
+
+The IOC shell's `epicsMutexShowAll` command prints "PI is enabled" if both
+libc and kernel support is present.
+
+### Fix for Periodic Scan threads hanging on Windows
+
+Since 7.0.3.1 a Windows IOC could not run for more than 49.7 days; at that
+time the periodic scan threads would stop processing. This issue should now
+have been fixed and the Monotonic time functions on Windows should return
+values which count at nanosecond resolution. However we have not waited 49.7
+days to test the final software, so there is a small chance that it's still
+broken.
+
+This fixes [lauchpad bug #1896295](https://bugs.launchpad.net/bugs/1896295).
+
+### Support for Apple M1/M2 (arm64) Processors
+
+Thanks to Jeong Han Lee this release comes with build support for Apple's new
+M1/M2 CPUs running macOS, using the target name `darwin-aarch64`.
+
+It should also be possible to build universal binaries containing code for
+both the Intel and arm64 processors under either target name: In the
+appropriate `configure/os/CONFIG_SITE.Common.darwin-*` file add the other
+architecture class name to the `ARCH_CLASS` variable (after a space).
+
+### New String Comparison Routine `epicsStrSimilarity()`
+
+The new `epicsStrSimilarity()` routine in epicsString.h uses a modified
+Levenshtein distance to compare two strings, with a character case difference
+being half the weight of a full substitution. The double return value falls in
+the range 0.0 (identical) through 1.0 (no characters matching), or -1.0 for
+error. This is used to provide a new "Did you mean ..." suggestion when a .db
+file provides an invalid choice string for a `DBF_MENU` or `DBF_DEVICE` field.
+
+### Build System: New `VALID_BUILDS` type "Command"
+
+Target architectures that support command-line programs that run the `main()`
+routine can now be marked as such in their `VALID_BUILDS` definition. This
+enables a new set of Makefile target variables `PROD_CMD` (similar to
+`PROD_HOST`), `LIBRARY_CMD` (like `LIBRARY_HOST`, etc.), `LOADABLE_LIBRARY_CMD`,
+`OBJS_CMD`, `SCRIPTS_CMD`, `TARGETS_CMD`, `TESTLIBRARY_CMD`, `TESTSCRIPTS_CMD`
+and `TESTPROD_CMD`. The CA client tools and programs such as `caRepeater` are now built for all such targets (previously they were built for all targets except where the OS was VxWorks, RTEMS and iOS).
+
+If you have created your own site-specific target architectures you may need to
+update the `VALID_BUILDS` variable if it gets set in your locally added
+`configure/os/CONFIG.Common.<arch>` files. This is usually only needed for
+cross-compiled targets though since `CONFIG.Common.UnixCommon` sets it.
+
+The other `VALID_BUILDS` types are "Host" for target architectures that can
+compile and run their own programs (`PROD_HOST` etc.), and "Ioc" for targets
+that can run IOCs (`PROD_IOC` etc.).
+
+### Support for JSON5
+
+The YAJL parser and generator routines in libcom and in the IOC's dbStatic
+parser now support the JSON5 standard. This adds various features to JSON
+without altering the API for the code other than adding a new option to the
+YAJL parser which can be used to disable JSON5 support if desired. The new
+features include:
+
+- The ability to handle numeric values `Infinity`, `-Infinity` and `NaN`.
+- String values and map keys may be enclosed in single quotes `'`, inside which
+  the double-quote character `"` doesn't have to be escaped with a back-slash
+  `\`, although a single-quote character `'` (or apostrophy) must be escaped
+  inside a single-quoted string.
+- Numbers may start with a plus sign, `+`.
+- Integers may be expressed in hexadecimal with a leading `0x` or `0X`.
+- Floating-point numbers may start or end with their decimal point `.`
+  (after the sign or before the exponent respectively if present).
+- Map keys that match the regex `[A-Za-z_][A-Za-z_0-9]*` don't have to be
+  enclosed in quotes at all. The dbStatic parser adds `.+-` to the characters
+  allowed but will add quotes around such keys before passing them to YAJL.
+- Arrays and maps allow a comma before the closing bracket/brace character.
+- The YAJL parser will elide a backslash followed by a newline characters from
+  a string value. The dbStatic parser doesn't allow that however.
+
+Code that must also compile against the older API can use the new C macro
+`HAS_JSON5` to detect the new version. This macro is defined on including
+either the `yajl_parse.h` or `yajl_gen.h` headers, which also provide the
+new configuration options to turn on JSON5 support.
+
+All APIs in the IOC that previously accepted JSON will now accept JSON5.
+This includes JSON field modifiers (channel filters), JSON link addresses,
+constant input link array values and database info-tag values. JSON values
+that get parsed by the dbLoadRecords() routine are still more liberal than
+the other uses as the ability to use unquoted strings that was called
+"relaxed JSON" is still supported, whereas the JSON5 standard and the YAJL
+parser only allow unquoted strings to be used for keys in a JSON map.
+
+This also fixes [lauchpad bug #1714455](https://bugs.launchpad.net/bugs/1714455).
+
+
+### Character Escape Changes
+
+- The libCom routines `epicsStrnRawFromEscaped()` and `dbTranslateEscape()`
+  declared in epicsString.h no longer accept octal escaped characters such as
+  `\123` or `\41`.
+- The routine `epicsStrnEscapedFromRaw()` now generates hex
+  excaped characters for unprintable characters such as `\x1f`.
+- Hex escape character sequences `\xXX` must now contain exactly 2 hex digits.
+- An escape sequence `\0` now generates a zero byte in the raw string, but the
+  other digits `1-9` should not appear after a back-slash.
+
+These changes are to more closely follow the JSON5 standard, which doesn't
+support octal character escapes or the `\a` (Bel, `\x07`) escape sequence.
+
+### Filters in database input links
+
+Input database links can now use channel filters, it is not necessary to
+make them CA links for the filters to work.
+
+### ai Soft Channel support
+
+The Soft Channel device support for ai records now returns failure when
+fetching the INP link fails.
+
+### Support for zero-length arrays
+
+Several modifications have been made to properly support zero-length
+array values inside the IOC and over Channel Access. Some of these changes
+may affect external code that interfaces with the IOC, either directly or
+over the CA client API so we recommend thorough testing of any external
+code that handles array fields when upgrading to this release.
+
+Since these changes affect the Channel Access client-side API they will
+require rebuilding any CA Gateways against this version or Base to
+properly handle zero-length arrays. The `caget`, `caput` and `camonitor`
+client programs are known to work with empty arrays as long as they were
+built with this or a later version of EPICS.
+
+#### Change to the db_access.h `dbr_size_n(TYPE, COUNT)` macro
+
+When called with COUNT=0 this macro no longer returns the number of bytes
+required for a scalar (1 element) but for an empty array (0 elements).
+Make sure code that uses this doesn't call it with COUNT=0 when it really
+means COUNT=1.
+
+Note that the db_access.h header file is included by cadef.h so the change
+can impact Channel Access client programs that use this macro.
+
+#### Channel Access support for zero-length arrays
+
+The `ca_array_put()` and `ca_array_put_callback()` routines now accept an
+element count of zero, and will write a zero-length array to the PV if
+possible. No error will be raised if the target is a scalar field though,
+and the field's value will not be changed.
+
+The `ca_array_get_callback()` and `ca_create_subscription()` routines
+still accept a count of zero to mean fetch as many elements as the PV
+currently holds.
+
+Client programs should be prepared for the `count` fields of any
+`struct event_handler_args` or `struct exception_handler_args` passed to
+their callback routines to be zero.
+
+#### Array records
+
+The soft device support for the array records aai, waveform, and subArray
+as well as the aSub record type now correctly report reading 0 elements
+when getting an empty array from an input link.
+
+#### Array support for dbpf
+
+The dbpf command now accepts array values, including empty arrays, when
+provided as a JSON string. This must be enclosed in quotes so the iocsh
+argument parser sees the JSON as a single argument:
+
+```
+epics> dbpf wf10:i32 '[1, 2, 3, 4, 5]'
+DBF_LONG[5]:        1 = 0x1   2 = 0x2   3 = 0x3   4 = 0x4   5 = 0x5
+```
+
+#### Reading empty arrays as scalar values
+
+Record links that get a scalar value from an array that is currently
+empty will cause the record that has the link field to be set to an
+`INVALID/LINK` alarm status.
+The record code must call `dbGetLink()` with `pnRequest=NULL` for it to
+be recognized as a request for a scalar value though.
+
+This changes the semantics of passing `pnRequest=NULL` to `dbGetLink()`,
+which now behaves differently than passing it a pointer to a long integer
+containing the value 1, which was previously equivalent.
+The latter can successfully fetch a zero-element array without triggering
+a LINK alarm.
+
+#### Writing empty arrays to scalar fields
+
+Record links that put a zero-element array into a scalar field will now set
+the target record to `INVALID/LINK` alarm without changing the field's value.
+Previously the field was set to 0 in this case (with no alarm).
+The target field must be marked as `special(SPC_DBADDR)` to be recognized
+as an array field, and its record support must define a `put_array_info()`
+routine.
+
+### Timestamp before processing output links
+
+The record processing code for records with output links has been modified to
+update the timestamp via recGblGetTimeStamp() _before_ processing the output
+links.  This ensures that other records which get processed via an output link
+can use TSEL links to fetch the timestamp corresponding to the data processed
+by the output link.
+
+This change could result in a slightly earlier timestamp for records whose
+output link is handled by a device driver, but only if the device driver does
+not handle its own timestamping via TSE -2 and instead uses TSE 0 or TSE -1 to
+get current time or best time, and the time spent in the device driver is
+greater than your timestamp provider resolution.  For these situations it is
+recommended to set TSE to -2 and set the timestamp in the driver code.
+
+### Add registerAllRecordDeviceDrivers()
+
+A new iocsh command `registerAllRecordDeviceDrivers` is provided and also
+defined as a function in iocshRegisterCommon.h. This uses dynamic symbol
+lookup with `epicsFindSymbol()` to perform the same function as a generated
+`*_registerRecordDeviceDriver()` function. This allows for an alternative
+approach to dynamic loading of support modules without code generation.
+
+This feature is not intended for use by IOCs constructed using the standard
+EPICS application build process and booted from a startup script in an iocBoot
+subdirectory, although it might work in some of those cases &mdash; the
+generated registerRecordDeviceDriver.cpp file is normally required to link
+everything referred to in the DBD file into the IOC's executable. It also
+won't work with some static build configurations, or if the symbol table has
+been stripped from the executable.
+
+### Using a `{const:"string"}` to initialize an array of `DBF_CHAR`
+
+It is now possible to use a JSON Const link with a string value to initialize
+an aai or waveform record that has `FTVL` set to `CHAR` through the INP link.
+The string length is not limited to 40 characters. This should also work for
+aSub record inputs similarly configured as long strings.
+
+```
+  record(waveform, "wf") {
+    field(NELM, 100)
+    field(FTVL, CHAR)
+    field(INP, {const:"This is a waveform and more than 40 characters"})
+  }
+```
+
+### RELEASE files may use `undefine`
+
+GNUmake added the directive `undefine` in version 3.82 to allow variables to
+be undefined. Support for this has been added to the EPICS Release file parser,
+so `undefine` can now be used in configure/RELEASE files to unset variables.
+
+-----
+
+## EPICS Release 7.0.4.1
+
+### ARM Architecture Changes
+
+Build configuration files for a new cross-build architecture `linux-aarch64`
+have been added, and the targets `linux-arm_el` and `linux-arm_eb` removed.
+The 64-bit ARM architecture target doesn't have build files for self-hosting
+yet but they should be relatively easy to add, contributions welcome!
+
+### Bug fixes
+
+The following bugs/issues have fixes included in this release:
+
+- [lp: 1884339](https://bugs.launchpad.net/epics-base/+bug/1884339),
+  Inaccessible CA servers on Windows
+- [github: 83](https://github.com/epics-base/epics-base/issues/83)
+  osdTimeGetCurrent doesn't work for subprocess on macOS
+- Recent Cygwin build problem with a missing `TCP_NODELAY` declaration.
+
+### Perl CA Bindings under Conda
+
+Builds of the Perl CA bindings weren't working properly when the Perl
+installation was from Conda. This release also fixed the capr.pl script
+to handle the INT64 data types, and to be able to properly handle missing
+fields, as happens if the IOC is running an older EPICS version for example.
+
+### epicsMessageQueue implementation on RTEMS
+
+The implementation of the `epicsMessageQueue` used on RTEMS has switched from
+the native RTEMS-specific one to the EPICS generic version, avoiding a bug
+in the RTEMS Kernel message queue code.
+
+### Record Name Validation
+
+Historically, there have been very few restrictions on which characters
+may be present in record and alias names.  Base 3.14.12.3 added a warning
+for names containing space, single or double quote, period/dot, or
+dollar sign.
+
+```
+Bad character ' ' in record name "bad practice"
+```
+
+7.0.4.1 Turns this warning into an error, and adds a new warning
+if a record name begins with a minus, plus, left square bracket,
+or left curly bracket.
+
+-----
+
+## EPICS Release 7.0.4
+
+### Bug fixes
+
+The following launchpad bugs have fixes included in this release:
+
+- [lp: 1812084](https://bugs.launchpad.net/bugs/1812084), Build failure on
+  RTEMS 4.10.2
+- [lp: 1829919](https://bugs.launchpad.net/bugs/1829919), IOC segfaults when
+  calling dbLoadRecords after iocInit
+- [lp: 1838792](https://bugs.launchpad.net/bugs/1838792), epicsCalc bit-wise
+  operators on aarch64
+- [lp: 1853148](https://bugs.launchpad.net/bugs/1853148), mingw compiler
+  problem with printf/scanf formats
+- [lp: 1852653](https://bugs.launchpad.net/bugs/1852653), USE_TYPED_DSET
+  incompatible with C++
+- [lp: 1862328](https://bugs.launchpad.net/bugs/1862328), Race condition on
+  IOC start leaves rsrv unresponsive
+- [lp: 1866651](https://bugs.launchpad.net/bugs/1866651), thread joinable race
+- [lp: 1868486](https://bugs.launchpad.net/bugs/1868486), epicsMessageQueue
+  lost messages
+- [lp: 1868680](https://bugs.launchpad.net/bugs/1868680), Access Security file
+  reload (asInit) fails
+
+### \*_API macros in EPICS headers
+
+Internally, the Com and ca libraries now express dllimport/export (Windows)
+and symbol visibility (GCC) using library-specific macros (eg. `LIBCOM_API`)
+instead of the macros `epicsShareFunc`, `epicsShareClass`, `epicsShareDef` etc.
+that are defined in the `shareLib.h` header.
+This change may affect some user code which uses the `epicsShare*` macros
+without having explicitly included the `shareLib.h` header themselves.
+Such code should be changed to include `shareLib.h` directly.
+
+A new helper script `makeAPIheader.pl` and build rules to generate a
+library-specific `*API.h` header file has been added. Run `makeAPIheader.pl -h`
+for information on how to use this in your own applications, but note that the
+resulting sources will not be able to be compiled using earlier versions of
+EPICS Base.
+
+### IOCsh usage messages
+
+At the iocShell prompt `help <cmd>` now prints a descriptive usage message
+for many internal IOCsh commands in addition to the command parameters.
+Try `help *` to see all commands, or a glob pattern such as `help db*` to see
+a subset.
+
+External code may provide usage messages when registering commands using a
+new `const char *usage` member of the `iocshFuncDef` structure.
+The `iocsh.h` header also now defines a macro `IOCSHFUNCDEF_HAS_USAGE` which
+can be used to detect Base versions that support this feature at compile-time.
+
+### Variable names in RELEASE files
+
+`configure/RELEASE` files are parsed by both GNUmake and the `convertRelease.pl`
+script. While GNUmake is quite relaxed about what characters may be used in a
+RELEASE variable name, the `convertRelease.pl` script parser has only recognized
+variable names that match the Perl regular expression `\w+`, i.e. upper and
+lower-case letters, digits and underscore characters.
+
+The script has been modified so now RELEASE variable names must start with a
+letter or underscore, and be followed by any number of letters, digits,
+underscore or hyphen characters, matching the regular expression
+`[A-Za-z_][A-Za-z_0-9-]*`. The hyphen character `-` was not previously allowed
+and if used would have prevented a build from finding include files and
+libraries in any module using that in its RELEASE variable name.
+
+This change does disallow names that start with a digit which used to be
+allowed, but hopefully nobody has been relying on that ability. The regular
+expression used for names can be found in the file `src/tools/EPICS/Release.pm`
+and can be adjusted locally if necessary.
+
+### caRepeater /dev/null
+
+On \*NIX targets caRepeater will now partially daemonize by redirecting
+stdin/out/err to /dev/null.  This prevents caRepeater from inheriting
+the stdin/out of a process, like caget, which has spawned it in the
+background.  This has been known to cause problems in some cases when
+caget is itself being run from a shell script.
+
+caRepeater will now understand the `-v` argument to retain stdin/out/err
+which may be necessary to see any error messages it may emit.
+
+### `state` record deprecated
+
+IOCs now emit a warning when a database file containing the `state` record is
+loaded. This record has been deprecated for a while and will be removed
+beginning with EPICS 7.1. Consider using the `stringin` record instead.
+
+### Record types publish dset's
+
+The record types in Base now define their device support entry table (DSET)
+structures in the record header file. While still optional, developers of
+external support modules are encouraged to start converting their code to use
+the record's new definitions instead of the traditional approach of copying the
+structure definitions into each source file that needs them. By following the
+instructions below it is still possible for the converted code to build and
+work with older Base releases.
+
+This would also be a good time to modify the device support to use the type-safe
+device support entry tables that were introduced in Base-3.16.2 -- see
+[this entry below](#type-safe-device-and-driver-support-tables) for the
+description of that change, which is also optional for now.
+
+Look at the aiRecord for example. Near the top of the generated `aiRecord.h`
+header file is a new section that declares the `aidset`:
+
+```C
+/* Declare Device Support Entry Table */
+struct aiRecord;
+typedef struct aidset {
+    dset common;
+    long (*read_ai)(struct aiRecord *prec);
+    long (*special_linconv)(struct aiRecord *prec, int after);
+} aidset;
+#define HAS_aidset
+```
+
+Notice that the common members (`number`, `report()`, `init()`, `init_record()`
+and `get_ioint_info()` don't appear directly but are included by embedding the
+`dset common` member instead. This avoids the need to have separate definitions
+of those members in each record dset, but does require those members to be
+wrapped inside another set of braces `{}` when initializing the data structure
+for the individual device supports. It also requires changes to code that
+references those common members, but that code usually only appears inside the
+record type implementation and very rarely in device supports.
+
+An aiRecord device support that will only be built against this or later
+versions of EPICS can now declare its dset like this:
+
+```C
+aidset devAiSoft = {
+    { 6, NULL, NULL, init_record, NULL },
+    read_ai, NULL
+};
+epicsExportAddress(dset, devAiSoft);
+```
+
+However most device support that is not built into EPICS itself will need to
+remain compatible with older EPICS versions, which is why the ai record's header
+file also declares the preprocessor macro `HAS_aidset`. This makes it easy to
+define the `aidset` in the device support code when it's needed, and not when
+it's provided in the header:
+
+```C
+#ifndef HAS_aidset
+typedef struct aidset {
+    dset common;
+    long (*read_ai)(aiRecord *prec);
+    long (*special_linconv)(aiRecord *prec, int after);
+} aidset;
+#endif
+aidset devAiSoft = {
+    { 6, NULL, NULL, init_record, NULL },
+    read_ai, NULL
+};
+epicsExportAddress(dset, devAiSoft);
+```
+
+The above `typedef struct` declaration was copied directly from the new
+aiRecord.h file and wrapped in the `#ifndef HAS_aidset` conditional.
+
+This same pattern should be followed for all record types except for the lsi,
+lso and printf record types, which have published their device support entry
+table structures since they were first added to Base but didn't previously embed
+the `dset common` member. Device support for these record types therefore can't
+use the dset name since the new definitions are different from the originals and
+will cause a compile error, so this pattern should be used instead:
+
+```C
+#ifndef HAS_lsidset
+struct {
+    dset common;
+    long (*read_string)(lsiRecord *prec);
+}
+#else
+lsidset
+#endif
+devLsiEtherIP = {
+    {5, NULL, lsi_init, lsi_init_record, get_ioint_info},
+    lsi_read
+};
+```
+
+-----
+
+## EPICS Release 7.0.3.1
 
 **IMPORTANT NOTE:** *Some record types in this release will not be compatible
 with device support binaries compiled against earlier versions of those record
@@ -205,7 +1479,9 @@ necessary, all RTEMS targets should now link although the IOC won't be able to
 be used with the VME I/O on those systems (that we don't have VMEbus I/O
 support for in libCom).
 
-# EPICS Release 7.0.3
+-----
+
+## EPICS Release 7.0.3
 
 ### `epicsTimeGetCurrent()` optimization
 
@@ -225,7 +1501,9 @@ This may result in slightly fewer, but larger frames being sent.
 Report NOBT as "precision" through the dbAccess API. This is not accessible
 through CA, but is planned to be used through QSRV.
 
-# EPICS Release 7.0.2.2
+-----
+
+## EPICS Release 7.0.2.2
 
 ### Build System changes
 
@@ -259,7 +1537,9 @@ substantial than bug fixes.
 
 Turns out this is ~10x slower to query than `CLOCK_MONOTONIC`.
 
-# EPICS Release 7.0.2.1
+-----
+
+## EPICS Release 7.0.2.1
 
 ### Linking shared libraries on macOS
 
@@ -310,7 +1590,9 @@ rewrite of the link address parser code in dbStaticLib. This release fixes that
 issue, although in some cases the output may be slightly different than it used
 to be.
 
-# EPICS Release 7.0.2
+-----
+
+## EPICS Release 7.0.2
 
 ### Launchpad Bugs
 
@@ -327,7 +1609,9 @@ modules. The layout of the source files has not changed at all however, so the
 source code for libcom, ca and the database are still found separately under
 the module subdirectory.
 
-# EPICS Release 7.0.1.1
+-----
+
+## EPICS Release 7.0.1.1
 
 ### Changed SIML failure behavior
 
@@ -385,7 +1669,11 @@ than is currently available, but as developers we generally much prefer to
 write code than documentation. Send questions to the tech-talk mailing list
 and we'll be happy to try and answer them!
 
-## Changes between 3.16.1 and 3.16.2
+-----
+
+## Changes made between 3.16.1 and 3.16.2
+
+### Launchpad Bugs
 
 The list of tracked bugs fixed in this release can be found on the
 [Launchpad Milestone page for EPICS Base 3.16.2](https://launchpad.net/epics-base/+milestone/3.16.2).
@@ -548,7 +1836,7 @@ editing and history. This functionality has now been restored, see Launchpad
 ### Constant link types
 
 Constant links can now hold 64-bit integer values, either as scalars or
-arrays. Only base 10 is supported by the JSON parser though, the JSON standard
+    arrays. Only base 10 is supported by the JSON parser though, the JSON standard
 doesn't allow for hexadecimal numbers.
 
 ### Upgraded the YAJL JSON Library
@@ -591,6 +1879,8 @@ In the 3.16.1 release a crash can occur in the IOC's RSRV server when a large
 array is made even larger; the previous array buffer was not being released
 correctly. See Launchpad
 [bug #1706703](https://bugs.launchpad.net/epics-base/+bug/1706703).
+
+-----
 
 ## Changes made between 3.16.0.1 and 3.16.1
 
@@ -1028,6 +2318,7 @@ and then replace `(RECSUPFUN)` with `RECSUPFUN_CAST` when initializing the
 rset. Further changes might also be needed, e.g. to adapt `const`-ness of
 method parameters.
 
+-----
 
 ## Changes made between 3.15.3 and 3.16.0.1
 
@@ -1135,9 +2426,176 @@ Added a new macro `callbackGetPriority(prio, callback)` to the callback.h
 header and removed the need for dbScan.c to reach into the internals of its
 `CALLBACK` objects.
 
-## Changes from the 3.15 branch since 3.15.7
 
-> None.
+-----
+
+# Changes incorporated from the 3.15 branch
+
+
+## Changes from the 3.15 branch since 3.15.9
+
+### Support for Apple M1/M2 (arm64) Processors
+
+Thanks to Jeong Han Lee this release comes with build support for Apple's new
+M1/M2 CPUs running macOS, using the target name `darwin-aarch64`.
+
+### Set thread names on Windows
+
+On MS Windows, epicsThread names are made available to the OS and debugger
+using `SetThreadDescription()` if available as well as using the older
+exception mechanism.
+
+### Fix timers on MS Windows for non-EPICS threads
+
+The waitable timer changes in 3.15.9 broke calls to `epicsThreadSleep()` and
+similar routines that used timers (including `ca_pend_event()`) when made from
+threads that were not started using the epicsThread APIs.
+[This problem](https://github.com/epics-base/epics-base/pull/200)
+[has now been fixed](https://github.com/epics-base/epics-base/pull/201).
+
+## Changes made between 3.15.8 and 3.15.9
+
+### Use waitable timers on Microsoft Windows
+
+The `epicsEventWaitWithTimeout()` and `epicsThreadSleep()` functions have
+been changed to use waitable timers. On Windows 10 version 1803 or higher
+they will use high resolution timers for more consistent timing.
+
+See [this Google Groups thread](https://groups.google.com/a/chromium.org/g/scheduler-dev/c/0GlSPYreJeY)
+for a comparison of the performance of different timers.
+
+### Build target for documentation
+
+The build target `inc` now works again after a very long hiatus. It now
+generates and installs just the dbd, header and html files, without compiling
+any C/C++ code. This can be used to speed up CI jobs that only generate
+documentation.
+
+### Bug fixes
+
+- The error status returned by a record support's `special()` method is now propagated out of the `dbPut()` routine again (broken since 3.15.0).
+- [gh: #80](https://github.com/epics-base/epics-base/issues/80), VS-2015 and
+later have working strtod()
+- [lp: #1776141](https://bugs.launchpad.net/epics-base/+bug/1776141), Catch
+buffer overflow from long link strings
+- [lp: #1899697](https://bugs.launchpad.net/epics-base/+bug/1899697), Records
+in wrong PHAS order
+
+### Change to the `junitfiles` self-test build target
+
+The names of the generated junit xml test output files have been changed
+from `<testname>.xml` to `<testname>-results.xml`, to allow better
+distinction from other xml files. (I.e., for easy wildcard matching.)
+
+### Fixes and code cleanups
+
+Issues reported by various static code checkers.
+
+## Changes made between 3.15.7 and 3.15.8
+
+### Bug fixes
+
+The following launchpad bugs have fixes included in this release:
+
+- [lp: 1812084](https://bugs.launchpad.net/epics-base/+bug/1812084), Build
+  failure on RTEMS 4.10.2
+- [lp: 1829770](https://bugs.launchpad.net/epics-base/+bug/1829770), event
+  record device support broken with constant INP
+- [lp: 1829919](https://bugs.launchpad.net/epics-base/+bug/1829919), IOC
+  segfaults when calling dbLoadRecords after iocInit
+- [lp: 1838792](https://bugs.launchpad.net/epics-base/+bug/1838792), epicsCalc
+  bit-wise operators on aarch64
+- [lp: 1841608](https://bugs.launchpad.net/epics-base/+bug/1841608), logClient
+  falsely sends error logs on all connections
+- [lp: 1853168](https://bugs.launchpad.net/epics-base/+bug/1853168), undefined
+  reference to `clock_gettime()`
+- [lp: 1862328](https://bugs.launchpad.net/epics-base/+bug/1862328), Race
+  condition on IOC start leaves rsrv unresponsive
+- [lp: 1868486](https://bugs.launchpad.net/epics-base/+bug/1868486),
+  epicsMessageQueue lost messages
+
+### Improvements to the self-test build targets
+
+This release contains changes that make it possible to integrate another test
+running and reporting system (such as Google's gtest) into the EPICS build
+system. The built-in test-runner and reporting system will continue to be used
+by the test programs inside Base however.
+
+These GNUmake `tapfiles` and `test-results` build targets now collect a list of
+the directories that experienced test failures and display those at the end of
+running and/or reporting all of the tests. The GNUmake process will also only
+exit with an error status after running and/or reporting all of the test
+results; previously the `-k` flag to make was needed and even that didn't always
+work.
+
+Continuous Integration systems are recommended to run `make tapfiles` (or if
+they can read junittest output instead of TAP `make junitfiles`) followed by
+`make -s test-results` to display the results of the tests. If multiple CPUs are
+available the `-j` flag can be used to run tests in parallel, giving the maximum
+jobs that should be allowed so `make -j4 tapfiles` for a system with 4 CPUs say.
+Running many more jobs than you have CPUs is likely to be slower and is not
+recommended.
+
+### Calc Engine Fixes and Enhancements
+
+The code that implements bit operations for Calc expressions has been reworked
+to better handle some CPU architectures and compilers. As part of this work a
+new operator has been added: `>>>` performs a logical right-shift, inserting
+zero bits into the most significant bits (the operator `>>` is an arithmetic
+right-shift which copies the sign bit as it shifts the value rightwards).
+
+### IOC logClient Changes
+
+The IOC's error logging system has been updated significantly to fix a number
+of issues including:
+
+  - Only send errlog messages to iocLogClient listeners
+  - Try to minimize lost messages while the log server is down:
+    + Detect disconnects sooner
+    + Don't discard the buffer on disconnect
+    + Flush the buffer immediately after a server reconnects
+
+### epicsThread: Main thread defaults to allow blocking I/O
+
+VxWorks IOCs (and potentially RTEMS IOCs running GeSys) have had problems with
+garbled error messages from dbStaticLib routines for some time &mdash; messages
+printed before `iocInit` were being queued through the errlog thread instead of
+being output immediately. This has been fixed by initializing the main thread
+with its `OkToBlock` flag set instead of cleared. IOCs running on other
+operating systems that use iocsh to execute the startup script previously had
+that set anyway in iocsh so were not affected, but this change might cause other
+programs that don't use iocsh to change their behavior slightly if they use
+`errlogPrintf()`, `epicsPrintf()` or `errPrintf()`.
+
+### catools: Handle data type changes in camonitor
+
+The camonitor program didn't properly cope if subscribed to a channel whose data
+type changed when its IOC was rebooted without restarting the camonitor program.
+This has now been fixed.
+
+### More Record Reference Documentation
+
+The remaining record types have had their reference pages moved from the Wiki,
+and some new reference pages have been written to cover the analog array and
+long string input and output record types plus the printf record type, none of
+which were previously documented. The wiki reference pages covering the fields
+common to all, input, and output record types have also been added, thanks to
+Rolf Keitel. The POD conversion scripts have also been improved and they now
+properly support linking to subsections in a different document, although the
+POD changes to add the cross-links that appeared in the original wiki pages
+still needs to be done in most cases.
+
+### Fix build issues with newer MinGW versions
+
+The `clock_gettime()` routine is no longer used under MinGW since newer versions
+don't provide it any more.
+
+### Fix race for port in RSRV when multiple IOCs start simultaneously
+
+If multiple IOCs were started at the same time, by systemd say, they could race
+to obtain the Channel Access TCP port number 5064. This issue has been fixed.
+
+-----
 
 ## Changes made between 3.15.6 and 3.15.7
 
@@ -1281,6 +2739,8 @@ into the htmls directory. Thanks to Tony Pietryla.
 
 This displays the version numbers of EPICS Base and the CA protocol.
 
+-----
+
 ## Changes made between 3.15.5 and 3.15.6
 
 ### Unsetting environment variables
@@ -1320,8 +2780,8 @@ cases. This fixes
 Some documentation has been added to the `dbdToHtml.pl` script
 explaining how Perl POD (Plain Old Documentation) markup can be added to
 `.dbd` files to generate HTML documentation for the record types. To see
-these instructions, run `perl bin/<host>/dbdToHtml.pl -H`
-or `perldoc bin/<host>/dbdToHtml.pl`.
+these instructions, run `perl bin/<host>/dbdToHtml.pl -H`
+or `perldoc bin/<host>/dbdToHtml.pl`.
 
 ### Fix problem with numeric soft events
 
@@ -1506,6 +2966,8 @@ choice string cannot be parsed, the associated periodic scan thread will no
 longer be started by the IOC and a warning message will be displayed at iocInit
 time. The `scanppl` command will also flag the faulty menuScan value.
 
+-----
+
 ## Changes made between 3.15.4 and 3.15.5
 
 ### dbStatic Library Speedup and Cleanup
@@ -1637,6 +3099,8 @@ will be installed into the target bin directory, from where it can be copied
 into the appropriate systemd location and modified as necessary. Installation
 instructions are included as comments in the file.
 
+-----
+
 ## Changes made between 3.15.3 and 3.15.4
 
 ### New string input device support "getenv"
@@ -1741,6 +3205,8 @@ variable to a non-zero value before loading the file, like this:
 
 This was [Launchpad bug
 541119](https://bugs.launchpad.net/bugs/541119).
+
+-----
 
 ## Changes from the 3.14 branch between 3.15.3 and 3.15.4
 
@@ -1854,4 +3320,3 @@ Simpler versions of the `epicsTime_gmtime()` and `epicsTime_localtime()`
 routines have been included in the Windows implementations, and a new test
 program added. The original versions do not report DST status properly. Fixes
 [Launchpad bug 1528284](https://bugs.launchpad.net/bugs/1528284).
-

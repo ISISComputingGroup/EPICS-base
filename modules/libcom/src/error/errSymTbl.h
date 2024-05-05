@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -12,8 +13,11 @@
 
 #include <stddef.h>
 
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "epicsTypes.h"
+
+#define S_err_invCode (M_err | 1)       /* Invalid error symbol code */
+#define S_err_codeExists (M_err | 2)    /* Error code already exists */
 
 /* ERRSYMBOL - entry in symbol table */
 typedef struct {
@@ -34,14 +38,39 @@ typedef ERRSYMTAB *ERRSYMTAB_ID;
 extern "C" {
 #endif
 
-epicsShareFunc void errSymLookup(long status, char *pBuf, size_t bufLength);
-epicsShareFunc const char* errSymMsg(long status);
-epicsShareFunc void errSymTest(epicsUInt16 modnum, epicsUInt16 begErrNum,
+/** \brief Lookup message from error/status code.
+ * \param status Input code
+ * \param pBuf Output string buffer
+ * \param bufLength Length of output buffer in bytes.  Must be non-zero.
+ *
+ * Handles EPICS message codes, and "errno" codes.
+ *
+ * Copies in a mesage for any status code.  Unknown status codes
+ * are printed numerically.
+ */
+LIBCOM_API void errSymLookup(long status, char *pBuf, size_t bufLength);
+/** \brief Lookup message from error/status code.
+ * \param status Input code
+ * \returns A statically allocated message string.  Never NULL.
+ *
+ * Handles EPICS message codes, and "errno" codes.
+ *
+ * For any unknown status codes, a generic "Unknown code" message is returned.
+ *
+ * \since 3.16.1
+ */
+LIBCOM_API const char* errSymMsg(long status);
+LIBCOM_API void errSymTest(epicsUInt16 modnum, epicsUInt16 begErrNum,
     epicsUInt16 endErrNum);
-epicsShareFunc void errSymTestPrint(long errNum);
-epicsShareFunc int errSymBld(void);
-epicsShareFunc int errSymbolAdd(long errNum, const char *name);
-epicsShareFunc void errSymDump(void);
+LIBCOM_API void errSymTestPrint(long errNum);
+LIBCOM_API int errSymBld(void);
+/** @brief Define new custom error code and associate message string.
+ *  @param errNum New error code.  Caller is reponsible for avoiding reuse of existing codes.
+ *  @param message New message.  Pointer stored.  Caller must not free pointed storage.
+ *  @return 0 on success
+ */
+LIBCOM_API int errSymbolAdd(long errNum, const char *message);
+LIBCOM_API void errSymDump(void);
 
 #ifdef __cplusplus
 }

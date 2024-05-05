@@ -434,11 +434,11 @@ public:
         _E_non_const* temp=new _E_non_const[i];
         try{
             std::copy(begin(), begin()+new_count, temp);
-            this->m_sdata.reset(temp, detail::default_array_deleter<E*>());
         }catch(...){
             delete[] temp;
             throw;
         }
+        this->m_sdata.reset(temp, detail::default_array_deleter<E*>());
         this->m_offset = 0;
         this->m_count = new_count;
         this->m_total = i;
@@ -481,11 +481,11 @@ public:
             std::copy(begin(),
                       begin()+n,
                       temp);
-            this->m_sdata.reset(temp, detail::default_array_deleter<pointer>());
         }catch(...){
             delete[] temp;
             throw;
         }
+        this->m_sdata.reset(temp, detail::default_array_deleter<pointer>());
         this->m_offset= 0;
         this->m_count = i;
         this->m_total = new_total;
@@ -544,11 +544,11 @@ private:
     /* Hack alert.
      * For reasons of simplicity and efficiency, we want to use raw pointers for iteration.
      * However, shared_ptr::get() isn't defined when !m_sdata, although practically it gives NULL.
-     * Unfortunately, many of the MSVC (<= VS 2010) STL methods assert() that iterators are never NULL.
+     * Unfortunately, many of the MSVC (<= VS 2013) STL methods assert() that iterators are never NULL.
      * So we fudge here by abusing 'this' so that our iterators are always !NULL.
      */
     inline E* base_ptr() const {
-#if defined(_MSC_VER) && _MSC_VER<=1600
+#if defined(_MSC_VER) && _MSC_VER<=1800
         return this->m_count ? this->m_sdata.get() : (E*)(this-1);
 #else
         return this->m_sdata.get();
@@ -837,9 +837,13 @@ namespace detail {
             typedef typename meta::strip_const<TO>::type to_t;
             ScalarType stype = src.original_type(),
                        dtype = (ScalarType)ScalarTypeID<TO>::value;
-            if(stype==dtype) {
+            if(src.empty()) {
+                return shared_vector<TO>();
+
+            } else if(stype==dtype) {
                 // no convert needed
                 return shared_vector<TO>(src, detail::_shared_vector_cast_tag());
+
             } else {
                 // alloc and convert
                 shared_vector<to_t> ret(src.size()/ScalarTypeFunc::elementSize(stype));

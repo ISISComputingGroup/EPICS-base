@@ -5,6 +5,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -23,7 +24,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "epicsMutex.h"
 #include "errlog.h"
@@ -149,7 +149,7 @@ long devBusToLocalAddr(
     volatile void *localAddress;
 
     /*
-     * Make sure that devLib has been intialized
+     * Make sure that devLib has been initialized
      */
     if (!devLibInitFlag) {
         status = devLibInit();
@@ -263,8 +263,8 @@ long devRegisterAddress(
 /*
  * devReadProbe()
  *
- * a bus error safe "wordSize" read at the specified address which returns 
- * unsuccessful status if the device isnt present
+ * a bus error safe "wordSize" read at the specified address which returns
+ * unsuccessful status if the device isn't present
  */
 long devReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
 {
@@ -283,8 +283,8 @@ long devReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
 /*
  * devWriteProbe
  *
- * a bus error safe "wordSize" write at the specified address which returns 
- * unsuccessful status if the device isnt present
+ * a bus error safe "wordSize" write at the specified address which returns
+ * unsuccessful status if the device isn't present
  */
 long devWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
 {
@@ -503,7 +503,7 @@ long devUnregisterAddress(
         return S_dev_addressNotFound;
     }
 
-    if (strcmp(pOwnerName,pRange->pOwnerName)) {
+    if (strcmp(pOwnerName,pRange->pOwnerName)!=0) {
         s = S_dev_addressOverlap;
         errPrintf (
             s, 
@@ -695,7 +695,7 @@ static long addrVerify(epicsAddressType addrType, size_t base, size_t size)
 static long devLibInit (void)
 {
     rangeItem   *pRange;
-    int 	i;
+    int         i;
 
 
     if(devLibInitFlag) return(SUCCESS);
@@ -910,9 +910,9 @@ long devNoResponseProbe (epicsAddressType addrType,
 }
 
 long devConnectInterruptVME(
-unsigned	vectorNumber,
-void		(*pFunction)(void *),
-void		*parameter )
+unsigned    vectorNumber,
+void        (*pFunction)(void *),
+void        *parameter )
 {
     long status;
 
@@ -928,8 +928,8 @@ void		*parameter )
 }
 
 long devDisconnectInterruptVME(
-unsigned		vectorNumber,
-void			(*pFunction)(void *) )
+unsigned        vectorNumber,
+void            (*pFunction)(void *) )
 {
     long status;
 
@@ -1112,7 +1112,7 @@ long locationProbe (epicsAddressType addrType, char *pLocation)
 
 /******************************************************************************
  *
- * The follwing may, or may not be present in the BSP for the CPU in use.
+ * The following may, or may not be present in the BSP for the CPU in use.
  *
  */
 /******************************************************************************

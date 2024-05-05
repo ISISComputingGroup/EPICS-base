@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -15,7 +16,6 @@
 #include <stdio.h>
 #include <float.h>
 
-#define epicsExportSharedSymbols
 #include "epicsGuard.h"
 #include "timerPrivate.h"
 #include "errlog.h"
@@ -30,7 +30,7 @@ timerQueue::timerQueue ( epicsTimerQueueNotify & notifyIn ) :
     pExpireTmr ( 0 ),  
     processThread ( 0 ), 
     exceptMsgTimeStamp ( 
-        epicsTime :: getMonotonic () - exceptMsgMinPeriod ),
+        epicsTime :: getCurrent () - exceptMsgMinPeriod ),
     cancelPending ( false )
 {
 }
@@ -49,7 +49,7 @@ void timerQueue ::
     char date[64];
     double delay;
     try {
-        epicsTime cur = epicsTime :: getMonotonic ();
+        epicsTime cur = epicsTime :: getCurrent ();
         delay = cur - this->exceptMsgTimeStamp;
         cur.strftime ( date, sizeof ( date ), 
                         "%a %b %d %Y %H:%M:%S.%f" );
@@ -97,7 +97,7 @@ double timerQueue::process ( const epicsTime & currentTime )
     }
 
     //
-    // Tag current epired tmr so that we can detect if call back
+    // Tag current expired tmr so that we can detect if call back
     // is in progress when canceling the timer.
     //
     if ( this->timerList.first () ) {
@@ -133,8 +133,8 @@ double timerQueue::process ( const epicsTime & currentTime )
         {
             epicsGuardRelease < epicsMutex > unguard ( guard );
 
-            debugPrintf ( ( "%5u expired \"%s\" with error %f sec\n", 
-                N++, typeid ( this->pExpireTmr->notify ).name (), 
+            debugPrintf ( ( "%5u expired \"%s\" with error %f sec\n",
+                N++, typeid ( this->pExpireTmr->pNotify ).name (),
                 currentTime - this->pExpireTmr->exp ) );
             try {
                 expStat = pTmpNotify->expire ( currentTime );

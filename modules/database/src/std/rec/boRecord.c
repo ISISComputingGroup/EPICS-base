@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -33,7 +34,7 @@
 #include "special.h"
 #include "menuIvoa.h"
 #include "menuOmsl.h"
-#include "menuYesNo.h"
+#include "menuSimm.h"
 
 #define GEN_SIZE_OFFSET
 #include "boRecord.h"
@@ -86,16 +87,6 @@ epicsExportAddress(int, boHIGHprecision);
 double boHIGHlimit = 100000;
 epicsExportAddress(double, boHIGHlimit);
 
-struct bodset { /* binary output dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;  /*returns:(0,2)=>(success,success no convert*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_bo;/*returns: (-1,0)=>(failure,success)*/
-};
-
-
 /* control block for callback*/
 typedef struct myCallback {
         epicsCallback        callback;
@@ -131,7 +122,7 @@ static void myCallbackFunc(epicsCallback *arg)
 static long init_record(struct dbCommon *pcommon,int pass)
 {
     struct boRecord *prec = (struct boRecord *)pcommon;
-    struct bodset *pdset = (struct bodset *) prec->dset;
+    bodset *pdset = (bodset *) prec->dset;
     unsigned short ival = 0;
     long status = 0;
     myCallback *pcallback;
@@ -146,7 +137,7 @@ static long init_record(struct dbCommon *pcommon,int pass)
     }
 
     /* must have  write_bo functions defined */
-    if ((pdset->number < 5) || (pdset->write_bo == NULL)) {
+    if ((pdset->common.number < 5) || (pdset->write_bo == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "bo: init_record");
         return S_dev_missingSup;
     }
@@ -163,8 +154,8 @@ static long init_record(struct dbCommon *pcommon,int pass)
     callbackSetUser(pcallback, &pcallback->callback);
     pcallback->precord = (struct dbCommon *) prec;
 
-    if (pdset->init_record) {
-	status=(*pdset->init_record)(prec);
+    if (pdset->common.init_record) {
+        status=(*pdset->common.init_record)(pcommon);
 	if(status==0) {
 		if(prec->rval==0) prec->val = 0;
 		else prec->val = 1;
@@ -188,9 +179,9 @@ static long init_record(struct dbCommon *pcommon,int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct boRecord *prec = (struct boRecord *)pcommon;
-    struct bodset  *pdset = (struct bodset *)(prec->dset);
-	long		 status=0;
-	unsigned char    pact=prec->pact;
+    bodset  *pdset = (bodset *)(prec->dset);
+    long            status=0;
+    unsigned char   pact=prec->pact;
 
 	if( (pdset==NULL) || (pdset->write_bo==NULL) ) {
 		prec->pact=TRUE;
@@ -218,10 +209,14 @@ static long process(struct dbCommon *pcommon)
 			if(prec->val==0) prec->rval = 0;
 			else prec->rval = prec->mask;
 		} else prec->rval = (epicsUInt32)prec->val;
-	}
 
-	/* check for alarms */
-	checkAlarms(prec);
+        /* Update the timestamp before writing output values so it
+         * will be up to date if any downstream records fetch it via TSEL */
+        recGblGetTimeStampSimm(prec, prec->simm, NULL);
+    }
+
+    /* check for alarms */
+    checkAlarms(prec);
 
         if (prec->nsev < INVALID_ALARM )
                 status=writeValue(prec); /* write the new value */
@@ -254,7 +249,10 @@ static long process(struct dbCommon *pcommon)
 	if ( !pact && prec->pact ) return(0);
 	prec->pact = TRUE;
 
+    if ( pact ) {
+        /* Update timestamp again for asynchronous devices */
     recGblGetTimeStampSimm(prec, prec->simm, NULL);
+    }
 
 	if((prec->val==1) && (prec->high>0)){
 	    myCallback *pcallback;
@@ -321,9 +319,9 @@ static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 
 static long get_enum_str(const DBADDR *paddr, char *pstring)
 {
-    boRecord	*prec=(boRecord *)paddr->precord;
-    int                 index;
-    unsigned short      *pfield = (unsigned short *)paddr->pfield;
+    boRecord        *prec=(boRecord *)paddr->precord;
+    int             index;
+    unsigned short  *pfield = (unsigned short *)paddr->pfield;
 
 
     index = dbGetFieldIndex(paddr);
@@ -343,7 +341,7 @@ static long get_enum_str(const DBADDR *paddr, char *pstring)
 
 static long get_enum_strs(const DBADDR *paddr,struct dbr_enumStrs *pes)
 {
-    boRecord	*prec=(boRecord *)paddr->precord;
+    boRecord    *prec=(boRecord *)paddr->precord;
 
     /*SETTING no_str=0 breaks channel access clients*/
     pes->no_str = 2;
@@ -390,7 +388,7 @@ static void checkAlarms(boRecord *prec)
 
 static void monitor(boRecord *prec)
 {
-	unsigned short	monitor_mask;
+    unsigned short  monitor_mask;
 
         monitor_mask = recGblResetAlarms(prec);
         /* check for value change */
@@ -420,7 +418,7 @@ static void monitor(boRecord *prec)
 
 static long writeValue(boRecord *prec)
 {
-    struct bodset *pdset = (struct bodset *) prec->dset;
+    bodset *pdset = (bodset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {
@@ -429,14 +427,18 @@ static long writeValue(boRecord *prec)
     }
 
     switch (prec->simm) {
-    case menuYesNoNO:
+    case menuSimmNO:
         status = pdset->write_bo(prec);
         break;
 
-    case menuYesNoYES: {
+    case menuSimmYES:
+    case menuSimmRAW:
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
         if (prec->pact || (prec->sdly < 0.)) {
-            status = dbPutLink(&prec->siol, DBR_USHORT, &prec->val, 1);
+            if (prec->simm == menuSimmYES)
+                status = dbPutLink(&prec->siol, DBR_USHORT, &prec->val, 1);
+            else /* prec->simm == menuSimmRAW */
+                status = dbPutLink(&prec->siol, DBR_ULONG, &prec->rval, 1);
             prec->pact = FALSE;
         } else { /* !prec->pact && delay >= 0. */
             epicsCallback *pvt = prec->simpvt;
@@ -448,7 +450,6 @@ static long writeValue(boRecord *prec)
             prec->pact = TRUE;
         }
         break;
-    }
 
     default:
         recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);

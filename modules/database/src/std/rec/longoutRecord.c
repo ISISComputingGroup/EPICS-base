@@ -3,13 +3,14 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 /*
- * Author: 	Janet Anderson
- * Date:	9/23/91
+ * Author:  Janet Anderson
+ * Date:    9/23/91
  */ 
 #include <stddef.h>
 #include <stdlib.h>
@@ -80,24 +81,19 @@ rset longoutRSET={
 };
 epicsExportAddress(rset,longoutRSET);
 
+#define DONT_EXEC_OUTPUT    0
+#define EXEC_OUTPUT         1
 
-struct longoutdset { /* longout input dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_longout;/*(-1,0)=>(failure,success*/
-};
 static void checkAlarms(longoutRecord *prec);
 static void monitor(longoutRecord *prec);
 static long writeValue(longoutRecord *prec);
 static void convert(longoutRecord *prec, epicsInt32 value);
+static long conditional_write(longoutRecord *prec);
 
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct longoutRecord *prec = (struct longoutRecord *)pcommon;
-    struct longoutdset *pdset = (struct longoutdset *) prec->dset;
+    longoutdset *pdset = (longoutdset *) prec->dset;
 
     if (pass == 0) return 0;
 
@@ -109,7 +105,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     /* must have  write_longout functions defined */
-    if ((pdset->number < 5) || (pdset->write_longout == NULL)) {
+    if ((pdset->common.number < 5) || (pdset->write_longout == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "longout: init_record");
         return S_dev_missingSup;
     }
@@ -117,8 +113,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
     if (recGblInitConstantLink(&prec->dol, DBF_LONG, &prec->val))
         prec->udf=FALSE;
 
-    if (pdset->init_record) {
-        long status = pdset->init_record(prec);
+    if (pdset->common.init_record) {
+        long status = pdset->common.init_record(pcommon);
 
         if (status)
             return status;
@@ -127,16 +123,19 @@ static long init_record(struct dbCommon *pcommon, int pass)
     prec->mlst = prec->val;
     prec->alst = prec->val;
     prec->lalm = prec->val;
+    prec->pval = prec->val;
+    prec->outpvt = EXEC_OUTPUT;
+    
     return 0;
 }
 
 static long process(struct dbCommon *pcommon)
 {
     struct longoutRecord *prec = (struct longoutRecord *)pcommon;
-    struct longoutdset  *pdset = (struct longoutdset *)(prec->dset);
-	long		 status=0;
-	epicsInt32	 value;
-	unsigned char    pact=prec->pact;
+    longoutdset  *pdset = (longoutdset *)(prec->dset);
+    long                status=0;
+    epicsInt32          value;
+    unsigned char       pact=prec->pact;
 
 	if( (pdset==NULL) || (pdset->write_longout==NULL) ) {
 		prec->pact=TRUE;
@@ -154,6 +153,10 @@ static long process(struct dbCommon *pcommon)
 			value = prec->val;
 		}
 		if (!status) convert(prec,value);
+
+        /* Update the timestamp before writing output values so it
+         * will be up to date if any downstream records fetch it via TSEL */
+        recGblGetTimeStampSimm(prec, prec->simm, NULL);
 	}
 
 	/* check for alarms */
@@ -185,7 +188,10 @@ static long process(struct dbCommon *pcommon)
 	if ( !pact && prec->pact ) return(0);
 	prec->pact = TRUE;
 
+    if ( pact ) {
+        /* Update timestamp again for asynchronous devices */
     recGblGetTimeStampSimm(prec, prec->simm, NULL);
+    }
 
 	/* check event list */
 	monitor(prec);
@@ -211,6 +217,14 @@ static long special(DBADDR *paddr, int after)
                 recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
             return(0);
         }
+
+        /* Detect an output link re-direction (change) */
+        if (dbGetFieldIndex(paddr) == longoutRecordOUT) {
+            if ((after) && (prec->ooch == menuYesNoYES))
+                prec->outpvt = EXEC_OUTPUT;
+            return(0);
+        }
+
     default:
         recGblDbaddrError(S_db_badChoice, paddr, "longout: special");
         return(S_db_badChoice);
@@ -382,7 +396,6 @@ static void monitor(longoutRecord *prec)
 
 static long writeValue(longoutRecord *prec)
 {
-    struct longoutdset *pdset = (struct longoutdset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {
@@ -392,7 +405,7 @@ static long writeValue(longoutRecord *prec)
 
     switch (prec->simm) {
     case menuYesNoNO:
-        status = pdset->write_longout(prec);
+        status = conditional_write(prec);
         break;
 
     case menuYesNoYES: {
@@ -428,4 +441,55 @@ static void convert(longoutRecord *prec, epicsInt32 value)
         	else if (value < prec->drvl) value = prec->drvl;
 	}
 	prec->val = value;
+}
+
+/* Evaluate OOPT field to perform the write operation */
+static long conditional_write(longoutRecord *prec)
+{
+    struct longoutdset *pdset = (struct longoutdset *) prec->dset;
+    long status = 0;
+    int doDevSupWrite = 0;
+
+    switch (prec->oopt) 
+    {
+    case longoutOOPT_On_Change:
+        /* Forces a write op if a change in the OUT field is detected OR is first process */
+        if (prec->outpvt == EXEC_OUTPUT) {
+            doDevSupWrite = 1;
+        } else {
+            /* Only write if value is different from the previous one */ 
+            doDevSupWrite = (prec->val != prec->pval);
+        }
+        break;
+
+    case longoutOOPT_Every_Time:
+        doDevSupWrite = 1;
+        break;
+
+    case longoutOOPT_When_Zero:
+        doDevSupWrite = (prec->val == 0);
+        break;
+
+    case longoutOOPT_When_Non_zero:
+        doDevSupWrite = (prec->val != 0);
+        break;
+
+    case longoutOOPT_Transition_To_Zero:
+        doDevSupWrite = ((prec->val == 0)&&(prec->pval != 0));
+        break;
+
+    case longoutOOPT_Transition_To_Non_zero:
+        doDevSupWrite = ((prec->val != 0)&&(prec->pval == 0));      
+        break;
+
+    default:
+        break;
+    }
+
+    if (doDevSupWrite)
+        status = pdset->write_longout(prec);
+
+    prec->pval = prec->val;
+    prec->outpvt = DONT_EXEC_OUTPUT; /* reset status */
+    return status;
 }

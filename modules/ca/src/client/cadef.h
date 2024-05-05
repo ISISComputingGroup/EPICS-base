@@ -3,8 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* SPDX-License-Identifier: EPICS
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* 
@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef INCLcadefh
-#define INCLcadefh
+#ifndef INC_cadef_H
+#define INC_cadef_H
 
 /*
  * done in two ifdef steps so that we will remain compatible with
@@ -32,19 +32,9 @@
 #   include <stdarg.h>
 #endif
 
-#ifdef epicsExportSharedSymbols
-#   define INCLcadefh_accessh_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
-
 #include "epicsThread.h"
 
-#ifdef INCLcadefh_accessh_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#   include "shareLib.h"
-#endif
-
-
+#include "libCaAPI.h"
 #include "caerr.h"
 #include "db_access.h"
 #include "caeventmask.h"
@@ -102,7 +92,7 @@ typedef struct event_handler_args {
 } evargs;
 typedef void caEventCallBackFunc (struct event_handler_args);
 
-epicsShareFunc void epicsShareAPI ca_test_event
+LIBCA_API void epicsStdCall ca_test_event
 (
     struct event_handler_args
 );
@@ -139,7 +129,7 @@ typedef unsigned CA_SYNC_GID;
 #define CA_OP_CONN_UP       6
 #define CA_OP_CONN_DOWN     7
 
-/* depricated */
+/* deprecated */
 #define CA_OP_SEARCH        2
 
 /*
@@ -158,13 +148,13 @@ typedef unsigned CA_SYNC_GID;
 
 
 #define TYPENOTCONN (-1) /* the channel's native type when disconnected   */
-epicsShareFunc short epicsShareAPI ca_field_type (chid chan);
-epicsShareFunc unsigned long epicsShareAPI ca_element_count (chid chan);
-epicsShareFunc const char * epicsShareAPI ca_name (chid chan);
-epicsShareFunc void epicsShareAPI ca_set_puser (chid chan, void *puser);
-epicsShareFunc void * epicsShareAPI ca_puser (chid chan);
-epicsShareFunc unsigned epicsShareAPI ca_read_access (chid chan);
-epicsShareFunc unsigned epicsShareAPI ca_write_access (chid chan);
+LIBCA_API short epicsStdCall ca_field_type (chid chan);
+LIBCA_API unsigned long epicsStdCall ca_element_count (chid chan);
+LIBCA_API const char * epicsStdCall ca_name (chid chan);
+LIBCA_API void epicsStdCall ca_set_puser (chid chan, void *puser);
+LIBCA_API void * epicsStdCall ca_puser (chid chan);
+LIBCA_API unsigned epicsStdCall ca_read_access (chid chan);
+LIBCA_API unsigned epicsStdCall ca_write_access (chid chan);
 
 /*
  *  cs_ - `channel state'   
@@ -175,27 +165,27 @@ epicsShareFunc unsigned epicsShareAPI ca_write_access (chid chan);
  *  cs_closed           channel deleted by user
  */
 enum channel_state {cs_never_conn, cs_prev_conn, cs_conn, cs_closed};
-epicsShareFunc enum channel_state epicsShareAPI ca_state (chid chan);
+LIBCA_API enum channel_state epicsStdCall ca_state (chid chan);
 
 /************************************************************************/
 /*  Perform Library Initialization                                      */
 /*                                                                      */
 /*  Must be called once before calling any of the other routines        */
 /************************************************************************/
-epicsShareFunc int epicsShareAPI ca_task_initialize (void);
+LIBCA_API int epicsStdCall ca_task_initialize (void);
 enum ca_preemptive_callback_select 
 { ca_disable_preemptive_callback, ca_enable_preemptive_callback };
-epicsShareFunc int epicsShareAPI 
+LIBCA_API int epicsStdCall 
         ca_context_create (enum ca_preemptive_callback_select select);
-epicsShareFunc void epicsShareAPI ca_detach_context (); 
+LIBCA_API void epicsStdCall ca_detach_context (); 
 
 /************************************************************************/
 /*  Remove CA facility from your task                                   */
 /*                                                                      */
 /*  Normally called automatically at task exit                          */
 /************************************************************************/
-epicsShareFunc int epicsShareAPI ca_task_exit (void);
-epicsShareFunc void epicsShareAPI ca_context_destroy (void);
+LIBCA_API int epicsStdCall ca_task_exit (void);
+LIBCA_API void epicsStdCall ca_context_destroy (void);
 
 typedef unsigned capri; 
 #define CA_PRIORITY_MAX 99
@@ -218,7 +208,7 @@ typedef unsigned capri;
  * priority             R   priority level in the server 0 - 100
  * pChanID              RW  channel id written here
  */
-epicsShareFunc int epicsShareAPI ca_create_channel
+LIBCA_API int epicsStdCall ca_create_channel
 (
      const char     *pChanName, 
      caCh           *pConnStateCallback, 
@@ -233,7 +223,7 @@ epicsShareFunc int epicsShareAPI ca_create_channel
  * chan     R   channel identifier  
  * pfunc    R   address of connection call-back function
  */
-epicsShareFunc int epicsShareAPI ca_change_connection_event
+LIBCA_API int epicsStdCall ca_change_connection_event
 (
      chid       chan,
      caCh *     pfunc
@@ -245,7 +235,7 @@ epicsShareFunc int epicsShareAPI ca_change_connection_event
  * chan     R   channel identifier  
  * pfunc    R   address of access rights call-back function
  */
-epicsShareFunc int epicsShareAPI ca_replace_access_rights_event (
+LIBCA_API int epicsStdCall ca_replace_access_rights_event (
      chid   chan,
      caArh  *pfunc
 );
@@ -260,7 +250,7 @@ epicsShareFunc int epicsShareAPI ca_replace_access_rights_event (
  *          call-back function
  */
 typedef void caExceptionHandler (struct exception_handler_args);
-epicsShareFunc int epicsShareAPI ca_add_exception_event
+LIBCA_API int epicsStdCall ca_add_exception_event
 (
      caExceptionHandler *pfunc,
      void               *pArg
@@ -272,7 +262,7 @@ epicsShareFunc int epicsShareAPI ca_add_exception_event
  *
  * chanId   R   channel ID
  */
-epicsShareFunc int epicsShareAPI ca_clear_channel
+LIBCA_API int epicsStdCall ca_clear_channel
 (
      chid   chanId
 );
@@ -320,7 +310,7 @@ ca_array_put(DBR_FLOAT, 1u, chan, (const dbr_float_t *) pValue)
  * chan         R   channel identifier  
  * pValue       R       new channel value copied from this location
  */
-epicsShareFunc int epicsShareAPI ca_array_put
+LIBCA_API int epicsStdCall ca_array_put
 (
      chtype         type,   
      unsigned long  count,   
@@ -345,7 +335,7 @@ epicsShareFunc int epicsShareAPI ca_array_put
  * pFunc        R   pointer to call-back function
  * pArg         R   copy of this pointer passed to pFunc
  */
-epicsShareFunc int epicsShareAPI ca_array_put_callback
+LIBCA_API int epicsStdCall ca_array_put_callback
 (
      chtype                 type,   
      unsigned long          count,   
@@ -402,7 +392,7 @@ ca_array_get(DBR_FLOAT, 1u, chan, (dbr_float_t *)(pValue))
  * chan     R   channel identifier  
  * pValue   W   channel value copied to this location
  */
-epicsShareFunc int epicsShareAPI ca_array_get
+LIBCA_API int epicsStdCall ca_array_get
 (
      chtype         type,   
      unsigned long  count,   
@@ -461,7 +451,7 @@ ca_array_get_callback (type, 1u, chan, pFunc, pArg)
  * pFunc    R   pointer to call-back function
  * pArg     R   copy of this pointer passed to pFunc
  */
-epicsShareFunc int epicsShareAPI ca_array_get_callback
+LIBCA_API int epicsStdCall ca_array_get_callback
 (
      chtype                 type,   
      unsigned long          count,   
@@ -474,7 +464,7 @@ epicsShareFunc int epicsShareAPI ca_array_get_callback
 /*  Specify a function to be executed whenever significant changes      */
 /*  occur to a channel.                                                 */
 /*  NOTES:                                                              */
-/*  1)  Evid may be omited by passing a NULL pointer                    */
+/*  1)  Evid may be omitted by passing a NULL pointer                    */
 /*                                                                      */
 /*  2)  An array count of zero specifies the native db count            */ 
 /*                                                                      */
@@ -491,7 +481,7 @@ epicsShareFunc int epicsShareAPI ca_array_get_callback
  * pArg     R   copy of this pointer passed to pFunc
  * pEventID W   event id written at specified address
  */
-epicsShareFunc int epicsShareAPI ca_create_subscription
+LIBCA_API int epicsStdCall ca_create_subscription
 (
      chtype                 type,   
      unsigned long          count,   
@@ -512,12 +502,12 @@ epicsShareFunc int epicsShareAPI ca_create_subscription
  *
  * eventID  R   event id
  */
-epicsShareFunc int epicsShareAPI ca_clear_subscription
+LIBCA_API int epicsStdCall ca_clear_subscription
 (
      evid eventID
 );
 
-epicsShareFunc chid epicsShareAPI ca_evid_to_chid ( evid id );
+LIBCA_API chid epicsStdCall ca_evid_to_chid ( evid id );
 
 
 /************************************************************************/
@@ -569,22 +559,22 @@ epicsShareFunc chid epicsShareAPI ca_evid_to_chid ( evid id );
 /*
  * ca_pend_event()
  *
- * timeOut  R   wait for this delay in seconds
+ * timeout  R   wait for this delay in seconds
  */
-epicsShareFunc int epicsShareAPI ca_pend_event (ca_real timeOut);
+LIBCA_API int epicsStdCall ca_pend_event (ca_real timeout);
 #define ca_poll() ca_pend_event(1e-12)
 
 /*
  * ca_pend_io()
  *
- * timeOut  R   wait for this delay in seconds but return early 
- *              if all get requests (or search requests with null 
+ * timeout  R   wait for this delay in seconds but return early
+ *              if all get requests (or search requests with null
  *              connection handler pointer have completed)
  */
-epicsShareFunc int epicsShareAPI ca_pend_io (ca_real timeOut);
+LIBCA_API int epicsStdCall ca_pend_io (ca_real timeout);
 
 /* calls ca_pend_io() if early is true otherwise ca_pend_event() is called */
-epicsShareFunc int epicsShareAPI ca_pend (ca_real timeout, int early);
+LIBCA_API int epicsStdCall ca_pend (ca_real timeout, int early);
 
 /*
  * ca_test_io()
@@ -592,7 +582,7 @@ epicsShareFunc int epicsShareAPI ca_pend (ca_real timeout, int early);
  * returns TRUE when get requests (or search requests with null 
  * connection handler pointer) are outstanding
  */
-epicsShareFunc int epicsShareAPI ca_test_io (void);
+LIBCA_API int epicsStdCall ca_test_io (void);
 
 /************************************************************************/
 /*  Send out all outstanding messages in the send queue                 */
@@ -600,7 +590,7 @@ epicsShareFunc int epicsShareAPI ca_test_io (void);
 /*
  * ca_flush_io()
  */
-epicsShareFunc int epicsShareAPI ca_flush_io (void);
+LIBCA_API int epicsStdCall ca_flush_io (void);
 
 
 /*
@@ -609,7 +599,7 @@ epicsShareFunc int epicsShareAPI ca_flush_io (void);
  * errorCode    R   status returned from channel access function
  * pCtxStr  R   context string included with error print out
  */
-epicsShareFunc void epicsShareAPI ca_signal
+LIBCA_API void epicsStdCall ca_signal
 (
      long errorCode,    
      const char *pCtxStr     
@@ -623,7 +613,7 @@ epicsShareFunc void epicsShareAPI ca_signal
  * lineNo   R   line number included with error print out
  *
  */
-epicsShareFunc void epicsShareAPI ca_signal_with_file_and_lineno
+LIBCA_API void epicsStdCall ca_signal_with_file_and_lineno
 (
      long errorCode,    
      const char *pCtxStr,    
@@ -639,7 +629,7 @@ epicsShareFunc void epicsShareAPI ca_signal_with_file_and_lineno
  * pFormat      R   printf dtyle format string (and optional arguments)
  *
  */
-epicsShareFunc void epicsShareAPI ca_signal_formated (long ca_status, const char *pfilenm, 
+LIBCA_API void epicsStdCall ca_signal_formated (long ca_status, const char *pfilenm, 
                                        int lineno, const char *pFormat, ...);
 
 /*
@@ -649,9 +639,9 @@ epicsShareFunc void epicsShareAPI ca_signal_formated (long ca_status, const char
  *
  * !!!! this function is _not_ thread safe !!!!
  */
-epicsShareFunc const char * epicsShareAPI ca_host_name (chid channel);
+LIBCA_API const char * epicsStdCall ca_host_name (chid channel);
 /* thread safe version */
-epicsShareFunc unsigned epicsShareAPI ca_get_host_name ( chid pChan, 
+LIBCA_API unsigned epicsStdCall ca_get_host_name ( chid pChan, 
     char *pBuf, unsigned bufLength );
 
 /*
@@ -674,7 +664,7 @@ typedef void CAFDHANDLER (void *parg, int fd, int opened);
  *                  when an fd is created or deleted
  * pArg     R   argument passed to above function
  */
-epicsShareFunc int epicsShareAPI ca_add_fd_registration
+LIBCA_API int epicsStdCall ca_add_fd_registration
 (
      CAFDHANDLER    *pHandler,
      void           *pArg
@@ -698,7 +688,7 @@ epicsShareFunc int epicsShareAPI ca_add_fd_registration
  *
  * pgid     W   pointer to sync group id that will be written   
  */
-epicsShareFunc int epicsShareAPI ca_sg_create (CA_SYNC_GID *  pgid);
+LIBCA_API int epicsStdCall ca_sg_create (CA_SYNC_GID *  pgid);
 
 /*
  * ca_sg_delete()
@@ -707,7 +697,7 @@ epicsShareFunc int epicsShareAPI ca_sg_create (CA_SYNC_GID *  pgid);
  *
  * gid      R   sync group id 
  */
-epicsShareFunc int epicsShareAPI ca_sg_delete (const CA_SYNC_GID gid);
+LIBCA_API int epicsStdCall ca_sg_delete (const CA_SYNC_GID gid);
 
 /*
  * ca_sg_block()
@@ -718,7 +708,7 @@ epicsShareFunc int epicsShareAPI ca_sg_delete (const CA_SYNC_GID gid);
  * timeout  R   wait for this duration prior to timing out
  *          and returning ECA_TIMEOUT
  */
-epicsShareFunc int epicsShareAPI ca_sg_block (const CA_SYNC_GID gid, ca_real timeout);
+LIBCA_API int epicsStdCall ca_sg_block (const CA_SYNC_GID gid, ca_real timeout);
 
 /*
  * ca_sg_test()
@@ -729,14 +719,14 @@ epicsShareFunc int epicsShareAPI ca_sg_block (const CA_SYNC_GID gid, ca_real tim
  * 
  * returns one of ECA_BADSYNCGRP, ECA_IOINPROGRESS, ECA_IODONE
  */
-epicsShareFunc int epicsShareAPI ca_sg_test (const CA_SYNC_GID gid);
+LIBCA_API int epicsStdCall ca_sg_test (const CA_SYNC_GID gid);
 
 /*
  * ca_sg_reset
  *
  * gid      R   sync group id
  */
-epicsShareFunc int epicsShareAPI ca_sg_reset(const CA_SYNC_GID gid);
+LIBCA_API int epicsStdCall ca_sg_reset(const CA_SYNC_GID gid);
 
 /*
  * ca_sg_array_get()
@@ -750,7 +740,7 @@ epicsShareFunc int epicsShareAPI ca_sg_reset(const CA_SYNC_GID gid);
  * chan     R   channel identifier  
  * pValue   W   channel value copied to this location
  */
-epicsShareFunc int epicsShareAPI ca_sg_array_get
+LIBCA_API int epicsStdCall ca_sg_array_get
 (
     const CA_SYNC_GID gid,
     chtype type, 
@@ -774,7 +764,7 @@ ca_sg_array_get (gid, type, 1u, chan, pValue)
  * chan     R   channel identifier  
  * pValue   R   new channel value copied from this location
  */
-epicsShareFunc int epicsShareAPI ca_sg_array_put
+LIBCA_API int epicsStdCall ca_sg_array_put
 (
     const CA_SYNC_GID gid,
     chtype type, 
@@ -793,9 +783,9 @@ ca_sg_array_put (gid, type, 1u, chan, pValue)
  *
  * gid      R   sync group id
  */
-epicsShareFunc int epicsShareAPI ca_sg_stat (CA_SYNC_GID gid);
+LIBCA_API int epicsStdCall ca_sg_stat (CA_SYNC_GID gid);
 
-epicsShareFunc void epicsShareAPI ca_dump_dbr (chtype type, unsigned count, const void * pbuffer);
+LIBCA_API void epicsStdCall ca_dump_dbr (chtype type, unsigned count, const void * pbuffer);
 
 
 /*
@@ -808,14 +798,14 @@ epicsShareFunc void epicsShareAPI ca_dump_dbr (chtype type, unsigned count, cons
  * 
  * (returns true or false)
  */
-epicsShareFunc int epicsShareAPI ca_v42_ok (chid chan);
+LIBCA_API int epicsStdCall ca_v42_ok (chid chan);
 
 /*
  * ca_version()
  *
  * returns the CA version string
  */
-epicsShareFunc const char * epicsShareAPI ca_version (void);
+LIBCA_API const char * epicsStdCall ca_version (void);
 
 /*
  * ca_replace_printf_handler ()
@@ -830,7 +820,7 @@ epicsShareFunc const char * epicsShareAPI ca_version (void);
  */
 #ifndef CA_DONT_INCLUDE_STDARGH
 typedef int caPrintfFunc (const char *pformat, va_list args);
-epicsShareFunc int epicsShareAPI ca_replace_printf_handler (
+LIBCA_API int epicsStdCall ca_replace_printf_handler (
     caPrintfFunc    *ca_printf_func
 );
 #endif /*CA_DONT_INCLUDE_STDARGH*/
@@ -838,24 +828,24 @@ epicsShareFunc int epicsShareAPI ca_replace_printf_handler (
 /*
  * (for testing purposes only)
  */
-epicsShareFunc unsigned epicsShareAPI ca_get_ioc_connection_count (void);
-epicsShareFunc int epicsShareAPI ca_preemtive_callback_is_enabled (void);
-epicsShareFunc void epicsShareAPI ca_self_test (void);
-epicsShareFunc unsigned epicsShareAPI ca_beacon_anomaly_count (void);
-epicsShareFunc unsigned epicsShareAPI ca_search_attempts (chid chan);
-epicsShareFunc double epicsShareAPI ca_beacon_period (chid chan);
-epicsShareFunc double epicsShareAPI ca_receive_watchdog_delay (chid chan);
+LIBCA_API unsigned epicsStdCall ca_get_ioc_connection_count (void);
+LIBCA_API int epicsStdCall ca_preemtive_callback_is_enabled (void);
+LIBCA_API void epicsStdCall ca_self_test (void);
+LIBCA_API unsigned epicsStdCall ca_beacon_anomaly_count (void);
+LIBCA_API unsigned epicsStdCall ca_search_attempts (chid chan);
+LIBCA_API double epicsStdCall ca_beacon_period (chid chan);
+LIBCA_API double epicsStdCall ca_receive_watchdog_delay (chid chan);
 
 /*
- * used when an auxillary thread needs to join a CA client context started
+ * used when an auxiliary thread needs to join a CA client context started
  * by another thread
  */
-epicsShareFunc struct ca_client_context * epicsShareAPI ca_current_context ();
-epicsShareFunc int epicsShareAPI ca_attach_context ( struct ca_client_context * context );
+LIBCA_API struct ca_client_context * epicsStdCall ca_current_context ();
+LIBCA_API int epicsStdCall ca_attach_context ( struct ca_client_context * context );
 
 
-epicsShareFunc int epicsShareAPI ca_client_status ( unsigned level );
-epicsShareFunc int epicsShareAPI ca_context_status ( struct ca_client_context *, unsigned level );
+LIBCA_API int epicsStdCall ca_client_status ( unsigned level );
+LIBCA_API int epicsStdCall ca_context_status ( struct ca_client_context *, unsigned level );
 
 /*
  * deprecated
@@ -864,16 +854,16 @@ epicsShareFunc int epicsShareAPI ca_context_status ( struct ca_client_context *,
 ca_build_and_connect(NAME, XXXXX, 1, CHIDPTR, YYYYY, 0, 0)
 #define ca_array_build(NAME,XXXXX, ZZZZZZ, CHIDPTR,YYYYY)\
 ca_build_and_connect(NAME, XXXXX, ZZZZZZ, CHIDPTR, YYYYY, 0, 0)
-epicsShareFunc int epicsShareAPI ca_build_and_connect
+LIBCA_API int epicsStdCall ca_build_and_connect
     ( const char *pChanName, chtype, unsigned long, 
     chid * pChanID, void *, caCh * pFunc, void * pArg );
 #define ca_search(pChanName, pChanID)\
 ca_search_and_connect (pChanName, pChanID, 0, 0)
-epicsShareFunc int epicsShareAPI ca_search_and_connect
+LIBCA_API int epicsStdCall ca_search_and_connect
     ( const char * pChanName, chid * pChanID, 
     caCh *pFunc, void * pArg );
-epicsShareFunc int epicsShareAPI ca_channel_status (epicsThreadId tid);
-epicsShareFunc int epicsShareAPI ca_clear_event ( evid eventID );
+LIBCA_API int epicsStdCall ca_channel_status (epicsThreadId tid);
+LIBCA_API int epicsStdCall ca_clear_event ( evid eventID );
 #define ca_add_event(type,chan,pFunc,pArg,pEventID)\
 ca_add_array_event(type,1u,chan,pFunc,pArg,0.0,0.0,0.0,pEventID)
 #define ca_add_delta_event(TYPE,CHID,ENTRY,ARG,DELTA,EVID)\
@@ -882,7 +872,7 @@ ca_add_array_event(type,1u,chan,pFunc,pArg,0.0,0.0,0.0,pEventID)
 ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)
 #define ca_add_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)\
 ca_add_masked_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID, DBE_VALUE | DBE_ALARM)
-epicsShareFunc int epicsShareAPI ca_add_masked_array_event
+LIBCA_API int epicsStdCall ca_add_masked_array_event
     ( chtype type, unsigned long count, chid chanId, caEventCallBackFunc * pFunc,
         void * pArg, ca_real p_delta, ca_real n_delta, ca_real timeout,
         evid * pEventID, long mask );
@@ -890,8 +880,8 @@ epicsShareFunc int epicsShareAPI ca_add_masked_array_event
 /*
  * defunct
  */
-epicsShareFunc int epicsShareAPI ca_modify_user_name ( const char *pUserName );
-epicsShareFunc int epicsShareAPI ca_modify_host_name ( const char *pHostName );
+LIBCA_API int epicsStdCall ca_modify_user_name ( const char *pUserName );
+LIBCA_API int epicsStdCall ca_modify_host_name ( const char *pHostName );
 
 #ifdef __cplusplus
 }

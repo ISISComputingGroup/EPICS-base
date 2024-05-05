@@ -72,40 +72,60 @@ void testScalar()
     testEqual(dbChannelFinalFieldType(chan_mbbi), DBR_ENUM);
 #ifdef USE_INT64
     testEqual(dbChannelFinalFieldType(chan_i64), DBR_INT64);
+#else
+    testSkip(1, "!USE_INT64");
 #endif
 
-    ScalarBuilder builder;
-
-    pvd::FieldConstPtr dtype_li(builder.dtype(chan_li));
+    pvd::PVStructurePtr root;
+    p2p::auto_ptr<PVIF> pvif_li;
 #ifdef USE_INT64
-    pvd::FieldConstPtr dtype_i64(builder.dtype(chan_i64));
+    p2p::auto_ptr<PVIF> pvif_i64;
 #endif
-    pvd::FieldConstPtr dtype_si(builder.dtype(chan_si));
-    pvd::FieldConstPtr dtype_ai(builder.dtype(chan_ai));
-    pvd::FieldConstPtr dtype_ai_rval(builder.dtype(chan_ai_rval));
-    pvd::FieldConstPtr dtype_mbbi(builder.dtype(chan_mbbi));
-
-    pvd::StructureConstPtr dtype_root(pvd::getFieldCreate()->createFieldBuilder()
-                                      ->add("li", dtype_li)
+    p2p::auto_ptr<PVIF> pvif_si;
+    p2p::auto_ptr<PVIF> pvif_ai;
+    p2p::auto_ptr<PVIF> pvif_ai_rval;
+    p2p::auto_ptr<PVIF> pvif_mbbi;
+    {
+        ScalarBuilder builder_li(chan_li);
 #ifdef USE_INT64
-                                      ->add("i64", dtype_i64)
+        ScalarBuilder builder_i64(chan_i64);
 #endif
-                                      ->add("si", dtype_si)
-                                      ->add("ai", dtype_ai)
-                                      ->add("ai_rval", dtype_ai_rval)
-                                      ->add("mbbi", dtype_mbbi)
-                                      ->createStructure());
+        ScalarBuilder builder_si(chan_si);
+        ScalarBuilder builder_ai(chan_ai);
+        ScalarBuilder builder_ai_rval(chan_ai_rval);
+        ScalarBuilder builder_mbbi(chan_mbbi);
 
-    pvd::PVStructurePtr root(pvd::getPVDataCreate()->createPVStructure(dtype_root));
+        pvd::FieldConstPtr dtype_li(builder_li.dtype());
+    #ifdef USE_INT64
+        pvd::FieldConstPtr dtype_i64(builder_i64.dtype());
+    #endif
+        pvd::FieldConstPtr dtype_si(builder_si.dtype());
+        pvd::FieldConstPtr dtype_ai(builder_ai.dtype());
+        pvd::FieldConstPtr dtype_ai_rval(builder_ai_rval.dtype());
+        pvd::FieldConstPtr dtype_mbbi(builder_mbbi.dtype());
 
-    p2p::auto_ptr<PVIF> pvif_li(builder.attach(chan_li, root, FieldName("li")));
-#ifdef USE_INT64
-    p2p::auto_ptr<PVIF> pvif_i64(builder.attach(chan_i64, root, FieldName("i64")));
-#endif
-    p2p::auto_ptr<PVIF> pvif_si(builder.attach(chan_si, root, FieldName("si")));
-    p2p::auto_ptr<PVIF> pvif_ai(builder.attach(chan_ai, root, FieldName("ai")));
-    p2p::auto_ptr<PVIF> pvif_ai_rval(builder.attach(chan_ai_rval, root, FieldName("ai_rval")));
-    p2p::auto_ptr<PVIF> pvif_mbbi(builder.attach(chan_mbbi, root, FieldName("mbbi")));
+        pvd::StructureConstPtr dtype_root(pvd::getFieldCreate()->createFieldBuilder()
+                                          ->add("li", dtype_li)
+    #ifdef USE_INT64
+                                          ->add("i64", dtype_i64)
+    #endif
+                                          ->add("si", dtype_si)
+                                          ->add("ai", dtype_ai)
+                                          ->add("ai_rval", dtype_ai_rval)
+                                          ->add("mbbi", dtype_mbbi)
+                                          ->createStructure());
+
+        root = pvd::getPVDataCreate()->createPVStructure(dtype_root);
+
+        pvif_li.reset(builder_li.attach(root, FieldName("li")));
+    #ifdef USE_INT64
+        pvif_i64.reset(builder_i64.attach(root, FieldName("i64")));
+    #endif
+        pvif_si.reset(builder_si.attach(root, FieldName("si")));
+        pvif_ai.reset(builder_ai.attach(root, FieldName("ai")));
+        pvif_ai_rval.reset(builder_ai_rval.attach(root, FieldName("ai_rval")));
+        pvif_mbbi.reset(builder_mbbi.attach(root, FieldName("mbbi")));
+    }
 
     testShow()<<"Entire structure\n"<<root;
 
@@ -118,6 +138,12 @@ void testScalar()
     dbScanUnlock((dbCommon*)prec_li);
 
 #define OFF(NAME) (epicsUInt32)root->getSubFieldT(NAME)->getFieldOffset()
+#ifdef HAVE_UTAG
+    testTrue(mask.get(OFF("li.timeStamp.userTag")));
+    mask.clear(OFF("li.timeStamp.userTag"));
+#else
+    testSkip(1, "!HAVE_UTAG");
+#endif
     testEqual(mask, pvd::BitSet()
               .set(OFF("li.value"))
               .set(OFF("li.alarm.severity"))
@@ -150,6 +176,12 @@ void testScalar()
     dbScanUnlock((dbCommon*)prec_i64);
 
 #define OFF(NAME) (epicsUInt32)root->getSubFieldT(NAME)->getFieldOffset()
+#ifdef HAVE_UTAG
+    testTrue(mask.get(OFF("i64.timeStamp.userTag")));
+    mask.clear(OFF("i64.timeStamp.userTag"));
+#else
+    testSkip(1, "!HAVE_UTAG");
+#endif
     testEqual(mask, pvd::BitSet()
               .set(OFF("i64.value"))
               .set(OFF("i64.alarm.severity"))
@@ -173,7 +205,10 @@ void testScalar()
 #undef OFF
     mask.clear();
 
-#endif
+#else // !USE_INT64
+    testSkip(2, "!USE_INT64");
+
+#endif // USE_INT64
 
     dbScanLock((dbCommon*)prec_si);
     prec_si->time.secPastEpoch = 0x12345678;
@@ -182,6 +217,12 @@ void testScalar()
     dbScanUnlock((dbCommon*)prec_si);
 
 #define OFF(NAME) (epicsUInt32)root->getSubFieldT(NAME)->getFieldOffset()
+#ifdef HAVE_UTAG
+    testTrue(mask.get(OFF("si.timeStamp.userTag")));
+    mask.clear(OFF("si.timeStamp.userTag"));
+#else
+    testSkip(1, "!HAVE_UTAG");
+#endif
     testEqual(mask, pvd::BitSet()
               .set(OFF("si.value"))
               .set(OFF("si.alarm.severity"))
@@ -189,7 +230,6 @@ void testScalar()
               .set(OFF("si.alarm.message"))
               .set(OFF("si.timeStamp.secondsPastEpoch"))
               .set(OFF("si.timeStamp.nanoseconds"))
-              //.set(OFF("si.timeStamp.userTag"))
               .set(OFF("si.display.limitHigh"))
               .set(OFF("si.display.limitLow"))
               .set(OFF("si.display.description"))
@@ -210,6 +250,14 @@ void testScalar()
     dbScanUnlock((dbCommon*)prec_ai);
 
 #define OFF(NAME) (epicsUInt32)root->getSubFieldT(NAME)->getFieldOffset()
+#ifdef HAVE_UTAG
+    testTrue(mask.get(OFF("ai.timeStamp.userTag")));
+    mask.clear(OFF("ai.timeStamp.userTag"));
+    testTrue(mask.get(OFF("ai_rval.timeStamp.userTag")));
+    mask.clear(OFF("ai_rval.timeStamp.userTag"));
+#else
+    testSkip(2, "!HAVE_UTAG");
+#endif
     testEqual(mask, pvd::BitSet()
               .set(OFF("ai.value"))
               .set(OFF("ai.alarm.severity"))
@@ -217,7 +265,6 @@ void testScalar()
               .set(OFF("ai.alarm.message"))
               .set(OFF("ai.timeStamp.secondsPastEpoch"))
               .set(OFF("ai.timeStamp.nanoseconds"))
-              //.set(OFF("ai.timeStamp.userTag"))
               .set(OFF("ai.display.limitHigh"))
               .set(OFF("ai.display.limitLow"))
               .set(OFF("ai.display.description"))
@@ -236,7 +283,6 @@ void testScalar()
               .set(OFF("ai_rval.alarm.message"))
               .set(OFF("ai_rval.timeStamp.secondsPastEpoch"))
               .set(OFF("ai_rval.timeStamp.nanoseconds"))
-              //.set(OFF("ai_rval.timeStamp.userTag"))
               .set(OFF("ai_rval.display.limitHigh"))
               .set(OFF("ai_rval.display.limitLow"))
               .set(OFF("ai_rval.display.description"))
@@ -297,6 +343,8 @@ void testScalar()
     testFieldEqual<pvd::PVString>(root, "i64.display.units", "arb");
     testTodoEnd();
     testFieldEqual<pvd::PVInt>(root, "i64.display.precision", 0);
+#else
+    testSkip(9, "!USE_INT64");
 #endif
 
     testFieldEqual<pvd::PVString>(root, "si.value", "hello");
@@ -362,15 +410,15 @@ void testScalar()
     pvif_i64->get(mask);
     testEqual(prec_i64->val, epicsInt64(-0x8000000000000000LL));
     dbScanUnlock((dbCommon*)prec_i64);
-#endif
 
-#ifdef USE_INT64
     dbScanLock((dbCommon*)prec_i64);
     mask.clear();
     mask.set(root->getSubFieldT("i64.value")->getFieldOffset());
     pvif_i64->get(mask);
     testEqual(prec_i64->val, epicsInt64(-0x8000000000000000LL));
     dbScanUnlock((dbCommon*)prec_i64);
+#else
+    testSkip(2, "!USE_INT64");
 #endif
 
     dbScanLock((dbCommon*)prec_si);
@@ -424,29 +472,36 @@ void testPlain()
     DBCH chan_ai("test:ai");
     DBCH chan_mbbi("test:mbbi");
 
-    p2p::auto_ptr<PVIFBuilder> builder;
+    pvd::PVStructurePtr root;
+    p2p::auto_ptr<PVIF> pvif_li;
+    p2p::auto_ptr<PVIF> pvif_si;
+    p2p::auto_ptr<PVIF> pvif_ai;
+    p2p::auto_ptr<PVIF> pvif_mbbi;
     {
-        builder.reset(PVIFBuilder::create("plain"));
+        p2p::auto_ptr<PVIFBuilder> builder_li(PVIFBuilder::create("plain", chan_li));
+        p2p::auto_ptr<PVIFBuilder> builder_si(PVIFBuilder::create("plain", chan_si));
+        p2p::auto_ptr<PVIFBuilder> builder_ai(PVIFBuilder::create("plain", chan_ai));
+        p2p::auto_ptr<PVIFBuilder> builder_mbbi(PVIFBuilder::create("plain", chan_mbbi));
+
+        pvd::FieldConstPtr dtype_li(builder_li->dtype());
+        pvd::FieldConstPtr dtype_si(builder_si->dtype());
+        pvd::FieldConstPtr dtype_ai(builder_ai->dtype());
+        pvd::FieldConstPtr dtype_mbbi(builder_mbbi->dtype());
+
+        pvd::StructureConstPtr dtype_root(pvd::getFieldCreate()->createFieldBuilder()
+                                          ->add("li", dtype_li)
+                                          ->add("si", dtype_si)
+                                          ->add("ai", dtype_ai)
+                                          ->add("mbbi", dtype_mbbi)
+                                          ->createStructure());
+
+        root = pvd::getPVDataCreate()->createPVStructure(dtype_root);
+
+        pvif_li.reset(builder_li->attach(root, FieldName("li")));
+        pvif_si.reset(builder_si->attach(root, FieldName("si")));
+        pvif_ai.reset(builder_ai->attach(root, FieldName("ai")));
+        pvif_mbbi.reset(builder_mbbi->attach(root, FieldName("mbbi")));
     }
-
-    pvd::FieldConstPtr dtype_li(builder->dtype(chan_li));
-    pvd::FieldConstPtr dtype_si(builder->dtype(chan_si));
-    pvd::FieldConstPtr dtype_ai(builder->dtype(chan_ai));
-    pvd::FieldConstPtr dtype_mbbi(builder->dtype(chan_mbbi));
-
-    pvd::StructureConstPtr dtype_root(pvd::getFieldCreate()->createFieldBuilder()
-                                      ->add("li", dtype_li)
-                                      ->add("si", dtype_si)
-                                      ->add("ai", dtype_ai)
-                                      ->add("mbbi", dtype_mbbi)
-                                      ->createStructure());
-
-    pvd::PVStructurePtr root(pvd::getPVDataCreate()->createPVStructure(dtype_root));
-
-    p2p::auto_ptr<PVIF> pvif_li(builder->attach(chan_li, root, FieldName("li")));
-    p2p::auto_ptr<PVIF> pvif_si(builder->attach(chan_si, root, FieldName("si")));
-    p2p::auto_ptr<PVIF> pvif_ai(builder->attach(chan_ai, root, FieldName("ai")));
-    p2p::auto_ptr<PVIF> pvif_mbbi(builder->attach(chan_mbbi, root, FieldName("mbbi")));
 
     pvd::BitSet mask;
 
@@ -521,15 +576,73 @@ void testPlain()
     dbScanUnlock((dbCommon*)prec_mbbi);
 }
 
+void testFilters()
+{
+    testDiag("testFilter");
+
+#if EPICS_VERSION_INT < VERSION_INT(7, 0, 0, 0)
+    testSkip(5, "Needs Base >=7.0");
+#else
+
+    TestIOC IOC;
+
+    testdbReadDatabase("p2pTestIoc.dbd", NULL, NULL);
+    p2pTestIoc_registerRecordDeviceDriver(pdbbase);
+    testdbReadDatabase("testfilters.db", NULL, NULL);
+
+    IOC.init();
+
+    static const epicsInt32 arr[] = {9, 8, 7, 6, 5, 4, 3, 2, 1};
+    testdbPutArrFieldOk("TEST", DBF_LONG, 9, arr);
+
+#if EPICS_VERSION_INT > VERSION_INT(7, 0, 5, 0)
+    testdbGetArrFieldEqual("TEST", DBF_LONG, 10, 9, arr);
+    testdbGetArrFieldEqual("TEST.{\"arr\":{\"s\":5}}", DBF_LONG, 10, 4, arr+5);
+
+    static const epicsInt32 arr2[] = {9, 7, 5, 3, 1};
+    testdbGetArrFieldEqual("TEST.{\"arr\":{\"i\":2}}", DBF_LONG, 10, 5, arr2);
+
+#else
+    testSkip(3, "dbUnitTest doesn't use dbChannel");
+#endif
+
+    pvd::PVStructurePtr root;
+    p2p::auto_ptr<PVIF> pvif;
+
+    DBCH chan("TEST.{\"arr\":{\"i\":2}}");
+    ScalarBuilder builder(chan);
+
+    root = pvd::FieldBuilder::begin()
+            ->add("dut", builder.dtype())
+            ->createStructure()->build();
+
+    pvif.reset(builder.attach(root, FieldName("dut")));
+
+    LocalFL fl(0, chan.chan);
+
+    pvd::shared_vector<pvd::int16> scratch(5);
+    scratch[0] = 9;
+    scratch[1] = 7;
+    scratch[2] = 5;
+    scratch[3] = 3;
+    scratch[4] = 1;
+    pvd::shared_vector<const pvd::int16> expected(pvd::freeze(scratch));
+
+    dbCommon *prec =  testdbRecordPtr("TEST");
+    dbScanLock(prec);
+    pvd::BitSet changed;
+    pvif->put(changed, DBE_VALUE, fl.pfl);
+    dbScanUnlock(prec);
+
+    testFieldEqual<pvd::PVShortArray>(root, "dut.value", expected);
+#endif // >= 7.0
+}
+
 } // namespace
 
 MAIN(testpvif)
 {
-    testPlan(75
-#ifdef USE_INT64
-             +13
-#endif
-             );
+    testPlan(98);
 #ifdef USE_INT64
     testDiag("Testing of 64-bit field access");
 #else
@@ -537,5 +650,6 @@ MAIN(testpvif)
 #endif
     testScalar();
     testPlain();
+    testFilters();
     return testDone();
 }

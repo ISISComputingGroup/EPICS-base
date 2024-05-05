@@ -3,8 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* SPDX-License-Identifier: EPICS
+* EPICS Base is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 //
@@ -22,7 +22,6 @@
 #include <algorithm>
 
 #define instantiateRecourceLib
-#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "epicsThread.h"
 #include "fdManager.h"
@@ -30,7 +29,7 @@
 
 using std :: max;
 
-epicsShareDef fdManager fileDescriptorManager;
+fdManager fileDescriptorManager;
 
 const unsigned mSecPerSec = 1000u;
 const unsigned uSecPerSec = 1000u * mSecPerSec;
@@ -41,7 +40,7 @@ const unsigned uSecPerSec = 1000u * mSecPerSec;
 // hopefully its a reasonable guess that select() and epicsThreadSleep()
 // will have the same sleep quantum 
 //
-epicsShareFunc fdManager::fdManager () : 
+LIBCOM_API fdManager::fdManager () : 
     sleepQuantum ( epicsThreadSleepQuantum () ), 
         fdSetsPtr ( new fd_set [fdrNEnums] ),
         pTimerQueue ( 0 ), maxFD ( 0 ), processInProg ( false ), 
@@ -58,7 +57,7 @@ epicsShareFunc fdManager::fdManager () :
 //
 // fdManager::~fdManager()
 //
-epicsShareFunc fdManager::~fdManager()
+LIBCOM_API fdManager::~fdManager()
 {
     fdReg   *pReg;
 
@@ -78,7 +77,7 @@ epicsShareFunc fdManager::~fdManager()
 //
 // fdManager::process()
 //
-epicsShareFunc void fdManager::process (double delay)
+LIBCOM_API void fdManager::process (double delay)
 {
     this->lazyInitTimerQueue ();
 
@@ -97,7 +96,7 @@ epicsShareFunc void fdManager::process (double delay)
     // more than once here so that fd activity get serviced
     // in a reasonable length of time.
     //
-    double minDelay = this->pTimerQueue->process(epicsTime::getMonotonic());
+    double minDelay = this->pTimerQueue->process(epicsTime::getCurrent());
 
     if ( minDelay >= delay ) {
         minDelay = delay;
@@ -121,7 +120,7 @@ epicsShareFunc void fdManager::process (double delay)
         fd_set * pExceptSet = & this->fdSetsPtr[fdrException];
         int status = select (this->maxFD, pReadSet, pWriteSet, pExceptSet, &tv);
 
-        this->pTimerQueue->process(epicsTime::getMonotonic());
+        this->pTimerQueue->process(epicsTime::getCurrent());
 
         if ( status > 0 ) {
 
@@ -204,10 +203,9 @@ epicsShareFunc void fdManager::process (double delay)
          * of select()
          */
         epicsThreadSleep(minDelay);
-        this->pTimerQueue->process(epicsTime::getMonotonic());
+        this->pTimerQueue->process(epicsTime::getCurrent());
     }
     this->processInProg = false;
-    return;
 }
 
 //
@@ -249,7 +247,7 @@ void fdRegId::show ( unsigned level ) const
         static_cast <const void *> ( this ) );
     if ( level > 1u ) {
         printf ( "\tfd = %d, type = %d\n",
-            this->fd, this->type );
+            int(this->fd), this->type );
     }
 }
 
@@ -331,7 +329,7 @@ double fdManager::quantum ()
 //
 // lookUpFD()
 //
-epicsShareFunc fdReg *fdManager::lookUpFD (const SOCKET fd, const fdRegType type)
+LIBCOM_API fdReg *fdManager::lookUpFD (const SOCKET fd, const fdRegType type)
 {
     if (fd<0) {
         return NULL;

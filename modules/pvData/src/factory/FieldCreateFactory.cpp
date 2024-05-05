@@ -227,7 +227,7 @@ static void serializeStructureField(const Structure* structure, ByteBuffer* buff
     // to optimize default (non-empty) IDs optimization
     // empty IDs are not allowed
     string id = structure->getID();
-    if (id == Structure::DEFAULT_ID)	// TODO slow comparison
+    if (id == Structure::DEFAULT_ID)    // TODO slow comparison
         SerializeHelper::serializeString(string(), buffer, control);
     else
         SerializeHelper::serializeString(id, buffer, control);
@@ -263,13 +263,13 @@ static StructureConstPtr deserializeStructureField(const FieldCreate* fieldCreat
 
 static void serializeUnionField(const Union* punion, ByteBuffer* buffer, SerializableControl* control)
 {
-	// to optimize default (non-empty) IDs optimization
-	// empty IDs are not allowed
-	string id = punion->getID();
-	if (id == Union::DEFAULT_ID)	// TODO slow comparison
+    // to optimize default (non-empty) IDs optimization
+    // empty IDs are not allowed
+    string id = punion->getID();
+    if (id == Union::DEFAULT_ID)    // TODO slow comparison
         SerializeHelper::serializeString(string(), buffer, control);
-	else
-	    SerializeHelper::serializeString(id, buffer, control);
+    else
+        SerializeHelper::serializeString(id, buffer, control);
 
     FieldConstPtrArray const & fields = punion->getFields();
     StringArray const & fieldNames = punion->getFieldNames();
@@ -1655,4 +1655,3 @@ namespace std{
         return o << "nullptr";
     }
 }
-

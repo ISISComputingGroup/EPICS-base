@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -12,11 +13,11 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
-#include <stdio.h>
 #include <errno.h>
 #include <time.h>
 #include <math.h>
 
+#include "epicsStdio.h"
 #include "epicsThread.h"
 #include "epicsEvent.h"
 #include "epicsTime.h"
@@ -72,7 +73,7 @@ void testMyThread()
     int startPriority = 0;
     for (int i = 0; i < ntasks; i++) {
         char name[10];
-        sprintf(name, "t%d", i);
+        epicsSnprintf(name, sizeof(name), "t%d", i);
         myThreads[i] = new myThread(i, name);
         if (i == 0)
             startPriority = myThreads[i]->thread.getPriority();
@@ -107,6 +108,18 @@ void dodelay(void *arg)
     epicsThreadSleep(2.0);
 }
 
+epicsThreadId joiningThread;
+
+void checkJoined(epicsThreadId thread)
+{
+    char name[80] = "?";
+
+    if(thread==joiningThread) {
+        epicsThreadGetName(thread, name, sizeof(name));
+        testFail("Joined thread '%s' is still alive!", name);
+    }
+}
+
 void joinTests(void *arg)
 {
     struct joinStuff *stuff = (struct joinStuff *) arg;
@@ -117,11 +130,17 @@ void joinTests(void *arg)
     epicsThreadSleep(0.1);
     epicsThreadMustJoin(tid);
 
+    joiningThread = tid;
+    epicsThreadMap(checkJoined);
+
     // Parent joins before task finishes
     tid = epicsThreadCreateOpt("await",
         &dowait, stuff->trigger, stuff->opts);
     stuff->trigger->signal();
     epicsThreadMustJoin(tid);
+
+    joiningThread = tid;
+    epicsThreadMap(checkJoined);
 
     // Parent gets delayed until task finishes
     epicsTime start, end;
@@ -137,9 +156,14 @@ void joinTests(void *arg)
     testOk(duration > 1.0, "Join delayed parent (%g seconds)", duration);
     testTodoEnd();
 
+    joiningThread = tid;
+    epicsThreadMap(checkJoined);
+
     // This is a no-op
     epicsThreadId self = epicsThreadGetIdSelf();
     epicsThreadMustJoin(self);
+    tid = epicsThreadGetIdSelf();
+    testOk(self==tid, "%p == %p avoid self re-alloc", self, tid);
 
     // This is a no-op as well, except for a warning.
     eltc(0);
@@ -151,18 +175,26 @@ void joinTests(void *arg)
 
 void testJoining()
 {
-    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+    epicsThreadOpts opts1 = EPICS_THREAD_OPTS_INIT;
+    epicsThreadOpts opts2 = EPICS_THREAD_OPTS_INIT;
     epicsEvent finished, trigger;
     struct joinStuff stuff = {
-        &opts, &trigger, &finished
+        &opts1, &trigger, &finished
     };
 
-    opts.priority = 50;
-    opts.joinable = 1;
-    epicsThreadCreateOpt("parent", &joinTests, &stuff, &opts);
+    opts1.priority = 50;
+    opts2.priority = 40;
+    opts1.joinable = 1;
+    opts2.joinable = 1;
+    epicsThreadCreateOpt("parent", &joinTests, &stuff, &opts2);
 
     // as selfjoin joins itself, we can't.
-    testOk(finished.wait(10.0), "Join tests completed");
+    testOk(finished.wait(10.0), "Join tests #1 completed");
+
+    // Repeat with opposite thread priorities
+    stuff.opts = &opts2;
+    epicsThreadCreateOpt("parent", &joinTests, &stuff, &opts1);
+    testOk(finished.wait(10.0), "Join tests #2 completed");
 }
 
 } // namespace
@@ -211,7 +243,7 @@ static void testOkToBlock()
 
 MAIN(epicsThreadTest)
 {
-    testPlan(13);
+    testPlan(17);
 
     unsigned int ncpus = epicsThreadGetCPUs();
     testDiag("System has %u CPUs", ncpus);

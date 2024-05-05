@@ -4,6 +4,7 @@
 *     Los Alamos National Laboratory.
 * Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -112,7 +113,7 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta 
 {
     MS_LONG * const pTarg = ( MS_LONG * ) ( pTarget );
     MS_LONG ldelta = (MS_LONG) delta;
-    /* we dont use InterlockedAdd because only latest windows is supported */
+    /* we don't use InterlockedAdd because only latest windows is supported */
     return ( ( size_t ) MS_InterlockedExchangeAdd ( pTarg, -ldelta ) ) - delta;
 }
 #endif
@@ -183,7 +184,7 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta 
 {
     MS_LONGLONG * const pTarg = ( MS_LONGLONG * ) ( pTarget );
     MS_LONGLONG ldelta = (MS_LONGLONG) delta;
-    /* we dont use InterlockedAdd64 because only latest windows is supported */
+    /* we don't use InterlockedAdd64 because only latest windows is supported */
     return (( size_t ) MS_InterlockedExchangeAdd64 ( pTarg, -ldelta )) - delta;
 }
 #endif

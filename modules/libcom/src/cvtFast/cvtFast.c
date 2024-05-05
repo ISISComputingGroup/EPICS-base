@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -16,7 +17,6 @@
 #include <string.h>
 #include <limits.h>
 
-#define epicsExportSharedSymbols
 #include "cvtFast.h"
 #include "epicsMath.h"
 #include "epicsStdio.h"
@@ -33,9 +33,9 @@ int cvtFloatToString(float flt_value, char *pdest,
     epicsUInt16 precision)
 {
         int got_one, i;
-	epicsInt32 whole, iplace, number, fraction, fplace;
-	float		ftemp;
-	char		*startAddr;
+    epicsInt32  whole, iplace, number, fraction, fplace;
+    float       ftemp;
+    char        *startAddr;
 
 	/* can this routine handle this conversion */
 	if (isnan(flt_value) || precision > 8 ||
@@ -64,7 +64,7 @@ int cvtFloatToString(float flt_value, char *pdest,
 	/* multiplier to convert fractional portion to integer */
 	fplace = frac_multiplier[precision];
 	fraction = (epicsInt32)(ftemp * fplace * 10);
-	fraction = (fraction + 5) / 10;		/* round up */
+    fraction = (fraction + 5) / 10;     /* round up */
 
 	/* determine rounding into the whole number portion */
 	if ((fraction / fplace) >= 1){
@@ -113,10 +113,10 @@ int cvtDoubleToString(
 	char  *pdest,
 	epicsUInt16 precision)
 {
-        epicsUInt16	got_one,i;
-	epicsInt32		whole,iplace,number,fraction,fplace;
-	double		ftemp;
-	char		*startAddr;
+    epicsUInt16 got_one,i;
+    epicsInt32  whole,iplace,number,fraction,fplace;
+    double      ftemp;
+    char        *startAddr;
 
 	/* can this routine handle this conversion */
 	if (isnan(flt_value) || precision > 8 || flt_value > 10000000.0 || flt_value < -10000000.0) {
@@ -145,7 +145,7 @@ int cvtDoubleToString(
 	/* multiplier to convert fractional portion to integer */
 	fplace = frac_multiplier[precision];
 	fraction = (epicsInt32)(ftemp * fplace * 10);	
-	fraction = (fraction + 5) / 10;		/* round up */
+    fraction = (fraction + 5) / 10;     /* round up */
 
 	/* determine rounding into the whole number portion */
 	if ((fraction / fplace) >= 1){

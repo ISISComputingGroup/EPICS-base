@@ -3,8 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* SPDX-License-Identifier: EPICS
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
@@ -176,9 +176,9 @@ void tcpRecvWatchdog::sendBacklogProgressNotify (
 {
     guard.assertIdenticalMutex ( this->mutex );
 
-    // We dont set "beaconAnomaly" to be false here because, after we see a
-    // beacon anomaly (which could be transiently detecting a reboot) we will 
-    // not trust the beacon as an indicator of a healthy server until we 
+    // We don't set "beaconAnomaly" to be false here because, after we see a
+    // beacon anomaly (which could be transiently detecting a reboot) we will
+    // not trust the beacon as an indicator of a healthy server until we
     // receive at least one message from the server.
     if ( this->probeResponsePending && ! this->shuttingDown ) {
         this->timer.start ( *this, CA_ECHO_TIMEOUT );

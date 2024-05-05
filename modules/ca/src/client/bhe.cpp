@@ -3,8 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* SPDX-License-Identifier: EPICS
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
     
@@ -28,7 +28,7 @@
 
 #include "errlog.h"
 
-#define epicsExportSharedSymbols
+//#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "virtualCircuit.h"
 #include "bhe.h"
@@ -155,7 +155,7 @@ bool bhe::updatePeriod (
         return false;
     }
 
-    // 1) detect beacon duplications due to redundant routes
+    // 1) detect beacon duplication due to redundant routes
     // 2) detect lost beacons due to input queue overrun or damage
     if ( CA_V410 ( protocolRevision ) ) {
         unsigned beaconSeqAdvance;
@@ -245,8 +245,8 @@ bool bhe::updatePeriod (
         /*
          * Is this an IOC seen because of an IOC reboot
          * (beacon come at a higher rate just after the
-         * IOC reboots). Lower tolarance here because we
-         * dont have to worry about lost beacons.
+         * IOC reboots). Lower tolerance here because we
+         * don't have to worry about lost beacons.
          *
          * It may be possible to get false triggers here 
          * if the client is busy, but this does not cause

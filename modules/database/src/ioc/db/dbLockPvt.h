@@ -9,6 +9,7 @@
 #define DBLOCKPVT_H
 
 #include "dbLock.h"
+#include "epicsMutex.h"
 #include "epicsSpin.h"
 
 /* Define to enable additional error checking */

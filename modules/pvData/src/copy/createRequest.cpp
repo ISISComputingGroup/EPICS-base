@@ -482,5 +482,4 @@ PVStructure::shared_pointer createRequest(std::string const & request)
 }
 
 
-}} // namespace
-
+}} // namespace<<<<<<< HEAD

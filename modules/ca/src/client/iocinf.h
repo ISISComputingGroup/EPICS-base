@@ -3,8 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* SPDX-License-Identifier: EPICS
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*  
@@ -17,13 +17,13 @@
  *  Copyright, 1986, The Regents of the University of California.
  *                                  
  *           
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
-#ifndef INCiocinfh  
-#define INCiocinfh
+#ifndef INC_iocinf_H
+#define INC_iocinf_H
 
 #ifdef DEBUG
 #   define debugPrintf(argsInParen) ::printf argsInParen
@@ -56,8 +56,8 @@ static const double CA_CONN_VERIFY_PERIOD = 30.0; /* (sec) how often to request 
  * monitor flow control
  *
  * turning this down effects maximum throughput
- * because we dont get an optimal number of bytes 
- * per network frame 
+ * because we don't get an optimal number of bytes
+ * per network frame
  */
 static const unsigned contiguousMsgCountWhichTriggersFlowControl = 10u;
 

@@ -1,6 +1,7 @@
 /*************************************************************************\
 * Copyright (c) 2008 UChicago Argonne, LLC as Operator of Argonne
 *     National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -10,7 +11,7 @@
 
 #include <math.h>
 #include <ieeefp.h>
-#include <shareLib.h>
+#include <libComAPI.h>
 
 #ifndef isinf
 #  define isinf(x) (((x)==(x)) && !finite((x)))
@@ -25,8 +26,8 @@
 extern "C" {
 #endif
 
-epicsShareExtern float epicsNAN;
-epicsShareExtern float epicsINF;
+LIBCOM_API extern const float epicsNAN;
+LIBCOM_API extern const float epicsINF;
 
 #ifdef __cplusplus
 }

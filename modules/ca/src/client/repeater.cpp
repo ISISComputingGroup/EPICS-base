@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -69,16 +70,16 @@
 #include "taskwd.h"
 #include "errlog.h"
 
-#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "caProto.h"
 #include "udpiiu.h"
 #include "repeaterClient.h"
+#include "addrList.h"
 
 
 /* 
  *  these can be external since there is only one instance
- *  per machine so we dont care about reentrancy
+ *  per machine so we don't care about reentrancy
  */
 static tsDLList < repeaterClient > client_list;
 
@@ -334,7 +335,7 @@ static void fanOut ( const osiSockAddr & from, const void * pMsg,
 
     while ( ( pclient = client_list.get () ) ) {
         theClients.add ( *pclient );
-        /* Dont reflect back to sender */
+        /* Don't reflect back to sender */
         if ( pclient->identicalAddress ( from ) ) {
             continue;
         }
@@ -391,7 +392,7 @@ static void register_new_client ( osiSockAddr & from,
          * repeater would not always allow the loopback address
          * as a local client address so current clients alternate
          * between the address of the first non-loopback interface
-         * found and the loopback addresss when subscribing with 
+         * found and the loopback address when subscribing with
          * the CA repeater until all CA repeaters have been updated
          * to current code.
          */
@@ -451,7 +452,7 @@ static void register_new_client ( osiSockAddr & from,
     }
 
     /*
-     * send a noop message to all other clients so that we dont 
+     * send a noop message to all other clients so that we don't
      * accumulate sockets when there are no beacons
      */
     caHdr noop;
@@ -516,6 +517,56 @@ void ca_repeater ()
         delete [] pBuf;
         return;
     }
+
+#ifdef IP_ADD_MEMBERSHIP
+    /*
+     * join UDP socket to any multicast groups
+     */
+    {
+        ELLLIST casBeaconAddrList = ELLLIST_INIT;
+        ELLLIST casMergeAddrList = ELLLIST_INIT;
+
+        /*
+         * collect user specified beacon address list;
+         * check BEACON_ADDR_LIST list first; if no result, take CA_ADDR_LIST
+        */
+        if(!addAddrToChannelAccessAddressList(&casMergeAddrList,&EPICS_CAS_BEACON_ADDR_LIST,port,0)) {
+            addAddrToChannelAccessAddressList(&casMergeAddrList,&EPICS_CA_ADDR_LIST,port,0);
+        }
+
+        /* First clean up */
+        removeDuplicateAddresses(&casBeaconAddrList, &casMergeAddrList , 0);
+
+        osiSockAddrNode *pNode;
+        for(pNode = (osiSockAddrNode*)ellFirst(&casBeaconAddrList);
+            pNode;
+            pNode = (osiSockAddrNode*)ellNext(&pNode->node))
+        {
+
+            if(pNode->addr.ia.sin_family==AF_INET) {
+                epicsUInt32 top = ntohl(pNode->addr.ia.sin_addr.s_addr)>>24;
+                if(top>=224 && top<=239) {
+
+                    /* This is a multi-cast address */
+                    struct ip_mreq mreq;
+
+                    memset(&mreq, 0, sizeof(mreq));
+                    mreq.imr_multiaddr = pNode->addr.ia.sin_addr;
+                    mreq.imr_interface.s_addr = INADDR_ANY;
+
+                    if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+                        (char *) &mreq, sizeof(mreq)) != 0) {
+                        char name[40];
+                        char sockErrBuf[64];
+                        epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
+                        ipAddrToDottedIP (&pNode->addr.ia, name, sizeof(name));
+                        errlogPrintf("caR: Socket mcast join to %s failed: %s\n", name, sockErrBuf );
+                    }
+                }
+            }
+        }
+    }
+#endif
 
     debugPrintf ( ( "CA Repeater: Attached and initialized\n" ) );
 

@@ -1,3 +1,8 @@
+/*************************************************************************\
+* SPDX-License-Identifier: EPICS
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
+\*************************************************************************/
 
 #include <cstdlib>
 #include <cstdio>
@@ -556,7 +561,7 @@ MAIN ( epicsAtomicPerform )
     // The tests running here are measuring fast
     // functions so they tend to be impacted
     // by where the cache lines are wrt to the
-    // virtual pages perhap
+    // virtual pages perhaps
     //
     measure < AtomicSet < int > > ();
     measure < AtomicSet < size_t > > ();

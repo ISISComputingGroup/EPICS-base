@@ -3,8 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* SPDX-License-Identifier: EPICS
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 // 
@@ -26,7 +26,6 @@
 
 #include "envDefs.h"
 
-#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "udpiiu.h"
 #include "nciu.h"
@@ -43,7 +42,7 @@ searchTimer::searchTimer (
         const unsigned indexIn, 
         epicsMutex & mutexIn,
         bool boostPossibleIn ) :
-    timeAtLastSend ( epicsTime::getMonotonic () ),
+    timeAtLastSend ( epicsTime::getCurrent () ),
     timer ( queueIn.createTimer () ),
     iiu ( iiuIn ),
     mutex ( mutexIn ),
@@ -280,8 +279,8 @@ epicsTimerNotify::expireStatus searchTimer::expire (
         if ( this->searchAttempts ) {
             char buf[64];
             currentTime.strftime ( buf, sizeof(buf), "%M:%S.%09f");
-            debugPrintf ( ("sent %u delay sec=%f Rts=%s\n", 
-                nFrameSent, this->period(), buf ) );
+            debugPrintf ( ("sent %u delay Rts=%s\n",
+                nFrameSent, buf ) );
         }
 #   endif
 
@@ -318,7 +317,7 @@ void searchTimer :: show ( unsigned level ) const
 
 //
 // Reset the delay to the next search request if we get
-// at least one response. However, dont reset this delay if we
+// at least one response. However, don't reset this delay if we
 // get a delayed response to an old search request.
 //
 void searchTimer::uninstallChanDueToSuccessfulSearchResponse ( 

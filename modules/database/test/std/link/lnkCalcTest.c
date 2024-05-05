@@ -20,7 +20,7 @@
 #define testPutLongStr(PV, VAL) \
     testdbPutArrFieldOk(PV, DBF_CHAR, sizeof(VAL), VAL);
 
-void linkTest_registerRecordDeviceDriver(struct dbBase *);
+int linkTest_registerRecordDeviceDriver(struct dbBase *);
 
 static void startTestIoc(const char *dbfile)
 {

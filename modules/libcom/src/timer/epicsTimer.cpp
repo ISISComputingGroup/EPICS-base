@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -15,7 +16,6 @@
 #include <string>
 #include <stdexcept>
 
-#define epicsExportSharedSymbols
 #include "epicsMath.h"
 #include "epicsTimer.h"
 #include "epicsGuard.h"
@@ -109,7 +109,7 @@ void epicsTimerQueuePassiveForC::destroy ()
     delete this;
 }
 
-epicsShareFunc epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) : 
+LIBCOM_API epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) : 
     delay ( - DBL_MAX )
 {
     if ( restart != noRestart ) {
@@ -118,7 +118,7 @@ epicsShareFunc epicsTimerNotify::expireStatus::expireStatus ( restart_t restart 
     }
 }
 
-epicsShareFunc epicsTimerNotify::expireStatus::expireStatus 
+LIBCOM_API epicsTimerNotify::expireStatus::expireStatus 
     ( restart_t restartIn, const double & expireDelaySec ) :
     delay ( expireDelaySec )
 {
@@ -132,12 +132,12 @@ epicsShareFunc epicsTimerNotify::expireStatus::expireStatus
     }
 }
 
-epicsShareFunc bool epicsTimerNotify::expireStatus::restart () const
+LIBCOM_API bool epicsTimerNotify::expireStatus::restart () const
 {
     return this->delay >= 0.0 && finite(this->delay);
 }
 
-epicsShareFunc double epicsTimerNotify::expireStatus::expirationDelay () const
+LIBCOM_API double epicsTimerNotify::expireStatus::expirationDelay () const
 {
     if ( this->delay < 0.0 || !finite(this->delay) ) {
         throw std::logic_error 
@@ -146,7 +146,7 @@ epicsShareFunc double epicsTimerNotify::expireStatus::expirationDelay () const
     return this->delay;
 }
 
-extern "C" epicsTimerQueuePassiveId epicsShareAPI
+extern "C" epicsTimerQueuePassiveId epicsStdCall
     epicsTimerQueuePassiveCreate ( 
         epicsTimerQueueNotifyReschedule pRescheduleCallbackIn, 
         epicsTimerQueueNotifyQuantum pSleepQuantumCallbackIn,
@@ -163,24 +163,24 @@ extern "C" epicsTimerQueuePassiveId epicsShareAPI
     }
 }
 
-extern "C" void epicsShareAPI 
+extern "C" void epicsStdCall 
     epicsTimerQueuePassiveDestroy ( epicsTimerQueuePassiveId pQueue )
 {
     pQueue->destroy ();
 }
 
-extern "C" double epicsShareAPI 
+extern "C" double epicsStdCall 
     epicsTimerQueuePassiveProcess ( epicsTimerQueuePassiveId pQueue )
 {
     try {
-        return pQueue->process ( epicsTime::getMonotonic() );
+        return pQueue->process ( epicsTime::getCurrent() );
     }
     catch ( ... ) {
         return 1.0;
     }
 }
 
-extern "C" epicsTimerId epicsShareAPI epicsTimerQueuePassiveCreateTimer (
+extern "C" epicsTimerId epicsStdCall epicsTimerQueuePassiveCreateTimer (
     epicsTimerQueuePassiveId pQueue, epicsTimerCallback pCallback, void *pArg )
 {
     try {
@@ -191,26 +191,26 @@ extern "C" epicsTimerId epicsShareAPI epicsTimerQueuePassiveCreateTimer (
     }
 }
 
-extern "C" epicsShareFunc void epicsShareAPI epicsTimerQueuePassiveDestroyTimer ( 
+extern "C" LIBCOM_API void epicsStdCall epicsTimerQueuePassiveDestroyTimer ( 
     epicsTimerQueuePassiveId /* pQueue */, epicsTimerId pTmr )
 {
     pTmr->destroy ();
 }
 
-extern "C" void  epicsShareAPI epicsTimerQueuePassiveShow (
+extern "C" void  epicsStdCall epicsTimerQueuePassiveShow (
     epicsTimerQueuePassiveId pQueue, unsigned int level )
 {
     pQueue->show ( level );
 }
 
-extern "C" epicsTimerQueueId epicsShareAPI
+extern "C" epicsTimerQueueId epicsStdCall
     epicsTimerQueueAllocate ( int okToShare, unsigned int threadPriority )
 {
     try {
         epicsSingleton < timerQueueActiveMgr > :: reference ref = 
             timerQueueMgrEPICS.getReference ();
-        epicsTimerQueueActiveForC & tmr = 
-            ref->allocate ( ref, okToShare ? true : false, threadPriority );
+        epicsTimerQueueActiveForC & tmr =
+            ref->allocate ( ref, okToShare != 0, threadPriority );
         return &tmr;
     }
     catch ( ... ) {
@@ -218,12 +218,12 @@ extern "C" epicsTimerQueueId epicsShareAPI
     }
 }
 
-extern "C" void epicsShareAPI epicsTimerQueueRelease ( epicsTimerQueueId pQueue )
+extern "C" void epicsStdCall epicsTimerQueueRelease ( epicsTimerQueueId pQueue )
 {
     pQueue->release ();
 }
 
-extern "C" epicsTimerId epicsShareAPI epicsTimerQueueCreateTimer (
+extern "C" epicsTimerId epicsStdCall epicsTimerQueueCreateTimer (
     epicsTimerQueueId pQueue, epicsTimerCallback pCallback, void *pArg )
 {
     try {
@@ -234,41 +234,41 @@ extern "C" epicsTimerId epicsShareAPI epicsTimerQueueCreateTimer (
     }
 }
 
-extern "C" void  epicsShareAPI epicsTimerQueueShow (
+extern "C" void  epicsStdCall epicsTimerQueueShow (
     epicsTimerQueueId pQueue, unsigned int level )
 {
     pQueue->show ( level );
 }
 
-extern "C" void epicsShareAPI epicsTimerQueueDestroyTimer ( 
+extern "C" void epicsStdCall epicsTimerQueueDestroyTimer ( 
     epicsTimerQueueId /* pQueue */, epicsTimerId pTmr )
 {
     pTmr->destroy ();
 }
 
-extern "C" void  epicsShareAPI epicsTimerStartTime (
+extern "C" void  epicsStdCall epicsTimerStartTime (
     epicsTimerId pTmr, const epicsTimeStamp *pTime )
 {
     pTmr->start ( *pTmr, *pTime );
 }
 
-extern "C" void  epicsShareAPI epicsTimerStartDelay (
+extern "C" void  epicsStdCall epicsTimerStartDelay (
     epicsTimerId pTmr, double delaySeconds )
 {
     pTmr->start ( *pTmr, delaySeconds );
 }
 
-extern "C" void  epicsShareAPI epicsTimerCancel ( epicsTimerId pTmr )
+extern "C" void  epicsStdCall epicsTimerCancel ( epicsTimerId pTmr )
 {
     pTmr->cancel ();
 }
 
-extern "C" double  epicsShareAPI epicsTimerGetExpireDelay ( epicsTimerId pTmr )
+extern "C" double  epicsStdCall epicsTimerGetExpireDelay ( epicsTimerId pTmr )
 {
     return pTmr->getExpireDelay ();
 }
 
-extern "C" void  epicsShareAPI epicsTimerShow (
+extern "C" void  epicsStdCall epicsTimerShow (
     epicsTimerId pTmr, unsigned int level )
 {
     pTmr->timer::show ( level );

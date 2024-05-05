@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -10,10 +11,10 @@
  *      Author: Jeffrey O. Hill
  *              hill@atdiv.lanl.gov
  *              (505) 665 1831
- *      Date:  	9-93 
+ *      Date:   9-93
  *
- * 	NOTES:
- * 	.01 Storage for identifier must persist until an item is deleted	
+ *  NOTES:
+ *  .01 Storage for identifier must persist until an item is deleted
  */
 
 #include <stdio.h>
@@ -23,9 +24,8 @@
 #include <math.h>
 #include <time.h>
 
-#define epicsExportSharedSymbols
 #include "epicsAssert.h"
-#include "freeList.h"	/* bucketLib uses freeListLib inside the DLL */
+#include "freeList.h"   /* bucketLib uses freeListLib inside the DLL */
 #include "bucketLib.h"
 
 /*
@@ -45,7 +45,7 @@ static bucketHash      bucketStringHash;
 typedef struct {
 	bucketHash      *pHash;
 	bucketCompare   *pCompare;
-	buckTypeOfId	type;
+    buckTypeOfId    type;
 }bucketSET;
 
 static bucketSET BSET[] = {
@@ -63,12 +63,12 @@ static void *bucketLookupItem(BUCKET *pb, bucketSET *pBSET, const void *pId);
 /*
  * bucket id bit width
  */
-#define BUCKETID_BIT_WIDTH 	(sizeof(BUCKETID)*CHAR_BIT)
+#define BUCKETID_BIT_WIDTH  (sizeof(BUCKETID)*CHAR_BIT)
 
 /*
  * Maximum bucket size
  */
-#define BUCKET_MAX_WIDTH	12	
+#define BUCKET_MAX_WIDTH    12
 
 
 /*
@@ -76,9 +76,9 @@ static void *bucketLookupItem(BUCKET *pb, bucketSET *pBSET, const void *pId);
  */
 static ITEM **bucketUnsignedCompare (ITEM **ppi, const void *pId)
 {
-	unsigned	id;	
-	unsigned	*pItemId;
-	ITEM		*pi;
+    unsigned    id;
+    unsigned    *pItemId;
+    ITEM        *pi;
 
 	id = * (unsigned *) pId;
 	while ( (pi = *ppi) ) {
@@ -99,9 +99,9 @@ static ITEM **bucketUnsignedCompare (ITEM **ppi, const void *pId)
  */
 static ITEM **bucketPointerCompare (ITEM **ppi, const void *pId)
 {
-	void		*ptr;	
-	void		**pItemId;
-	ITEM		*pi;
+    void        *ptr;
+    void        **pItemId;
+    ITEM        *pi;
 
 	ptr = * (void **) pId;
 	while ( (pi = *ppi) ) {
@@ -122,9 +122,9 @@ static ITEM **bucketPointerCompare (ITEM **ppi, const void *pId)
  */
 static ITEM **bucketStringCompare (ITEM **ppi, const void *pId)
 {
-	const char	*pStr = pId;	
-	ITEM		*pi;
-	int		status;
+    const char  *pStr = pId;
+    ITEM        *pi;
+    int         status;
 
 	while ( (pi = *ppi) ) {
 		if (bidtString == pi->type) {
@@ -144,9 +144,9 @@ static ITEM **bucketStringCompare (ITEM **ppi, const void *pId)
  */
 static BUCKETID bucketUnsignedHash (BUCKET *pb, const void *pId)
 {
-	const unsigned	*pUId = (const unsigned *) pId;	
-	unsigned 	src;
-	BUCKETID	hashid;
+    const unsigned  *pUId = (const unsigned *) pId;
+    unsigned    src;
+    BUCKETID    hashid;
 
 	src = *pUId;
 	hashid = src;
@@ -166,9 +166,9 @@ static BUCKETID bucketUnsignedHash (BUCKET *pb, const void *pId)
  */
 static BUCKETID bucketPointerHash (BUCKET *pb, const void *pId)
 {
-	void * const	*ppId = (void * const *) pId;	
-	size_t	src;
-	BUCKETID	hashid;
+    void * const    *ppId = (void * const *) pId;
+    size_t      src;
+    BUCKETID    hashid;
 
 	/*
 	 * This makes the assumption that size_t
@@ -194,9 +194,9 @@ static BUCKETID bucketPointerHash (BUCKET *pb, const void *pId)
  */
 static BUCKETID bucketStringHash (BUCKET *pb, const void *pId)
 {
-	const char	*pStr = (const char *) pId;	
-	BUCKETID	hashid;
-	unsigned	i;
+    const char  *pStr = (const char *) pId;
+    BUCKETID    hashid;
+    unsigned    i;
 
 	hashid = 0;
 	i = 1;
@@ -216,11 +216,11 @@ static BUCKETID bucketStringHash (BUCKET *pb, const void *pId)
 /*
  * bucketCreate()
  */
-epicsShareFunc BUCKET * epicsShareAPI bucketCreate (unsigned nHashTableEntries)
+LIBCOM_API BUCKET * epicsStdCall bucketCreate (unsigned nHashTableEntries)
 {
-	BUCKETID	mask;
-	unsigned	nbits;
-	BUCKET		*pb;
+    BUCKETID    mask;
+    unsigned    nbits;
+    BUCKET      *pb;
 
 	/*
 	 * no absurd sized buckets
@@ -283,7 +283,7 @@ epicsShareFunc BUCKET * epicsShareAPI bucketCreate (unsigned nHashTableEntries)
 /*
  * bucketFree()
  */
-epicsShareFunc int epicsShareAPI bucketFree (BUCKET *prb)
+LIBCOM_API int epicsStdCall bucketFree (BUCKET *prb)
 {
 	/*
 	 * deleting a bucket with entries in use
@@ -305,27 +305,27 @@ epicsShareFunc int epicsShareAPI bucketFree (BUCKET *prb)
 /*
  * bucketAddItem()
  */
-epicsShareFunc int epicsShareAPI 
+LIBCOM_API int epicsStdCall 
 	bucketAddItemUnsignedId(BUCKET *prb, const unsigned *pId, const void *pApp)
 {
 	return bucketAddItem(prb, &BSET[bidtUnsigned], pId, pApp);
 }
-epicsShareFunc int epicsShareAPI 
+LIBCOM_API int epicsStdCall 
 	bucketAddItemPointerId(BUCKET *prb, void * const *pId, const void *pApp)
 {
 	return bucketAddItem(prb, &BSET[bidtPointer], pId, pApp);
 }
-epicsShareFunc int epicsShareAPI 
+LIBCOM_API int epicsStdCall 
 	bucketAddItemStringId(BUCKET *prb, const char *pId, const void *pApp)
 {
 	return bucketAddItem(prb, &BSET[bidtString], pId, pApp);
 }
 static int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, const void *pApp)
 {
-	BUCKETID	hashid;
-	ITEM		**ppi;
-	ITEM		**ppiExists;
-	ITEM		*pi;
+    BUCKETID    hashid;
+    ITEM        **ppi;
+    ITEM        **ppiExists;
+    ITEM        *pi;
 
 	/*
 	 * try to get it off the free list first. If
@@ -341,22 +341,22 @@ static int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, const v
 	 */
 	hashid = (*pBSET->pHash) (prb, pId);
 
-	pi->pApp = pApp;
-	pi->pId = pId;
-	pi->type = pBSET->type;
-	assert ((hashid & ~prb->hashIdMask) == 0);
-	ppi = &prb->pTable[hashid];
-	/*
-	 * Dont reuse a resource id !
-	 */
-	ppiExists = (*pBSET->pCompare) (ppi, pId);
-	if (ppiExists) {
-		freeListFree(prb->freeListPVT,pi);
-		return S_bucket_idInUse;
-	}
-	pi->pItem = *ppi;
-	prb->pTable[hashid] = pi;
-	prb->nInUse++;
+    pi->pApp = pApp;
+    pi->pId = pId;
+    pi->type = pBSET->type;
+    assert ((hashid & ~prb->hashIdMask) == 0);
+    ppi = &prb->pTable[hashid];
+    /*
+     * Don't reuse a resource id !
+     */
+    ppiExists = (*pBSET->pCompare) (ppi, pId);
+    if (ppiExists) {
+        freeListFree(prb->freeListPVT,pi);
+        return S_bucket_idInUse;
+    }
+    pi->pItem = *ppi;
+    prb->pTable[hashid] = pi;
+    prb->nInUse++;
 
 	return S_bucket_success;
 }
@@ -366,9 +366,9 @@ static int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, const v
  */
 static void *bucketLookupAndRemoveItem (BUCKET *prb, bucketSET *pBSET, const void *pId)
 {
-	BUCKETID	hashid;
-	ITEM		**ppi;
-	ITEM		*pi;
+    BUCKETID    hashid;
+    ITEM        **ppi;
+    ITEM        *pi;
     void        *pApp;
 
 	/*
@@ -395,15 +395,15 @@ static void *bucketLookupAndRemoveItem (BUCKET *prb, bucketSET *pBSET, const voi
 
 	return pApp;
 }
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId)
+LIBCOM_API void * epicsStdCall bucketLookupAndRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId)
 {
     return bucketLookupAndRemoveItem(prb, &BSET[bidtUnsigned], pId);
 }
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemPointerId (BUCKET *prb, void * const *pId)
+LIBCOM_API void * epicsStdCall bucketLookupAndRemoveItemPointerId (BUCKET *prb, void * const *pId)
 {
 	return bucketLookupAndRemoveItem(prb, &BSET[bidtPointer], pId);
 }
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemStringId (BUCKET *prb, const char *pId)
+LIBCOM_API void * epicsStdCall bucketLookupAndRemoveItemStringId (BUCKET *prb, const char *pId)
 {
 	return bucketLookupAndRemoveItem(prb, &BSET[bidtString], pId);
 }
@@ -412,17 +412,17 @@ epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemStringId (BUCKET *p
 /*
  * bucketRemoveItem()
  */
-epicsShareFunc int epicsShareAPI 
+LIBCOM_API int epicsStdCall 
 	bucketRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId)
 {
     return bucketLookupAndRemoveItem(prb, &BSET[bidtUnsigned], pId)?S_bucket_success:S_bucket_uknId;
 }
-epicsShareFunc int epicsShareAPI 
+LIBCOM_API int epicsStdCall 
 	bucketRemoveItemPointerId (BUCKET *prb, void * const *pId)
 {
 	return bucketLookupAndRemoveItem(prb, &BSET[bidtPointer], pId)?S_bucket_success:S_bucket_uknId;
 }
-epicsShareFunc int epicsShareAPI 
+LIBCOM_API int epicsStdCall 
 	bucketRemoveItemStringId (BUCKET *prb, const char *pId)
 {
 	return bucketLookupAndRemoveItem(prb, &BSET[bidtString], pId)?S_bucket_success:S_bucket_uknId;
@@ -432,25 +432,25 @@ epicsShareFunc int epicsShareAPI
 /*
  * bucketLookupItem()
  */
-epicsShareFunc void * epicsShareAPI
+LIBCOM_API void * epicsStdCall
  	bucketLookupItemUnsignedId (BUCKET *prb, const unsigned *pId)
 {
 	return bucketLookupItem(prb, &BSET[bidtUnsigned], pId);
 }
-epicsShareFunc void * epicsShareAPI
+LIBCOM_API void * epicsStdCall
 	bucketLookupItemPointerId (BUCKET *prb, void * const *pId)
 {
 	return bucketLookupItem(prb, &BSET[bidtPointer], pId);
 }
-epicsShareFunc void * epicsShareAPI
+LIBCOM_API void * epicsStdCall
 	bucketLookupItemStringId (BUCKET *prb, const char *pId)
 {
 	return bucketLookupItem(prb, &BSET[bidtString], pId);
 }
 static void *bucketLookupItem (BUCKET *pb, bucketSET *pBSET, const void *pId)
 {
-	BUCKETID	hashid;
-	ITEM		**ppi;
+    BUCKETID    hashid;
+    ITEM        **ppi;
 
 	/*
 	 * create the hash index
@@ -474,19 +474,19 @@ static void *bucketLookupItem (BUCKET *pb, bucketSET *pBSET, const void *pId)
 /*
  * bucketShow()
  */
-epicsShareFunc int epicsShareAPI bucketShow(BUCKET *pb)
+LIBCOM_API int epicsStdCall bucketShow(BUCKET *pb)
 {
-	ITEM 		**ppi;
-	ITEM 		*pi;
-	unsigned	nElem;
-	double		X;
-	double		XX;
-	double		mean;
-	double		stdDev;
-	unsigned	count;
-	unsigned	maxEntries;
+    ITEM        **ppi;
+    ITEM        *pi;
+    unsigned    nElem;
+    double      X;
+    double      XX;
+    double      mean;
+    double      stdDev;
+    unsigned    count;
+    unsigned    maxEntries;
 
-	printf(	"    Bucket entries in use = %d bytes in use = %ld\n",
+    printf( "    Bucket entries in use = %d bytes in use = %ld\n",
 		pb->nInUse,
 		(long) (sizeof(*pb)+(pb->hashIdMask+1)*
 			sizeof(ITEM *)+pb->nInUse*sizeof(ITEM)));

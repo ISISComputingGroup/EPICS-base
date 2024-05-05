@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -10,6 +11,11 @@
 /*
  * Author: Jeff Hill
  */
+
+/* pull in _WIN32_WINNT* definitions, if _WIN32_WINNT
+ * is not already defined it is set to max supported by SDK
+ */
+#include <sdkddkver.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -21,24 +27,68 @@
 #include <windows.h>
 #include <process.h> /* for _endthread() etc */
 
-#define epicsExportSharedSymbols
 #include "epicsStdio.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "epicsThread.h"
 #include "cantProceed.h"
 #include "epicsAssert.h"
 #include "ellLib.h"
 #include "epicsExit.h"
 #include "epicsAtomic.h"
+#include "osdThreadPvt.h"
 
-epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
+/* Windows Vista and higher supports fibre functions, but the
+ * prototypes only appear in the windows SDK 8 and above.
+ * VS2010 supplies sdk 7, but can be upgraded to later SDK 
+
+ * To accomodate this we suuply prototypes on, for XP
+ * fall back to Tls*() which will build and run
+ * correctly for epicsThreads, but means that TLS allocations from
+ * epicsThreadImplicitCreate() will continue to leak (for non-EPICS threads).
+ *
+ * Also, WINE circa 5.0.3 provides the FLS storage functions, but doesn't
+ * actually run the dtor function.
+ *
+ * we check for existance of _WIN32_WINNT_WIN8 which will only be defined
+ * in SDK 8 and above. If Visa is detected and SDK < 8 we will supply
+ * the missing prototypes
+ */
+
+#if _WIN32_WINNT >= 0x0600 /* VISTA */
+#   ifdef _WIN32_WINNT_WIN8 /* Existance means using SDK 8 or higher */
+#       include <fibersapi.h>
+#   else
+#       include <winnt.h> /* for PFLS_CALLBACK_FUNCTION */
+/* the fibers api exists in vista and above, but no header is provided until SDK 8 */
+        WINBASEAPI DWORD WINAPI FlsAlloc(PFLS_CALLBACK_FUNCTION);
+        WINBASEAPI PVOID WINAPI FlsGetValue(DWORD);
+        WINBASEAPI BOOL WINAPI FlsSetValue(DWORD , PVOID);
+        WINBASEAPI BOOL WINAPI FlsFree(DWORD);
+#   endif
+#elif _WIN32_WINNT >= 0x0501 /* Windows XP */
+    typedef void (WINAPI *xPFLS_CALLBACK_FUNCTION) (void*);
+    static
+    DWORD xFlsAlloc(xPFLS_CALLBACK_FUNCTION dtor) {
+        (void)dtor;
+        return TlsAlloc();
+    }
+#   define FlsAlloc xFlsAlloc
+#   define FlsSetValue TlsSetValue
+#   define FlsGetValue TlsGetValue
+#   define USE_TLSALLOC_FALLBACK
+#else
+#   error Minimum supported is Windows XP
+#endif
+
+LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
 
 void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName );
+static void WINAPI epicsParmCleanupWIN32 ( void * praw );
 
 typedef struct win32ThreadGlobal {
     CRITICAL_SECTION mutex;
     ELLLIST threadList;
-    DWORD tlsIndexThreadLibraryEPICS;
+    DWORD flsIndexThreadLibraryEPICS;
 } win32ThreadGlobal;
 
 typedef struct epicsThreadOSD {
@@ -51,7 +101,9 @@ typedef struct epicsThreadOSD {
     DWORD id;
     unsigned epicsPriority;
     char isSuspended;
-    char joinable;
+    int joinable;
+    int isRunning;
+    HANDLE timer; /* waitable timer */
 } win32ThreadParam;
 
 typedef struct epicsThreadPrivateOSD {
@@ -116,17 +168,21 @@ BOOL WINAPI DllMain (
 
 	case DLL_THREAD_ATTACH:
         /*
-         * Dont allow user's explicitly calling FreeLibrary for Com.dll to yank 
+         * Don't allow user's explicitly calling FreeLibrary for Com.dll to yank
          * the carpet out from under EPICS threads that are still using Com.dll
+         */
+        /*
+         * Only in WXP
+         * That's a shame because this is probably much faster
          */
         success = GetModuleHandleEx (
             GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
             ( LPCTSTR ) DllMain, & dllHandle );
+
         if ( success ) {
             success = TlsSetValue ( dllHandleIndex, dllHandle );
         }
 		break;
-
 	case DLL_THREAD_DETACH:
         /*
          * Thread is exiting, release Com.dll. I am assuming that windows is
@@ -187,8 +243,8 @@ static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
 
     InitializeCriticalSection ( & pWin32ThreadGlobal->mutex );
     ellInit ( & pWin32ThreadGlobal->threadList );
-    pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS = TlsAlloc();
-    if ( pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS == TLS_OUT_OF_INDEXES ) {
+    pWin32ThreadGlobal->flsIndexThreadLibraryEPICS = FlsAlloc(&epicsParmCleanupWIN32);
+    if ( pWin32ThreadGlobal->flsIndexThreadLibraryEPICS == FLS_OUT_OF_INDEXES ) {
         DeleteCriticalSection ( & pWin32ThreadGlobal->mutex );
         free ( pWin32ThreadGlobal );
         pWin32ThreadGlobal = 0;
@@ -200,10 +256,27 @@ static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
     return pWin32ThreadGlobal;
 }
 
-static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
+static void epicsParmCleanupDataWIN32 ( win32ThreadParam * pParm )
 {
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    if ( ! pGbl )  {
+    if ( pParm ) {
+        if ( pParm->handle ) {
+            CloseHandle ( pParm->handle );
+        }
+        if ( pParm->timer ) {
+            CloseHandle ( pParm->timer );
+        }
+        free ( pParm );
+    }
+}
+
+static void WINAPI epicsParmCleanupWIN32 ( void * praw )
+{
+    win32ThreadParam * pParm = praw;
+    win32ThreadGlobal * pGbl;
+    if(!praw)
+        return;
+
+    if ( ! (pGbl = fetchWin32ThreadGlobal ()) )  {
         fprintf ( stderr, "epicsParmCleanupWIN32: unable to find ctx\n" );
         return;
     }
@@ -218,17 +291,16 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
         ellDelete ( & pGbl->threadList, & pParm->node );
         LeaveCriticalSection ( & pGbl->mutex );
 
-        CloseHandle ( pParm->handle );
-        free ( pParm );
+        epicsParmCleanupDataWIN32 ( pParm );
     }
 }
 
 /*
  * epicsThreadExitMain ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadExitMain ( void )
+LIBCOM_API void epicsStdCall epicsThreadExitMain ( void )
 {
-    _endthread ();
+    cantProceed("epicsThreadExitMain() must no longer be used.\n");
 }
 
 /*
@@ -254,7 +326,7 @@ static unsigned osdPriorityMagFromPriorityOSI ( unsigned osiPriority, unsigned p
     return magnitude;
 }
 
-epicsShareFunc
+LIBCOM_API
 void epicsThreadRealtimeLock(void)
 {}
 
@@ -336,7 +408,7 @@ static unsigned epicsThreadGetOsiPriorityValue ( int osdPriority )
 /*
  * epicsThreadLowestPriorityLevelAbove ()
  */
-epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadLowestPriorityLevelAbove 
+LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadLowestPriorityLevelAbove 
             ( unsigned int priority, unsigned * pPriorityJustAbove )
 {
     const DWORD priorityClass = GetPriorityClass ( GetCurrentProcess () );
@@ -366,7 +438,7 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadLowestPriorityL
 /*
  * epicsThreadHighestPriorityLevelBelow ()
  */
-epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriorityLevelBelow 
+LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadHighestPriorityLevelBelow 
             ( unsigned int priority, unsigned * pPriorityJustBelow )
 {
     const DWORD priorityClass = GetPriorityClass ( GetCurrentProcess () );
@@ -396,7 +468,7 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriority
 /*
  * epicsThreadGetStackSize ()
  */
-epicsShareFunc unsigned int epicsShareAPI 
+LIBCOM_API unsigned int epicsStdCall 
     epicsThreadGetStackSize ( epicsThreadStackSizeClass stackSizeClass ) 
 {
     #define STACK_SIZE(f) (f * 0x10000 * sizeof(void *))
@@ -430,7 +502,7 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     BOOL success;
 
     if ( pGbl )  {
-        success = TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, pParm );
+        success = FlsSetValue ( pGbl->flsIndexThreadLibraryEPICS, pParm );
         if ( success ) {
             osdThreadHooksRun ( ( epicsThreadId ) pParm );
             /* printf ( "starting thread %d\n", pParm->id ); */
@@ -447,11 +519,17 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     }
 
     epicsExitCallAtThreadExits ();
-    /*
-     * CAUTION: !!!! the thread id might continue to be used after this thread exits !!!!
+
+    epicsAtomicSetIntT(&pParm->isRunning, 0);
+
+    /* On Windows we could omit this and rely on the callback given to FlsAlloc() to free.
+     * However < vista doesn't implement FLS at all, and WINE (circa 5.0.3) doesn't
+     * implement fully (dtor never runs).  So for EPICS threads, we explicitly
+     * free() here.
      */
-    TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, (void*)0xdeadbeef );
-    epicsParmCleanupWIN32 ( pParm );
+    if(pGbl && FlsSetValue ( pGbl->flsIndexThreadLibraryEPICS, NULL )) {
+        epicsParmCleanupWIN32 ( pParm );
+    }
 
     return retStat; /* this indirectly closes the thread handle */
 }
@@ -465,7 +543,18 @@ static win32ThreadParam * epicsThreadParmCreate ( const char *pName )
         pParmWIN32->pName = (char *) ( pParmWIN32 + 1 );
         strcpy ( pParmWIN32->pName, pName );
         pParmWIN32->isSuspended = 0;
+        pParmWIN32->isRunning = 1;
         epicsAtomicIncrIntT(&pParmWIN32->refcnt);
+#ifdef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+        pParmWIN32->timer = CreateWaitableTimerEx(NULL, NULL, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+#endif
+        if (pParmWIN32->timer == NULL) {
+            pParmWIN32->timer = CreateWaitableTimer(NULL, 0, NULL);
+        }
+        if (pParmWIN32->timer == NULL) {
+            free(pParmWIN32);
+            return NULL;
+        }
     }
     return pParmWIN32;
 }
@@ -502,7 +591,7 @@ static win32ThreadParam * epicsThreadImplicitCreate ( void )
         win32ThreadPriority = GetThreadPriority ( pParm->handle );
         assert ( win32ThreadPriority != THREAD_PRIORITY_ERROR_RETURN );
         pParm->epicsPriority = epicsThreadGetOsiPriorityValue ( win32ThreadPriority );
-        success = TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, pParm );
+        success = FlsSetValue ( pGbl->flsIndexThreadLibraryEPICS, pParm );
         if ( ! success ) {
             epicsParmCleanupWIN32 ( pParm );
             pParm = 0;
@@ -532,7 +621,6 @@ epicsThreadId epicsThreadCreateOpt (
     BOOL bstat;
 
     if ( ! pGbl )  {
-        fprintf(stderr, "Error: Thread %s no thread global\n", pName);
         return NULL;
     }
 
@@ -546,12 +634,15 @@ epicsThreadId epicsThreadCreateOpt (
 
     pParmWIN32 = epicsThreadParmCreate ( pName );
     if ( pParmWIN32 == 0 ) {
-        fprintf(stderr, "Error: Thread %s unable to create param\n", pName);
         return ( epicsThreadId ) pParmWIN32;
     }
     pParmWIN32->funptr = pFunc;
     pParmWIN32->parm = pParm;
     pParmWIN32->epicsPriority = opts->priority;
+    if(opts->joinable) {
+        pParmWIN32->joinable = 1;
+        epicsAtomicIncrIntT(&pParmWIN32->refcnt);
+    }
 
     {
         unsigned threadId;
@@ -561,9 +652,7 @@ epicsThreadId epicsThreadCreateOpt (
             CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION, 
             & threadId );
         if ( pParmWIN32->handle == 0 ) {
-            perror("epicsThreadCreateOpt(_beginthreadex)");
-            fprintf(stderr, "Error: Thread %s unable to create thread\n", pName);
-            free ( pParmWIN32 );
+            epicsParmCleanupDataWIN32 ( pParmWIN32 );
             return NULL;
         }
         /* weird win32 interface threadId parameter inconsistency */
@@ -574,9 +663,7 @@ epicsThreadId epicsThreadCreateOpt (
     osdPriority = epicsThreadGetOsdPriorityValue (opts->priority);
     bstat = SetThreadPriority ( pParmWIN32->handle, osdPriority );
     if (!bstat) {
-        CloseHandle ( pParmWIN32->handle ); 
-        free ( pParmWIN32 );
-        fprintf(stderr, "Error: Thread %s unable to set epics priority %u (OSD %d)\n", pName, opts->priority, osdPriority);
+        epicsParmCleanupDataWIN32 ( pParmWIN32 );
         return NULL;
     }
     
@@ -589,16 +676,11 @@ epicsThreadId epicsThreadCreateOpt (
 		    EnterCriticalSection ( & pGbl->mutex );
 		    ellDelete ( & pGbl->threadList, & pParmWIN32->node );
 		    LeaveCriticalSection ( & pGbl->mutex );
-        CloseHandle ( pParmWIN32->handle ); 
-        free ( pParmWIN32 );
-        fprintf(stderr, "Error: Thread %s unable to resume thread\n", pName);
+        epicsParmCleanupDataWIN32 ( pParmWIN32 );
         return NULL;
     }
 
-    if(opts->joinable) {
-        pParmWIN32->joinable = 1;
-        epicsAtomicIncrIntT(&pParmWIN32->refcnt);
-    }
+    /* after this point, new thread is responsible to free(pParmWIN32) */
 
     return ( epicsThreadId ) pParmWIN32;
 }
@@ -609,18 +691,17 @@ void epicsThreadMustJoin(epicsThreadId id)
 
     if(!id) {
         /* no-op */
-    } else if(!pParmWIN32->joinable) {
+    } else if(epicsAtomicCmpAndSwapIntT(&id->joinable, 1, 0)!=1) {
         if(epicsThreadGetIdSelf()==id) {
             fprintf(stderr, "Warning: %s thread self-join of unjoinable\n", pParmWIN32->pName);
 
         } else {
-            /* try to error nicely, however in all likelyhood de-ref of
+            /* try to error nicely, however in all likelihood de-ref of
              * 'id' has already caused SIGSEGV as we are racing thread exit,
              * which free's 'id'.
              */
             cantProceed("Error: %s thread not joinable.\n", pParmWIN32->pName);
         }
-        return;
 
     } else if(epicsThreadGetIdSelf() != id) {
         DWORD status = WaitForSingleObject(pParmWIN32->handle, INFINITE);
@@ -628,31 +709,42 @@ void epicsThreadMustJoin(epicsThreadId id)
             /* TODO: signal error? */
         }
 
-        pParmWIN32->joinable = 0;
         epicsParmCleanupWIN32(pParmWIN32);
     } else {
         /* join self silently does nothing */
-        pParmWIN32->joinable = 0;
         epicsParmCleanupWIN32(pParmWIN32);
     }
 }
 
 /*
- * epicsThreadSuspendSelf ()
+ * getMyWin32ThreadParam ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf ()
+static void* getMyWin32ThreadParam ( win32ThreadGlobal * pGbl )
 {
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
-    DWORD stat;
 
-    assert ( pGbl );
+    if ( ! pGbl ) {
+        pGbl = fetchWin32ThreadGlobal ();
+        assert ( pGbl );
+    }
 
-    pParm = ( win32ThreadParam * ) 
-        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
+    pParm = ( win32ThreadParam * )
+        FlsGetValue ( pGbl->flsIndexThreadLibraryEPICS );
     if ( ! pParm ) {
         pParm = epicsThreadImplicitCreate ();
     }
+    return pParm;
+}
+
+/*
+ * epicsThreadSuspendSelf ()
+ */
+LIBCOM_API void epicsStdCall epicsThreadSuspendSelf ()
+{
+    DWORD stat;
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( pGbl );
+
     if ( pParm ) {
         EnterCriticalSection ( & pGbl->mutex );
         pParm->isSuspended = 1;
@@ -665,7 +757,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf ()
 /*
  * epicsThreadResume ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadResume ( epicsThreadId id )
+LIBCOM_API void epicsStdCall epicsThreadResume ( epicsThreadId id )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
@@ -686,7 +778,7 @@ epicsShareFunc void epicsShareAPI epicsThreadResume ( epicsThreadId id )
 /*
  * epicsThreadGetPriority ()
  */
-epicsShareFunc unsigned epicsShareAPI epicsThreadGetPriority (epicsThreadId id) 
+LIBCOM_API unsigned epicsStdCall epicsThreadGetPriority (epicsThreadId id) 
 { 
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
     return pParm->epicsPriority;
@@ -695,18 +787,10 @@ epicsShareFunc unsigned epicsShareAPI epicsThreadGetPriority (epicsThreadId id)
 /*
  * epicsThreadGetPrioritySelf ()
  */
-epicsShareFunc unsigned epicsShareAPI epicsThreadGetPrioritySelf () 
+LIBCOM_API unsigned epicsStdCall epicsThreadGetPrioritySelf () 
 { 
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm;
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
 
-    assert ( pGbl );
-
-    pParm = ( win32ThreadParam * ) 
-        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
-    if ( ! pParm ) {
-        pParm = epicsThreadImplicitCreate ();
-    }
     if ( pParm ) {
         return pParm->epicsPriority;
     }
@@ -721,7 +805,7 @@ epicsShareFunc unsigned epicsShareAPI epicsThreadGetPrioritySelf ()
 /*
  * epicsThreadSetPriority ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadSetPriority ( epicsThreadId id, unsigned priority ) 
+LIBCOM_API void epicsStdCall epicsThreadSetPriority ( epicsThreadId id, unsigned priority ) 
 {
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
     BOOL stat = SetThreadPriority ( pParm->handle, epicsThreadGetOsdPriorityValue (priority) );
@@ -731,7 +815,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSetPriority ( epicsThreadId id, uns
 /*
  * epicsThreadIsEqual ()
  */
-epicsShareFunc int epicsShareAPI epicsThreadIsEqual ( epicsThreadId id1, epicsThreadId id2 ) 
+LIBCOM_API int epicsStdCall epicsThreadIsEqual ( epicsThreadId id1, epicsThreadId id2 ) 
 {
     win32ThreadParam * pParm1 = ( win32ThreadParam * ) id1;
     win32ThreadParam * pParm2 = ( win32ThreadParam * ) id2;
@@ -741,7 +825,7 @@ epicsShareFunc int epicsShareAPI epicsThreadIsEqual ( epicsThreadId id1, epicsTh
 /*
  * epicsThreadIsSuspended () 
  */
-epicsShareFunc int epicsShareAPI epicsThreadIsSuspended ( epicsThreadId id ) 
+LIBCOM_API int epicsStdCall epicsThreadIsSuspended ( epicsThreadId id ) 
 {
     win32ThreadParam *pParm = ( win32ThreadParam * ) id;
     DWORD exitCode;
@@ -761,30 +845,65 @@ epicsShareFunc int epicsShareAPI epicsThreadIsSuspended ( epicsThreadId id )
     }
 }
 
+/**
+ * osdThreadGetTimer ()
+ * return stored waitable timer object for thread
+ */
+HANDLE osdThreadGetTimer()
+{
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
+    if (pParm) {
+        return pParm->timer;
+    } else {
+        return NULL;
+    }
+}
+
 /*
  * epicsThreadSleep ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
+LIBCOM_API void epicsStdCall epicsThreadSleep ( double seconds )
 {
-    static const unsigned mSecPerSec = 1000;
-    DWORD milliSecDelay;
 
-    if ( seconds > 0.0 ) {
-        seconds *= mSecPerSec;
-        seconds += 0.99999999;  /* 8 9s here is optimal */
-        milliSecDelay = ( seconds >= INFINITE ) ?
-            INFINITE - 1 : ( DWORD ) seconds;
+    static const unsigned ivalPerSec = 10000000u; /* number of 100ns intervals per second */
+    static const unsigned mSecPerSec = 1000u;     /* milliseconds per second */
+    LARGE_INTEGER tmo;
+    HANDLE timer;
+    LONGLONG nIvals; /* number of intervals */
+
+    if ( seconds <= 0.0 ) {
+        tmo.QuadPart = 0u;
     }
-    else {  /* seconds <= 0 or NAN */
-        milliSecDelay = 0u;
+    else if ( seconds >= INFINITE / mSecPerSec  ) { 
+        /* we need to apply a maximum wait time to stop an overflow. We choose (INFINITE - 1) milliseconds,
+           to be compatible with previous WaitForSingleObject() implementation */    
+        nIvals = (LONGLONG)(INFINITE - 1) * (ivalPerSec / mSecPerSec);
+        tmo.QuadPart = -nIvals; /* negative value means a relative time offset for timer */
     }
-    Sleep ( milliSecDelay );
+    else {
+        nIvals = (LONGLONG)(seconds * ivalPerSec + 0.999999);
+        tmo.QuadPart = -nIvals;
+    }
+
+    if (tmo.QuadPart == 0) {
+        Sleep ( 0 );
+    }
+    else {
+        timer = osdThreadGetTimer();
+        if (!SetWaitableTimer(timer, &tmo, 0, NULL, NULL, 0)) {
+            fprintf ( stderr, "epicsThreadSleep: SetWaitableTimer failed %lu\n", GetLastError() );
+            return;
+        }
+        if (WaitForSingleObject(timer, INFINITE) != WAIT_OBJECT_0) {
+            fprintf ( stderr, "epicsThreadSleep: WaitForSingleObject failed %lu\n", GetLastError() );
+        }
+    }
 }
 
 /*
  * epicsThreadSleepQuantum ()
  */
-double epicsShareAPI epicsThreadSleepQuantum ()
+double epicsStdCall epicsThreadSleepQuantum ()
 { 
     /*
      * Its worth noting here that the sleep quantum on windows can
@@ -816,23 +935,14 @@ double epicsShareAPI epicsThreadSleepQuantum ()
 /*
  * epicsThreadGetIdSelf ()
  */
-epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetIdSelf (void) 
+LIBCOM_API epicsThreadId epicsStdCall epicsThreadGetIdSelf (void) 
 {
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm;
-
-    assert ( pGbl );
-
-    pParm = ( win32ThreadParam * ) TlsGetValue ( 
-        pGbl->tlsIndexThreadLibraryEPICS );
-    if ( ! pParm ) {
-        pParm = epicsThreadImplicitCreate ();
-        assert ( pParm ); /* very dangerous to allow non-unique thread id into use */
-    }
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
+    assert ( pParm ); /* Don't return a NULL thread id */
     return ( epicsThreadId ) pParm;
 }
 
-epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetId ( const char * pName )
+LIBCOM_API epicsThreadId epicsStdCall epicsThreadGetId ( const char * pName )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
@@ -863,20 +973,9 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetId ( const char * pName
 /*
  * epicsThreadGetNameSelf ()
  */
-epicsShareFunc const char * epicsShareAPI epicsThreadGetNameSelf (void)
+LIBCOM_API const char * epicsStdCall epicsThreadGetNameSelf (void)
 {
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm;
-
-    if ( ! pGbl ) {
-        return "thread library not initialized";
-    }
-
-    pParm = ( win32ThreadParam * ) 
-        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
-    if ( ! pParm ) {
-        pParm = epicsThreadImplicitCreate ();
-    }
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
 
     if ( pParm ) {
         if ( pParm->pName ) {
@@ -889,7 +988,7 @@ epicsShareFunc const char * epicsShareAPI epicsThreadGetNameSelf (void)
 /*
  * epicsThreadGetName ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadGetName ( 
+LIBCOM_API void epicsStdCall epicsThreadGetName ( 
     epicsThreadId id, char * pName, size_t size )
 {
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
@@ -950,6 +1049,8 @@ static void epicsThreadShowInfo ( epicsThreadId id, unsigned level )
             fprintf (epicsGetStdout(), " %-8p %-8p ",
                 (void *) pParm->handle, (void *) pParm->parm );
         }
+        if(!epicsAtomicGetIntT(&pParm->isRunning))
+            fprintf (epicsGetStdout(), " ZOMBIE");
     }
     else {
         fprintf (epicsGetStdout(), 
@@ -964,7 +1065,7 @@ static void epicsThreadShowInfo ( epicsThreadId id, unsigned level )
 /*
  * epicsThreadMap ()
  */
-epicsShareFunc void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
+LIBCOM_API void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
@@ -986,10 +1087,15 @@ epicsShareFunc void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
 /*
  * epicsThreadShowAll ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
+LIBCOM_API void epicsStdCall epicsThreadShowAll ( unsigned level )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
+
+#ifdef USE_TLSALLOC_FALLBACK
+    fprintf(epicsGetStdout(), "Warning: For this target, use of epicsThread* from non-EPICS threads\n"
+                              "         May leak memory.  Recommend to upgrade to >= Window Vista\n");
+#endif
 
     if ( ! pGbl ) {
         return;
@@ -1009,7 +1115,7 @@ epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
 /*
  * epicsThreadShow ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadShow ( epicsThreadId id, unsigned level )
+LIBCOM_API void epicsStdCall epicsThreadShow ( epicsThreadId id, unsigned level )
 {
     epicsThreadShowInfo ( 0, level );
     epicsThreadShowInfo ( id, level );
@@ -1018,7 +1124,7 @@ epicsShareFunc void epicsShareAPI epicsThreadShow ( epicsThreadId id, unsigned l
 /*
  * epicsThreadOnce ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadOnce (
+LIBCOM_API void epicsStdCall epicsThreadOnce (
     epicsThreadOnceId *id, void (*func)(void *), void *arg )
 {
     static struct epicsThreadOSD threadOnceComplete;
@@ -1053,7 +1159,7 @@ epicsShareFunc void epicsShareAPI epicsThreadOnce (
 /*
  * epicsThreadPrivateCreate ()
  */
-epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate ()
+LIBCOM_API epicsThreadPrivateId epicsStdCall epicsThreadPrivateCreate ()
 {
     epicsThreadPrivateOSD *p = ( epicsThreadPrivateOSD * ) malloc ( sizeof ( *p ) );
     if ( p ) {
@@ -1069,7 +1175,7 @@ epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate ()
 /*
  * epicsThreadPrivateDelete ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadPrivateDelete ( epicsThreadPrivateId p )
+LIBCOM_API void epicsStdCall epicsThreadPrivateDelete ( epicsThreadPrivateId p )
 {
     BOOL stat = TlsFree ( p->key );
     assert ( stat );
@@ -1079,7 +1185,7 @@ epicsShareFunc void epicsShareAPI epicsThreadPrivateDelete ( epicsThreadPrivateI
 /*
  * epicsThreadPrivateSet ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadPrivateSet ( epicsThreadPrivateId pPvt, void *pVal )
+LIBCOM_API void epicsStdCall epicsThreadPrivateSet ( epicsThreadPrivateId pPvt, void *pVal )
 {
     BOOL stat = TlsSetValue ( pPvt->key, (void *) pVal );
     assert (stat);
@@ -1088,7 +1194,7 @@ epicsShareFunc void epicsShareAPI epicsThreadPrivateSet ( epicsThreadPrivateId p
 /*
  * epicsThreadPrivateGet ()
  */
-epicsShareFunc void * epicsShareAPI epicsThreadPrivateGet ( epicsThreadPrivateId pPvt )
+LIBCOM_API void * epicsStdCall epicsThreadPrivateGet ( epicsThreadPrivateId pPvt )
 {
     return ( void * ) TlsGetValue ( pPvt->key );
 }
@@ -1096,7 +1202,7 @@ epicsShareFunc void * epicsShareAPI epicsThreadPrivateGet ( epicsThreadPrivateId
 /*
  * epicsThreadGetCPUs ()
  */
-epicsShareFunc int epicsThreadGetCPUs ( void )
+LIBCOM_API int epicsThreadGetCPUs ( void )
 {
     SYSTEM_INFO sysinfo;
     GetSystemInfo(&sysinfo);

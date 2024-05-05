@@ -20,16 +20,16 @@
 #include <stdlib.h>
 #include <osfcn.h>
 
-#else	/* ! __cplusplus */
+#else   /* ! __cplusplus */
 #ifdef __GNUC__
 #include <stddef.h>
 void *malloc( size_t );
 void free( void* );
 #else
 #include <stdlib.h>
-#endif	/* __GNUC__ */
+#endif  /* __GNUC__ */
 
-#endif	/* ! __cplusplus */
+#endif  /* ! __cplusplus */
 
 
 /* amount of stuff to slurp up with each read */
@@ -68,10 +68,10 @@ void free( void* );
  * a single C statement (which needs a semi-colon terminator).
  * This avoids problems with code like:
  *
- * 	if ( something_happens )
- *		YY_FATAL_ERROR( "oops, the something happened" );
- *	else
- *		everything_okay();
+ *  if ( something_happens )
+ *              YY_FATAL_ERROR( "oops, the something happened" );
+ *      else
+ *              everything_okay();
  *
  * Prior to using the do-while the compiler would get upset at the
  * "else" because it interpreted the "if" statement as being all
@@ -238,8 +238,8 @@ struct yy_buffer_state
     {
     FILE *yy_input_file;
 
-    YY_CHAR *yy_ch_buf;		/* input buffer */
-    YY_CHAR *yy_buf_pos;	/* current position in input buffer */
+    YY_CHAR *yy_ch_buf;         /* input buffer */
+    YY_CHAR *yy_buf_pos;        /* current position in input buffer */
 
     /* size of input buffer in bytes, not including room for EOB characters*/
     int yy_buf_size;	
@@ -247,7 +247,7 @@ struct yy_buffer_state
     /* number of characters read into yy_ch_buf, not including EOB characters */
     int yy_n_chars;
 
-    int yy_eof_status;		/* whether we've seen an EOF on this buffer */
+    int yy_eof_status;          /* whether we've seen an EOF on this buffer */
 #define EOF_NOT_SEEN 0
     /* "pending" happens when the EOF has been seen but there's still
      * some text process
@@ -268,7 +268,7 @@ static YY_BUFFER_STATE yy_current_buffer;
 /* yy_hold_char holds the character lost when yytext is formed */
 static YY_CHAR yy_hold_char;
 
-static int yy_n_chars;		/* number of characters read into yy_ch_buf */
+static int yy_n_chars;          /* number of characters read into yy_ch_buf */
 
 
 
@@ -935,8 +935,8 @@ goto find_rule; \
  */
 /* points to current character in buffer */
 static YY_CHAR *yy_c_buf_p = (YY_CHAR *) 0;
-static int yy_init = 1;		/* whether we need to initialize */
-static int yy_start = 0;	/* start state number */
+static int yy_init = 1;         /* whether we need to initialize */
+static int yy_start = 0;        /* start state number */
 
 /* flag which is used to allow yywrap()'s to do buffer switches
  * instead of setting up a fresh yyin.  A bit of a hack ...
@@ -953,6 +953,7 @@ void yy_load_buffer_state ( void );
 YY_BUFFER_STATE yy_create_buffer ( FILE *file, int size );
 void yy_delete_buffer ( YY_BUFFER_STATE b );
 void yy_init_buffer ( YY_BUFFER_STATE b, FILE *file );
+void set_input_file( char *file );
 
 #define yy_new_buffer yy_create_buffer
 
@@ -966,7 +967,7 @@ YY_DECL
     static int bracelevel, didadef;
     int i, indented_code = false, checking_used = false, new_xlation = false;
     int doing_codeblock = false;
-    Char nmdef[MAXLINE], myesc();
+    Char nmdef[MAXLINE];
 
 
     if ( yy_init )
@@ -974,7 +975,7 @@ YY_DECL
 	YY_USER_INIT;
 
 	if ( ! yy_start )
-	    yy_start = 1;	/* first start state */
+            yy_start = 1;       /* first start state */
 
 	if ( ! yyin )
 	    yyin = stdin;
@@ -992,7 +993,7 @@ YY_DECL
 	yy_init = 0;
 	}
 
-    while ( 1 )		/* loops until end-of-file is reached */
+    while ( 1 )         /* loops until end-of-file is reached */
 	{
 	yy_cp = yy_c_buf_p;
 
@@ -1067,7 +1068,7 @@ find_rule: /* we branch to this label when backtracking */
 	YY_DO_BEFORE_ACTION;
 	YY_USER_ACTION;
 
-do_action:	/* this label is used only to access EOF actions */
+do_action:      /* this label is used only to access EOF actions */
 
 
 	switch ( yy_act )
@@ -1488,7 +1489,6 @@ case 65:
 # line 333 "scan.l"
 {
 			Char *nmdefptr;
-			Char *ndlookup();
 
 			(void) strcpy( nmstr, (char *) yytext );
 			nmstr[yyleng - 1] = '\0';  /* chop trailing brace */
@@ -2230,8 +2230,7 @@ int yywrap()
 
 /* set_input_file - open the given file (if NULL, stdin) for scanning */
 
-void set_input_file( file )
-char *file;
+void set_input_file( char *file )
 
     {
     if ( file )

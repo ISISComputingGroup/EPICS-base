@@ -3,13 +3,13 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* SPDX-License-Identifier: EPICS
+* EPICS Base is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *	Author:	Jeff Hill
- *	Date:	07-01-91
+ *  Author: Jeff Hill
+ *  Date:   07-01-91
  */
 
 /*
@@ -32,15 +32,15 @@ static unsigned long outstanding;
 
 
 /*
- *  	ca_test
+ *  ca_test
  *
- *	find channel, write a value if supplied, and 
- *	read back the current value
+ *  find channel, write a value if supplied, and
+ *  read back the current value
  *
  */
 int ca_test(
-char	*pname,
-char	*pvalue
+char    *pname,
+char    *pvalue
 )
 {
     int status;
@@ -57,11 +57,11 @@ char	*pvalue
 
 
 /*
- * 	cagft()
+ *  cagft()
  *
- *	ca get field test
+ *  ca get field test
  *
- *	test ca get over the range of CA data types
+ *  test ca get over the range of CA data types
  */
 static int cagft(char *pname)
 {	
@@ -72,7 +72,7 @@ static int cagft(char *pname)
 	int i;
 
 	/* 
-	 *	convert name to chan id 
+     *  convert name to chan id
 	 */
 	status = ca_search(pname, &chan_id);
 	SEVCHK(status,NULL);
@@ -149,7 +149,7 @@ static int cagft(char *pname)
 
 
 /*
- *	PRINTIT()
+ *  PRINTIT()
  */
 static void printit ( struct event_handler_args args )
 {
@@ -164,24 +164,24 @@ static void printit ( struct event_handler_args args )
 }
 
 /*
- *	capft
+ *  capft
  *
- *	test ca_put() over a range of data types
+ *  test ca_put() over a range of data types
  *	
  */
 static int capft(
-char		*pname,
-char		*pvalue
+char        *pname,
+char        *pvalue
 )
 {
-	dbr_short_t			shortvalue;
-	dbr_long_t			longvalue;
-	dbr_float_t			floatvalue;
-	dbr_char_t			charvalue;
-	dbr_double_t		doublevalue;
-	unsigned long		ntries = 10ul;
-	int					status;
-	chid				chan_id;
+    dbr_short_t         shortvalue;
+    dbr_long_t          longvalue;
+    dbr_float_t         floatvalue;
+    dbr_char_t          charvalue;
+    dbr_double_t        doublevalue;
+    unsigned long       ntries = 10ul;
+    int                 status;
+    chid                chan_id;
 
 	if (((*pname < ' ') || (*pname > 'z'))
 	  || ((*pvalue < ' ') || (*pvalue > 'z'))){
@@ -190,7 +190,7 @@ char		*pvalue
 	}
 
 	/* 
-	 *	convert name to chan id 
+     *  convert name to chan id
 	 */
 	status = ca_search(pname, &chan_id);
 	SEVCHK(status,NULL);
@@ -277,12 +277,12 @@ char		*pvalue
 
 skip_rest:
 
-	/*
-	 * wait for the operation to complete
-	 * (outstabnding decrements to zero)
-	 */
-	while(ntries){
-		ca_pend_event(1.0);
+    /*
+     * wait for the operation to complete
+     * (outstanding decrements to zero)
+     */
+    while(ntries){
+        ca_pend_event(1.0);
 
 		if(!outstanding){
             SEVCHK(ca_clear_channel(chan_id),NULL);

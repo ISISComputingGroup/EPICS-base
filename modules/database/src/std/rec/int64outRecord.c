@@ -3,13 +3,14 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
  * Original Author: Janet Anderson
- * Date:	9/23/91
+ * Date:    9/23/91
  */ 
 #include <stddef.h>
 #include <stdlib.h>
@@ -80,14 +81,6 @@ rset int64outRSET={
 epicsExportAddress(rset,int64outRSET);
 
 
-struct int64outdset { /* int64out input dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_int64out;/*(-1,0)=>(failure,success*/
-};
 static void checkAlarms(int64outRecord *prec);
 static void monitor(int64outRecord *prec);
 static long writeValue(int64outRecord *prec);
@@ -97,19 +90,19 @@ static void convert(int64outRecord *prec, epicsInt64 value);
 static long init_record(dbCommon *pcommon, int pass)
 {
     int64outRecord *prec = (int64outRecord*)pcommon;
-    struct int64outdset *pdset;
+    int64outdset *pdset;
     long status=0;
 
     if (pass == 0) return 0;
 
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
 
-    if(!(pdset = (struct int64outdset *)(prec->dset))) {
+    if(!(pdset = (int64outdset *)(prec->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)prec,"int64out: init_record");
 	return(S_dev_noDSET);
     }
     /* must have  write_int64out functions defined */
-    if( (pdset->number < 5) || (pdset->write_int64out == NULL) ) {
+    if ((pdset->common.number < 5) || (pdset->write_int64out == NULL)) {
 	recGblRecordError(S_dev_missingSup,(void *)prec,"int64out: init_record");
 	return(S_dev_missingSup);
     }
@@ -117,8 +110,8 @@ static long init_record(dbCommon *pcommon, int pass)
 	if(recGblInitConstantLink(&prec->dol,DBF_INT64,&prec->val))
 	    prec->udf=FALSE;
     }
-    if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(prec))) return(status);
+    if (pdset->common.init_record) {
+        if ((status = pdset->common.init_record(pcommon))) return status;
     }
     prec->mlst = prec->val;
     prec->alst = prec->val;
@@ -129,10 +122,10 @@ static long init_record(dbCommon *pcommon, int pass)
 static long process(dbCommon *pcommon)
 {
     int64outRecord *prec = (int64outRecord*)pcommon;
-	struct int64outdset	*pdset = (struct int64outdset *)(prec->dset);
-	long		 status=0;
-	epicsInt64	 value;
-	unsigned char    pact=prec->pact;
+    int64outdset  *pdset = (int64outdset *)(prec->dset);
+    long                status=0;
+    epicsInt64          value;
+    unsigned char       pact=prec->pact;
 
 	if( (pdset==NULL) || (pdset->write_int64out==NULL) ) {
 		prec->pact=TRUE;
@@ -151,6 +144,10 @@ static long process(dbCommon *pcommon)
 			value = prec->val;
 		}
 		if (!status) convert(prec,value);
+
+        /* Update the timestamp before writing output values so it
+         * will be up to date if any downstream records fetch it via TSEL */
+        recGblGetTimeStampSimm(prec, prec->simm, NULL);
 	}
 
 	/* check for alarms */
@@ -182,7 +179,10 @@ static long process(dbCommon *pcommon)
 	if ( !pact && prec->pact ) return(0);
 	prec->pact = TRUE;
 
+    if ( pact ) {
+        /* Update timestamp again for asynchronous devices */
     recGblGetTimeStampSimm(prec, prec->simm, NULL);
+    }
 
 	/* check event list */
 	monitor(prec);
@@ -377,7 +377,7 @@ static void monitor(int64outRecord *prec)
 
 static long writeValue(int64outRecord *prec)
 {
-    struct int64outdset *pdset = (struct int64outdset *) prec->dset;
+    int64outdset *pdset = (int64outdset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {
