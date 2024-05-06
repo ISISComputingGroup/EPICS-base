@@ -124,7 +124,7 @@ static int iocBuild_1(void)
         epicsThreadSetOkToBlock(1);
     }
 
-    errlogPrintf("Starting iocInit\n");
+    errlogSevPrintf(errlogInfo, "Starting iocInit\n");
     if (checkDatabase(pdbbase)) {
         errlogPrintf("iocBuild: Aborting, bad database definition (DBD)!\n");
         return -1;
@@ -257,7 +257,7 @@ int iocRun(void)
     if (iocState == iocBuilt)
         initHookAnnounce(initHookAtEnd);
 
-    errlogPrintf("iocRun: %s\n", iocState == iocBuilt ?
+    errlogSevPrintf(errlogInfo, "iocRun: %s\n", iocState == iocBuilt ?
         "All initialization complete" :
         "IOC restarted");
     iocState = iocRunning;
@@ -509,7 +509,7 @@ static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
 
     /* Initial UDF severity */
     if (precord->udf && precord->stat == UDF_ALARM)
-    	precord->sevr = precord->udfs;
+        precord->sevr = precord->udfs;
 
     /* Init DSET NOTE that result may be NULL */
     pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);

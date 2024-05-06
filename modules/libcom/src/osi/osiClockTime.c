@@ -3,7 +3,7 @@
 *     National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #include <stddef.h>
@@ -125,7 +125,7 @@ void ClockTime_Init(int synchronize)
 
     if (synchronize) {
         if (ClockTimePvt.synchronize == CLOCKTIME_NOSYNC) {
-            
+
 #if defined(vxWorks) || defined(__rtems__)
             /* Start synchronizing */
             ClockTimePvt.synchronize = CLOCKTIME_SYNC;
@@ -259,7 +259,7 @@ int osdTimeGetCurrent(epicsTimeStamp *pDest)
 #define UNINIT_ERROR "initialized"
 #else
 #define UNINIT_ERROR "available"
-#endif /* CLOCK_REALTIME */
+#endif /* CLOCK_REALTIME && !WIN32 */
 
 /* Allow the following report routine to be compiled anyway
  * to avoid getting a build warning from ranlib.

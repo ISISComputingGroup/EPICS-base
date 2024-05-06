@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 newline     "\n"
@@ -51,8 +51,8 @@ number      ({jsonnum}|{intexp}|{fracexp}|{specialnum}|{hexint})
 
 static int yyreset(void)
 {
-	BEGIN INITIAL;
-	return(0);
+    BEGIN INITIAL;
+    return(0);
 }
 
 %}
@@ -81,8 +81,8 @@ static int yyreset(void)
 "variable"      return(tokenVARIABLE);
 
 {bareword}+ { /* unquoted string or number */
-	yylval.Str = dbmfStrdup((char *) yytext);
-	return(tokenSTRING); 
+    yylval.Str = dbmfStrdup((char *) yytext);
+    return(tokenSTRING);
 }
 
 {doublequote}({dqschar}|{escape})*{doublequote} { /* quoted string */
@@ -92,8 +92,8 @@ static int yyreset(void)
 }
 
 %.* { /*C definition in recordtype*/
-	yylval.Str = dbmfStrdup((char *) yytext+1);
-	return(tokenCDEFS);
+    yylval.Str = dbmfStrdup((char *) yytext+1);
+    return(tokenCDEFS);
 }
 
 "{"     return(yytext[0]);
@@ -109,18 +109,18 @@ static int yyreset(void)
 <JSON>{punctuation}     return yytext[0];
 
 <JSON>{jsonstr} {
-	yylval.Str = dbmfStrdup((char *) yytext);
-	return jsonSTRING;
+    yylval.Str = dbmfStrdup((char *) yytext);
+    return jsonSTRING;
 }
 
 <JSON>{number} {
-	yylval.Str = dbmfStrdup((char *) yytext);
-	return jsonNUMBER;
+    yylval.Str = dbmfStrdup((char *) yytext);
+    return jsonNUMBER;
 }
 
 <JSON>{barechar}+ {
-	yylval.Str = dbmfStrdup((char *) yytext);
-	return jsonBARE;
+    yylval.Str = dbmfStrdup((char *) yytext);
+    return jsonBARE;
 }
 
 <INITIAL,JSON>{comment}.*   ;
@@ -145,16 +145,16 @@ static int yyreset(void)
     char message[40];
     YY_BUFFER_STATE *dummy=0;
 
-	if (isprint((int) yytext[0])) {
-	    sprintf(message, "Invalid character '%c'", yytext[0]);
-	}
-	else {
-	    sprintf(message, "Invalid character 0x%2.2x", yytext[0]);
-	}
-	yyerrorAbort(message);
-	/*The following suppresses compiler warning messages*/
-	if(FALSE) yyunput('c',(unsigned char *) message);
-	if(FALSE) yy_switch_to_buffer(*dummy);
+    if (isprint((int) yytext[0])) {
+        sprintf(message, "Invalid character '%c'", yytext[0]);
+    }
+    else {
+        sprintf(message, "Invalid character 0x%2.2x", yytext[0]);
+    }
+    yyerrorAbort(message);
+    /*The following suppresses compiler warning messages*/
+    if(FALSE) yyunput('c',(unsigned char *) message);
+    if(FALSE) yy_switch_to_buffer(*dummy);
 }
 
 %%

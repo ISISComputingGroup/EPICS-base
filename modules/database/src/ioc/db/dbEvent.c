@@ -159,7 +159,7 @@ int dbel ( const char *pname, unsigned level )
     if ( ! pname ) return DB_EVENT_OK;
     status = dbNameToAddr ( pname, &addr );
     if ( status != 0 ) {
-	    errMessage ( status, " dbNameToAddr failed" );
+        errMessage ( status, " dbNameToAddr failed" );
         return DB_EVENT_ERROR;
     }
 
@@ -168,7 +168,7 @@ int dbel ( const char *pname, unsigned level )
     pevent = (struct evSubscrip *) ellFirst ( &addr.precord->mlis );
 
     if ( ! pevent ) {
-	    printf ( "\"%s\": No PV event subscriptions ( monitors ).\n", pname );
+        printf ( "\"%s\": No PV event subscriptions ( monitors ).\n", pname );
         UNLOCKREC (addr.precord);
         return DB_EVENT_OK;
     }
@@ -180,14 +180,14 @@ int dbel ( const char *pname, unsigned level )
         pdbFldDes = dbChannelFldDes(pevent->chan);
 
         if ( level > 0 ) {
-	        printf ( "%4.4s", pdbFldDes->name );
+            printf ( "%4.4s", pdbFldDes->name );
 
-	        printf ( " { " );
-                if ( pevent->select & DBE_VALUE ) printf( "VALUE " );
-                if ( pevent->select & DBE_LOG ) printf( "LOG " );
-                if ( pevent->select & DBE_ALARM ) printf( "ALARM " );
-                if ( pevent->select & DBE_PROPERTY ) printf( "PROPERTY " );
-	        printf ( "}" );
+            printf ( " { " );
+            if ( pevent->select & DBE_VALUE ) printf( "VALUE " );
+            if ( pevent->select & DBE_LOG ) printf( "LOG " );
+            if ( pevent->select & DBE_ALARM ) printf( "ALARM " );
+            if ( pevent->select & DBE_PROPERTY ) printf( "PROPERTY " );
+            printf ( "}" );
 
             if ( pevent->npend ) {
                 printf ( " undelivered=%ld", pevent->npend );
@@ -237,7 +237,7 @@ int dbel ( const char *pname, unsigned level )
                     ( void * ) pevent->ev_que->evUser );
             }
 
-	        printf( "\n" );
+            printf( "\n" );
         }
 
             pevent = (struct evSubscrip *) ellNext ( &pevent->node );
@@ -351,7 +351,7 @@ DBCORE_API void db_cleanup_events(void)
     dbevFieldLogFreeList = NULL;
 }
 
-
+    /* intentionally leak stopSync to avoid possible shutdown races */
 /*
  *  DB_CLOSE_EVENTS()
  *
@@ -374,15 +374,15 @@ void db_close_events (dbEventCtx ctx)
      */
     epicsMutexMustLock ( evUser->lock );
     if(!evUser->pendexit) { /* event task running */
-    evUser->pendexit = TRUE;
-    epicsMutexUnlock ( evUser->lock );
+        evUser->pendexit = TRUE;
+        epicsMutexUnlock ( evUser->lock );
 
-    /* notify the waiting task */
-    epicsEventSignal(evUser->ppendsem);
-
+        /* notify the waiting task */
+        epicsEventSignal(evUser->ppendsem);
+        /* wait for task to exit */
         epicsEventMustWait(evUser->pexitsem);
         epicsThreadMustJoin(evUser->taskid);
-    /* evUser has been deleted by the worker */
+
         epicsMutexMustLock ( evUser->lock );
     }
 
@@ -404,7 +404,7 @@ void db_close_events (dbEventCtx ctx)
  */
 static struct event_que * create_ev_que ( struct event_user * const evUser )
 {
-    struct event_que * const ev_que = (struct event_que *) 
+    struct event_que * const ev_que = (struct event_que *)
         freeListCalloc ( dbevEventQueueFreeList );
     if ( ! ev_que ) {
         return NULL;
@@ -692,15 +692,15 @@ static db_field_log* db_create_field_log (struct dbChannel *chan, int use_val)
 
     if (pLog) {
         struct dbCommon  *prec = dbChannelRecord(chan);
-            pLog->stat = prec->stat;
-            pLog->sevr = prec->sevr;
+        pLog->stat = prec->stat;
+        pLog->sevr = prec->sevr;
         strncpy(pLog->amsg, prec->amsg, sizeof(pLog->amsg)-1);
         pLog->amsg[sizeof(pLog->amsg)-1] = '\0';
-            pLog->time = prec->time;
+        pLog->time = prec->time;
         pLog->utag = prec->utag;
-            pLog->field_type  = dbChannelFieldType(chan);
+        pLog->field_type  = dbChannelFieldType(chan);
         pLog->field_size  = dbChannelFieldSize(chan);
-            pLog->no_elements = dbChannelElements(chan);
+        pLog->no_elements = dbChannelElements(chan);
 
         if (use_val) {
             pLog->type = dbfl_type_val;
@@ -1137,7 +1137,7 @@ int db_start_events (
 /*
  * db_event_change_priority()
  */
-void db_event_change_priority ( dbEventCtx ctx, 
+void db_event_change_priority ( dbEventCtx ctx,
                                         unsigned epicsPriority )
 {
     struct event_user * const evUser = ( struct event_user * ) ctx;

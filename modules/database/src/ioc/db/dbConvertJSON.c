@@ -3,7 +3,7 @@
 *     National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbConvertJSON.c */
 
@@ -117,7 +117,7 @@ static int dbcj_start_map(void *ctx) {
 static int dbcj_start_array(void *ctx) {
     parseContext *parser = (parseContext *) ctx;
 
-    if (++parser->depth > 1) 
+    if (++parser->depth > 1)
         errlogPrintf("dbConvertJSON: Embedded arrays not supported\n");
 
     return (parser->depth == 1);

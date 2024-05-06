@@ -10,7 +10,7 @@
 \*************************************************************************/
 /* callback.c */
 
-/* general purpose callback tasks		*/
+/* general purpose callback tasks               */
 /*
  *      Original Author:        Marty Kraimer
  *      Date:                   07-18-91
@@ -354,13 +354,10 @@ int callbackRequest(epicsCallback *pcallback)
         return S_db_badChoice;
     }
     mySet = &callbackQueue[priority];
-<<<<<<< HEAD
-=======
     if (!mySet->queue) {
         epicsInterruptContextMessage("callbackRequest: " ERL_ERROR " Callbacks not initialized\n");
         return S_db_notInit;
     }
->>>>>>> vendor_7_0_8
     if (mySet->queueOverflow) return S_db_bufFull;
 
     pushOK = epicsRingPointerPush(mySet->queue, pcallback);

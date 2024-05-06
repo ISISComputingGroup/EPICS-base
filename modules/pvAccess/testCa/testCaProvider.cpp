@@ -168,7 +168,7 @@ private:
         TestChannelGetRequesterPtr const &getRequester,
         TestChannelPtr const &testChannel,
         PVStructurePtr const &  pvRequest);
-    
+
     TestChannelGetRequesterWPtr getRequester;
     TestChannelPtr testChannel;
     PVStructurePtr pvRequest;
@@ -288,7 +288,7 @@ private:
     TestChannelPut(
         TestChannelPutRequesterPtr const &putRequester,
         TestChannelPtr const &testChannel);
-    
+
     TestChannelPutRequesterWPtr putRequester;
     TestChannelPtr testChannel;
     PVStructurePtr pvStructure;
@@ -357,7 +357,7 @@ void TestChannelPut::connect()
 {
     string request("value");
     PVStructurePtr pvRequest(createRequest(request));
-    
+
     channelPut = testChannel->getChannel()->createChannelPut(shared_from_this(),pvRequest);
     if(!channelPut) throw std::runtime_error(testChannel->getChannelName() + " channelCreate failed ");
 }
@@ -365,7 +365,7 @@ void TestChannelPut::connect()
 void TestChannelPut::waitConnect(double timeout)
 {
     if(waitForConnect.wait(timeout)) return;
-    throw std::runtime_error(testChannel->getChannelName() 
+    throw std::runtime_error(testChannel->getChannelName()
         + " TestChannelPut::waitConnect failed ");
 }
 
@@ -373,7 +373,7 @@ void TestChannelPut::waitConnect(double timeout)
 void TestChannelPut::put(string const & value)
 {
     PVFieldPtr pvField(pvStructure->getSubField("value"));
-    if(!pvField) throw std::runtime_error(testChannel->getChannelName() 
+    if(!pvField) throw std::runtime_error(testChannel->getChannelName()
          + " TestChannelPut::put no value ");
     FieldConstPtr field(pvField->getField());
     Type type(field->getType());
@@ -398,10 +398,10 @@ void TestChannelPut::put(string const & value)
             }
             values.push_back(value.substr(pos,offset-pos));
             pos = offset+1;
-            n++;    
+            n++;
         }
         pvScalarArray->setLength(n);
-        getConvert()->fromStringArray(pvScalarArray,0,n,values,0);       
+        getConvert()->fromStringArray(pvScalarArray,0,n,values,0);
         bitSet->set(pvField->getFieldOffset());
         channelPut->put(pvStructure,bitSet);
         return;
@@ -415,7 +415,7 @@ void TestChannelPut::put(string const & value)
           return;
        }
     }
-    throw std::runtime_error(testChannel->getChannelName() 
+    throw std::runtime_error(testChannel->getChannelName()
         + " TestChannelPut::put not supported  type");
 }
 
@@ -460,7 +460,7 @@ private:
         TestChannelMonitorRequesterPtr const &putRequester,
         TestChannelPtr const &testChannel,
         PVStructurePtr const &  pvRequest);
-    
+
     TestChannelMonitorRequesterWPtr monitorRequester;
     TestChannelPtr testChannel;
     PVStructurePtr pvRequest;
@@ -498,7 +498,7 @@ void TestChannelMonitor::monitorConnect(
 {
     waitForConnect.signal();
 }
-    
+
 
 void TestChannelMonitor::monitorEvent(MonitorPtr const & monitor)
 {
@@ -604,20 +604,20 @@ void TestClient::getDone(
     PVStructure::shared_pointer const & pvStructure,
     BitSet::shared_pointer const & bitSet)
 {
-   testOk(pvStructure.get() != 0,"pvStructure not null");
-   testOk(pvStructure->getSubField("value").get() != 0,"value not null");
-   testOk(pvStructure->getSubField("timeStamp").get() != 0,"timeStamp not null");
-   testOk(pvStructure->getSubField("alarm").get() != 0,"alarm not null");
-   if (DEBUG) std::cout << testChannel->getChannelName() + " TestClient::getDone"
-             << " putValue " << putValue
-             << " bitSet " << *bitSet
-             << " pvStructure\n" << pvStructure << "\n";
-   PVScalarPtr pvScalar = pvStructure->getSubField<PVScalar>("value");
-   if(pvScalar) {
+    testOk(pvStructure.get() != 0,"pvStructure not null");
+    testOk(pvStructure->getSubField("value").get() != 0,"value not null");
+    testOk(pvStructure->getSubField("timeStamp").get() != 0,"timeStamp not null");
+    testOk(pvStructure->getSubField("alarm").get() != 0,"alarm not null");
+    if (DEBUG) std::cout << testChannel->getChannelName() + " TestClient::getDone"
+        << " putValue " << putValue
+        << " bitSet " << *bitSet
+        << " pvStructure\n" << pvStructure << "\n";
+    PVScalarPtr pvScalar = pvStructure->getSubField<PVScalar>("value");
+    if(pvScalar) {
         string getValue = getConvert()->toString(pvScalar);
         testOk(getValue.compare(putValue)==0,"getValue==putValue");
-   }
-   waitForGet.signal();
+    }
+    waitForGet.signal();
 }
 
 void TestClient::putDone()
@@ -629,9 +629,9 @@ void TestClient::monitorEvent(
         PVStructure::shared_pointer const & pvStructure,
         BitSet::shared_pointer const & bitSet)
 {
-   if (DEBUG) std::cout << testChannel->getChannelName() + " TestClient::monitorEvent"
-             << " bitSet " << *bitSet
-             << " pvStructure\n" << pvStructure << "\n";
+    if (DEBUG) std::cout << testChannel->getChannelName() + " TestClient::monitorEvent"
+        << " bitSet " << *bitSet
+        << " pvStructure\n" << pvStructure << "\n";
 }
 
 void TestClient::get()
@@ -714,8 +714,8 @@ void TestIocUnit::start()
 void TestIocUnit::shutdown()
 {
     testIocShutdownOk();
-    // Base-3.14 doesn't provide the dbUnitTest APIs, and the CA
-    // tests with an embedded IOC fail with a Base before 3.16.2.
+    // FIXME: We should run testdbCleanup() here but that causes
+    // Windows test-runs to fail, returning a weird status code.
     // On Linux valgrind also detects invalid reads.
 }
 #endif // HAS_DBUNITTEST
@@ -781,17 +781,17 @@ void TestIocSoft::run()
 
 void TestIocSoft::shutdown()
 {
-        // put to record that makes IOC exit
-        string channelName = "test:exit";
-        string request("value");
-        PVStructurePtr pvRequest(createRequest(request));
+    // put to record that makes IOC exit
+    string channelName = "test:exit";
+    string request("value");
+    PVStructurePtr pvRequest(createRequest(request));
     TestClientPtr client = TestClient::create(channelName, pvRequest);
-        if (!client)
-            testAbort("NULL client for %s", channelName.c_str());
-        client->put("1");
-        client->stopEvents();
+    if (!client)
+        testAbort("NULL client for %s", channelName.c_str());
+    client->put("1");
+    client->stopEvents();
     testOk(thread->exitWait(10), "IOC shutdown");
-    }
+}
 
 
 void checkClient(const string &channelName, const string &putValue)

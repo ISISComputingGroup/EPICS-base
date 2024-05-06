@@ -55,7 +55,7 @@ extern "C" {
  * timestamp validation.
  **/
 #define NUM_TIME_EVENTS 256
-/* Time Events numbered 0 through (NUM_TIME_EVENTS-1) are validated by */
+
 /**\brief Initialize the framework.
  *
  * This routine is called automatically by any function that requires the
@@ -137,7 +137,7 @@ LIBCOM_API const char * generalTimeEventProviderName(void);
  **/
 LIBCOM_API const char * generalTimeHighestCurrentName(void);
 
-/* Original names, for compatibility */
+/** \brief Old name provided for backwards compatibility */
 #define generalTimeCurrentTpName generalTimeCurrentProviderName
 /** \brief Old name provided for backwards compatibility */
 #define generalTimeEventTpName generalTimeEventProviderName

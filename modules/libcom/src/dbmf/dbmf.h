@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /**
@@ -87,7 +87,7 @@ LIBCOM_API char * dbmfStrndup(const char *str, size_t len);
  * \param mid Next string to be concatenated to the lhs (mid part).
  * \param rhs Last string to be concatenated to the lhs+mid (right part).
  * \return A pointer to the new string, or NULL on failure.
-*/
+ */
 LIBCOM_API char * dbmfStrcat3(const char *lhs, const char *mid,
     const char *rhs);
 /**

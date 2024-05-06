@@ -8,8 +8,8 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
- *  Author: 
+/*
+ *  Author:
  *  Jeffrey O. Hill
  *  johill@lanl.gov
  *  505 665 1831
@@ -48,7 +48,7 @@ dbPutNotifyBlocker::~dbPutNotifyBlocker ()
 {
 }
 
-void dbPutNotifyBlocker::destructor ( CallbackGuard & cbGuard, 
+void dbPutNotifyBlocker::destructor ( CallbackGuard & cbGuard,
                                   epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -103,7 +103,7 @@ extern "C" int putNotifyPut ( processNotify *ppn, notifyPutType type )
 
 extern "C" void putNotifyCompletion ( processNotify *ppn )
 {
-    dbPutNotifyBlocker * const pBlocker = 
+    dbPutNotifyBlocker * const pBlocker =
             static_cast < dbPutNotifyBlocker * > ( ppn->usrPvt );
     epicsGuard < epicsMutex > guard ( pBlocker->mutex );
     cacWriteNotify * const pNtfy = pBlocker->pNotify;
@@ -116,9 +116,9 @@ extern "C" void putNotifyCompletion ( processNotify *ppn )
         // might destroy this object.
         pBlocker->block.signal ();
         if ( pBlocker->pn.status != notifyOK ) {
-            pNtfy->exception ( 
+            pNtfy->exception (
                 guard, ECA_PUTFAIL,  "put notify unsuccessful",
-                static_cast < unsigned > (pBlocker->dbrType), 
+                static_cast < unsigned > (pBlocker->dbrType),
                 static_cast < unsigned > (pBlocker->nRequest) );
         }
         else {

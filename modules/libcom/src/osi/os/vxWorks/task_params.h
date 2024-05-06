@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*  Parameters for tasks on IOC  */
@@ -14,8 +14,8 @@
  *      Date:            2-24-89
  */
 
-#ifndef INCtaskLibh 		
-#include <taskLib.h>		
+#ifndef INCtaskLibh
+#include <taskLib.h>
 #endif
 
 #define VXTASKIDSELF 0
@@ -71,7 +71,7 @@
 #define GPIBLINK_PRI    125     /* GPIB link task */
 #define MOMENTARY_PRI   126      /* Momentary output - posted from watchdog */
 #define WFDONE_PRI      127      /* Waveform Task - Base Rate of .1 second */
-#define PERIODSCAN_PRI  139      /* Periodic Scanners - Slowest rate	*/
+#define PERIODSCAN_PRI  139      /* Periodic Scanners - Slowest rate    */
 #define DB_CA_PRI       149     /*database to channel access*/
 #define SEQUENCER_PRI   151
 #define XY240_PRI       160     /* xy 240 dio scanner */
@@ -95,7 +95,7 @@
 #define SEQUENCER_DELAY (sysClkRateGet()/5)
 #define SCANNER_DELAY   (sysClkRateGet()/5)
 #define CA_ONLINE_DELAY (sysClkRateGet()*15)
-#define LOG_RESTART_DELAY (sysClkRateGet()*30) 
+#define LOG_RESTART_DELAY (sysClkRateGet()*30)
 
 /* Task creation options */
 #define ERRLOG_OPT      VX_FP_TASK
@@ -129,17 +129,17 @@
 #define BBWDTASK_OPT    VX_FP_TASK|VX_STDIO
 #define DB_CA_OPT   (VX_FP_TASK | VX_STDIO)
 #define XY_240_OPT      (0)             /* none */
-#define LOG_RESTART_OPT  (VX_FP_TASK)		
+#define LOG_RESTART_OPT  (VX_FP_TASK)
 
 
-/* 
- * Task stack sizes 
+/*
+ * Task stack sizes
  *
  * (original stack sizes are appropriate for the 68k)
  * ARCH_STACK_FACTOR allows scaling the stacks on particular
- * processor architectures 
+ * processor architectures
  */
-#if CPU_FAMILY == MC680X0 
+#if CPU_FAMILY == MC680X0
 #define ARCH_STACK_FACTOR 1
 #elif CPU_FAMILY == SPARC
 #define ARCH_STACK_FACTOR 2

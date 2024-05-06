@@ -67,7 +67,7 @@ DBCORE_API void testdbCleanup(void);
  * @see @ref dbtestactions
  */
 DBCORE_API void testdbPutFieldOk(const char* pv, int dbrType, ...);
-/* Tests for put failure */
+
 /** Assert that a dbPutField() operation will fail with a certain S_\* code
  *
  * @see @ref dbtestactions
@@ -139,9 +139,9 @@ DBCORE_API dbCommon* testdbRecordPtr(const char* pv);
 
 typedef struct testMonitor testMonitor;
 
-/* Begin monitoring the named PV for changes */
+/** Setup monitoring the named PV for changes */
 DBCORE_API testMonitor* testMonitorCreate(const char* pvname, unsigned dbe_mask, unsigned opt);
-/* End monitoring */
+/** Stop monitoring */
 DBCORE_API void testMonitorDestroy(testMonitor*);
 /** Return immediately if it has been updated since create, last wait,
  * or reset (count w/ reset=1).

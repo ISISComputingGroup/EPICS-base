@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*!
@@ -63,8 +63,8 @@ LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
  * peer address.
  * \return A new socket used for communicating with the peer just accepted, or -1 on error.
  */
-LIBCOM_API int epicsStdCall epicsSocketAccept ( 
-    int sock, struct sockaddr * pAddr, osiSocklen_t * addrlen );
+LIBCOM_API SOCKET epicsStdCall epicsSocketAccept ( 
+    SOCKET sock, struct sockaddr * pAddr, osiSocklen_t * addrlen );
 /*!
  * \brief Close and free resources held by a SOCKET object.
  *
@@ -255,7 +255,7 @@ LIBCOM_API unsigned epicsStdCall ipAddrToHostName (
  * \return negative value on error, 0 on success.
  */
 LIBCOM_API int epicsStdCall aToIPAddr
-	( const char * pAddrString, unsigned short defaultPort, struct sockaddr_in * pIP);
+    ( const char * pAddrString, unsigned short defaultPort, struct sockaddr_in * pIP);
 
 /*!
  * \brief Attempt to convert ASCII host name string with optional port to an IP address
@@ -343,7 +343,7 @@ typedef struct osiSockAddrNode {
  * \return true if addresses are identical, false otherwise.
  */
 LIBCOM_API int epicsStdCall sockAddrAreIdentical 
-			( const osiSockAddr * plhs, const osiSockAddr * prhs );
+    ( const osiSockAddr * plhs, const osiSockAddr * prhs );
 
 /*!
  * \brief Add available broadcast addresses to a list

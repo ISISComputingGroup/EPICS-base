@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* special.h */
 
@@ -31,7 +31,7 @@ extern "C" {
 #define SPC_ATTRIBUTE   7       /* pseudo field, i.e. attribute field*/
 /* useful when record support must be notified of a field changing value*/
 #define SPC_MOD         100
-/* used by all records that support a reset field		*/
+/* used by all records that support a reset field*/
 #define SPC_RESET       101     /*The res field is being modified*/
 /* Specific to conversion (Currently only ai */
 #define SPC_LINCONV     102     /*A linear conversion field is being changed*/
@@ -49,15 +49,15 @@ typedef struct mapspcType{
 extern mapspcType pamapspcType[];
 #else
 mapspcType pamapspcType[SPC_NTYPES] = {
-	{"SPC_NOMOD",SPC_NOMOD},
-	{"SPC_DBADDR",SPC_DBADDR},
-	{"SPC_SCAN",SPC_SCAN},
-	{"SPC_ALARMACK",SPC_ALARMACK},
-	{"SPC_AS",SPC_AS},
-	{"SPC_MOD",SPC_MOD},
-	{"SPC_RESET",SPC_RESET},
-	{"SPC_LINCONV",SPC_LINCONV},
-	{"SPC_CALC",SPC_CALC}
+    {"SPC_NOMOD",SPC_NOMOD},
+    {"SPC_DBADDR",SPC_DBADDR},
+    {"SPC_SCAN",SPC_SCAN},
+    {"SPC_ALARMACK",SPC_ALARMACK},
+    {"SPC_AS",SPC_AS},
+    {"SPC_MOD",SPC_MOD},
+    {"SPC_RESET",SPC_RESET},
+    {"SPC_LINCONV",SPC_LINCONV},
+    {"SPC_CALC",SPC_CALC}
 };
 #endif /*SPECIAL_GBLSOURCE*/
 

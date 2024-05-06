@@ -11,6 +11,11 @@ TEMPLATES += top/iocApp/src/Makefile
 TEMPLATES += top/iocApp/src/build.mak
 TEMPLATES += top/iocApp/src/_APPNAME_Main.cpp
 
+TEMPLATES += top/supportApp/Makefile
+TEMPLATES += top/supportApp/Db/Makefile
+TEMPLATES += top/supportApp/src/Makefile
+TEMPLATES += top/supportApp/src/_APPNAME_.dbd
+
 TEMPLATES += top/exampleApp/Makefile
 TEMPLATES += top/exampleApp/Db/Makefile
 TEMPLATES += top/exampleApp/Db/circle.db
@@ -46,6 +51,7 @@ TEMPLATES += top/exampleBoot/ioc/Makefile@win32
 TEMPLATES += top/exampleBoot/ioc/Makefile@windows
 TEMPLATES += top/exampleBoot/ioc/Makefile@cygwin
 TEMPLATES += top/exampleBoot/ioc/st.cmd@Common
+TEMPLATES += top/iocBoot/ioc/st-common.cmd@Common
 TEMPLATES += top/exampleBoot/ioc/st.cmd@vxWorks
 TEMPLATES += top/exampleBoot/ioc/st.cmd@RTEMS
 TEMPLATES += top/exampleBoot/ioc/README@Common
@@ -60,7 +66,6 @@ TEMPLATES += top/iocBoot/ioc/Makefile@win32
 TEMPLATES += top/iocBoot/ioc/Makefile@windows
 TEMPLATES += top/iocBoot/ioc/Makefile@cygwin
 TEMPLATES += top/iocBoot/ioc/st.cmd@Common
-TEMPLATES += top/iocBoot/ioc/st-common.cmd@Common
 TEMPLATES += top/iocBoot/ioc/st.cmd@Cross
 TEMPLATES += top/iocBoot/ioc/st.cmd@vxWorks
 TEMPLATES += top/iocBoot/ioc/st.cmd@RTEMS

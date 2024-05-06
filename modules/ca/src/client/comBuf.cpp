@@ -5,18 +5,18 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*  
+/*
  *
- *                              
+ *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
+ *
+ *
  *  Author Jeffrey O. Hill
  *  johill@lanl.gov
  */
@@ -33,7 +33,7 @@ bool comBuf::flushToWire ( wireSendAdapter & wire, const epicsTime & currentTime
     unsigned index = this->nextReadIndex;
     unsigned finalIndex = this->commitIndex;
     while ( index < finalIndex ) {
-        unsigned nBytes = wire.sendBytes ( 
+        unsigned nBytes = wire.sendBytes (
             &this->buf[index], finalIndex - index, currentTime );
         if ( nBytes == 0u ) {
             this->nextReadIndex = index;
@@ -45,9 +45,9 @@ bool comBuf::flushToWire ( wireSendAdapter & wire, const epicsTime & currentTime
     return true;
 }
 
-// throwing the exception from a function that isn't inlin
+// throwing the exception from a function that isn't inline
 // shrinks the GNU compiled object code
-void comBuf::throwInsufficentBytesException () 
+void comBuf::throwInsufficentBytesException ()
 {
     throw comBuf::insufficentBytesAvailable ();
 }

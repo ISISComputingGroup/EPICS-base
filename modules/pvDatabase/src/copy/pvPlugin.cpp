@@ -38,7 +38,3 @@ PVPluginPtr PVPluginRegistry::find(const std::string & name)
 }
 
 }}
-<<<<<<< HEAD
-
-=======
->>>>>>> vendor_7_0_8

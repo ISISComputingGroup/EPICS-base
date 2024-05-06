@@ -5,11 +5,11 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* epicsMutex.c */
-/*	Author: Jeff Hill */
+/*  Author: Jeff Hill */
 
 #include <new>
 #include <exception>
@@ -25,17 +25,17 @@ using namespace std;
 class epicsEvent::invalidSemaphore : public exception
 {
     const char * what () const throw ();
-}; 
+};
 
-const char * epicsEvent::invalidSemaphore::what () const throw () 
+const char * epicsEvent::invalidSemaphore::what () const throw ()
 {
     return "epicsEvent::invalidSemaphore()";
 }
 
 //
-// Its probably preferable to not make these inline because they are in 
-// the sharable library interface. The use of inline or not here is probably
-// not an issue because all of this ends up in the operating system in system 
+// Its probably preferable to not make these inline because they are in
+// the shareable library interface. The use of inline or not here is probably
+// not an issue because all of this ends up in the operating system in system
 // calls
 //
 

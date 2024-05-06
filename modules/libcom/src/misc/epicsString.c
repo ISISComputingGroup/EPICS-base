@@ -6,7 +6,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* Authors: Jun-ichi Odagiri, Marty Kraimer, Eric Norum,
@@ -80,7 +80,7 @@ int epicsStrnRawFromEscaped(char *dst, size_t dstlen, const char *src,
         case '0':  OUT('\0'); break;
 
         case 'x' :
-            { /* \xXXX... */
+            { /* \xXX */
                 unsigned int u = 0;
 
                 if (!srclen-- || !(c = *src++ & 0xff))
@@ -89,17 +89,17 @@ int epicsStrnRawFromEscaped(char *dst, size_t dstlen, const char *src,
                 if (!isxdigit(c))
                     goto input;
 
-                    u = u << 4 | ((c > '9') ? toupper(c) - 'A' + 10 : c - '0');
-                        /* Undefined behaviour! */
-                    if (!srclen-- || !(c = *src++ & 0xff)) {
-                        OUT(u);
-                        goto done;
-                    }
+                u = u << 4 | ((c > '9') ? toupper(c) - 'A' + 10 : c - '0');
+
+                if (!srclen-- || !(c = *src++ & 0xff)) {
+                    OUT(u);
+                    goto done;
+                }
 
                 if (!isxdigit(c)) {
-                OUT(u);
-                goto input;
-            }
+                    OUT(u);
+                    goto input;
+                }
 
                 u = u << 4 | ((c > '9') ? toupper(c) - 'A' + 10 : c - '0');
                 OUT(u);

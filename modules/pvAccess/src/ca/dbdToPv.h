@@ -57,7 +57,7 @@ struct CaControl
 
 struct CaValueAlarm
 {
-    double upper_alarm_limit;	
+    double upper_alarm_limit;   
     double upper_warning_limit;
     double lower_warning_limit;
     double lower_alarm_limit;

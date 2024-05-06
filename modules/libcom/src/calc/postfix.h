@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /**
  * \file postfix.h
@@ -22,7 +22,7 @@
 
 #include "libComAPI.h"
 
-
+/** \brief Number of input arguments to a calc expression (A-L) */
 #define CALCPERFORM_NARGS 12
 /** \brief Size of the internal partial result stack */
 #define CALCPERFORM_STACK 80
@@ -71,8 +71,8 @@
  */
 #define MAX_POSTFIX_SIZE INFIX_TO_POSTFIX_SIZE(MAX_INFIX_SIZE)
 
+/** @} */
 
-/* Error numbers from postfix */
 /** \name Calc Engine Error Codes
 * \note Changes in these errors must also be made in calcErrorStr().
  * @{
@@ -106,8 +106,8 @@
 #define CALC_ERR_NULL_ARG       12
 /** \brief Internal error, bad element type */
 #define CALC_ERR_INTERNAL       13
-/* Changes in the above errors must also be made in calcErrorStr() */
 
+/** @} */
 
 #ifdef __cplusplus
 extern "C" {

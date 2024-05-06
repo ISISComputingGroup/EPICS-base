@@ -5,18 +5,18 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
- * Author: 
+ * Author:
  * Jeffrey O. Hill
  * johill@lanl.gov
  */
 
 #ifndef compilerSpecific_h
 #define compilerSpecific_h
- 
+
 #ifndef _MSC_VER
 #   error compiler/msvc/compilerSpecific.h is only for use with the Microsoft compiler
 #endif
@@ -34,7 +34,7 @@
  * standards incompliance issues will be fixed by future compiler
  * releases
  */
- 
+
 /*
  * CXX_PLACEMENT_DELETE - defined if compiler supports placement delete
  * CXX_THROW_SPECIFICATION - defined if compiler supports throw specification

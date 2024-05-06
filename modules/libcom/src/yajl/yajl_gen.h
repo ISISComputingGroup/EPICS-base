@@ -28,9 +28,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    /** generator status codes */
+    /** Generator status codes. */
     typedef enum {
-        /** no error */
+        /** No error. */
         yajl_gen_status_ok = 0,
         /** At a point where a map key is generated, a function other than
          *  yajl_gen_string() was called. */
@@ -41,8 +41,8 @@ extern "C" {
         /** A yajl_gen_XXX() generator function was called while in an error
          *  state. */
         yajl_gen_in_error_state,
-        /** A complete JSON document has been generated */
-        yajl_gen_generation_complete,                
+        /** A complete JSON document has been generated. */
+        yajl_gen_generation_complete,
         /** yajl_gen_double() was passed an invalid floating point value
          *  (infinity or NaN) without \ref yajl_gen_json5 set. */
         yajl_gen_invalid_number,
@@ -55,10 +55,10 @@ extern "C" {
         yajl_gen_invalid_string
     } yajl_gen_status;
 
-    /** an opaque handle to a generator */
+    /** An opaque handle to a generator. */
     typedef struct yajl_gen_t * yajl_gen;
 
-    /** a callback used for "printing" the results. */
+    /** A callback used for "printing" the results. */
     typedef void (*yajl_print_t)(void * ctx,
                                  const char * str,
                                  size_t len);
@@ -159,7 +159,7 @@ extern "C" {
      */
     YAJL_API yajl_gen yajl_gen_alloc(const yajl_alloc_funcs * allocFuncs);
 
-    /** free a generator handle */
+    /** Free a generator handle. */
     YAJL_API void yajl_gen_free(yajl_gen handle);
 
     /** Generate an integer number. */
@@ -223,6 +223,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif    
+#endif
 
 #endif

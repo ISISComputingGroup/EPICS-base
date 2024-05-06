@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /**\file epicsEvent.h
@@ -43,17 +43,17 @@
 
 #include "libComAPI.h"
 
-
+/** \brief An identifier for an epicsEvent for use with the C API */
 typedef struct epicsEventOSD *epicsEventId;
 
-
+/** \brief Return status from several C API routines. */
 typedef enum {
     epicsEventOK = 0,
     epicsEventWaitTimeout,
     epicsEventError
 } epicsEventStatus;
 
-/* Backwards compatibility */
+/** \brief Old name provided for backwards compatibility */
 #define epicsEventWaitStatus epicsEventStatus
 /** \brief Old name provided for backwards compatibility */
 #define epicsEventWaitOK epicsEventOK

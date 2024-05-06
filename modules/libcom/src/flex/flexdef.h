@@ -6,7 +6,7 @@
  *
  * This code is derived from software contributed to Berkeley by
  * Vern Paxson.
- * 
+ *
  * The United States Government has rights in this work pursuant
  * to contract no. DE-AC03-76SF00098 between the United States
  * Department of Energy and the University of California.
@@ -102,16 +102,16 @@
  * that can be used.  This definition is currently not used.
  */
 #define FREE_EPSILON(state) \
-	(transchar[state] == SYM_EPSILON && \
-	 trans2[state] == NO_TRANSITION && \
-	 finalst[state] != state)
+    (transchar[state] == SYM_EPSILON && \
+     trans2[state] == NO_TRANSITION && \
+     finalst[state] != state)
 
 /* returns true if an nfa state has an epsilon out-transition character
  * and both slots are free
  */
 #define SUPER_FREE_EPSILON(state) \
-	(transchar[state] == SYM_EPSILON && \
-	 trans1[state] == NO_TRANSITION) \
+    (transchar[state] == SYM_EPSILON && \
+     trans1[state] == NO_TRANSITION) \
 
 /* maximum number of NFA states that can comprise a DFA state.  It's real
  * big because if there's a lot of rules, the initial state will have a
@@ -199,7 +199,7 @@
 
 /* the percentage the number of homogeneous out-transitions of a state
  * must be of the number of total out-transitions of the state in order
- * that the state's transition table is first compared with a potential 
+ * that the state's transition table is first compared with a potential
  * template of the most common out-transition instead of with the first
  * proto in the proto queue
  */
@@ -287,7 +287,7 @@ typedef struct hash_entry *hash_table[];
 #define START_COND_HASH_SIZE 101
 #define CCL_HASH_SIZE 101
 
-extern struct hash_entry *ndtbl[NAME_TABLE_HASH_SIZE]; 
+extern struct hash_entry *ndtbl[NAME_TABLE_HASH_SIZE];
 extern struct hash_entry *sctbl[START_COND_HASH_SIZE];
 extern struct hash_entry *ccltab[CCL_HASH_SIZE];
 
@@ -346,7 +346,7 @@ extern int yymore_really_used, reject_really_used;
  * infilename - name of input file
  * input_files - array holding names of input files
  * num_input_files - size of input_files array
- * program_name - name with which program was invoked 
+ * program_name - name with which program was invoked
  */
 
 extern int datapos, dataline, linenum;
@@ -571,36 +571,36 @@ extern void *allocate_array(int size, int element_size);
 extern void *reallocate_array(void *array, int size, int element_size);
 
 #define allocate_integer_array(size) \
-	(int *) allocate_array( size, sizeof( int ) )
+    (int *) allocate_array( size, sizeof( int ) )
 
 #define reallocate_integer_array(array,size) \
-	(int *) reallocate_array( (void *) array, size, sizeof( int ) )
+    (int *) reallocate_array( (void *) array, size, sizeof( int ) )
 
 #define allocate_int_ptr_array(size) \
-	(int **) allocate_array( size, sizeof( int * ) )
+    (int **) allocate_array( size, sizeof( int * ) )
 
 #define allocate_char_ptr_array(size) \
-	(char **) allocate_array( size, sizeof( char * ) )
+    (char **) allocate_array( size, sizeof( char * ) )
 
 #define allocate_dfaacc_union(size) \
-	(union dfaacc_union *) \
-		allocate_array( size, sizeof( union dfaacc_union ) )
+    (union dfaacc_union *) \
+        allocate_array( size, sizeof( union dfaacc_union ) )
 
 #define reallocate_int_ptr_array(array,size) \
-	(int **) reallocate_array( (void *) array, size, sizeof( int * ) )
+    (int **) reallocate_array( (void *) array, size, sizeof( int * ) )
 
 #define reallocate_char_ptr_array(array,size) \
-	(char **) reallocate_array( (void *) array, size, sizeof( char * ) )
+    (char **) reallocate_array( (void *) array, size, sizeof( char * ) )
 
 #define reallocate_dfaacc_union(array, size) \
-	(union dfaacc_union *) \
-	reallocate_array( (void *) array, size, sizeof( union dfaacc_union ) )
+    (union dfaacc_union *) \
+        reallocate_array( (void *) array, size, sizeof( union dfaacc_union ) )
 
 #define allocate_character_array(size) \
-	(Char *) allocate_array( size, sizeof( Char ) )
+    (Char *) allocate_array( size, sizeof( Char ) )
 
 #define reallocate_character_array(array,size) \
-	(Char *) reallocate_array( (void *) array, size, sizeof( Char ) )
+    (Char *) reallocate_array( (void *) array, size, sizeof( Char ) )
 
 #if 0 /* JRW this might couse trouble... but not for IOC usage */
 /* used to communicate between scanner and parser.  The type should really

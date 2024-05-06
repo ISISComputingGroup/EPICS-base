@@ -7,7 +7,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* dbNotify.h	*/
+/* dbNotify.h   */
 
 #ifndef INCdbNotifyh
 #define INCdbNotifyh
@@ -90,7 +90,7 @@ DBCORE_API void dbNotifyCompletion(struct dbCommon *precord);
 DBCORE_API int db_put_process(
     processNotify *processNotify,notifyPutType type,
     int src_type,const void *psrc, int no_elements);
- 
+
 /* dbtpn is test routine for dbNotify putProcessRequest */
 DBCORE_API long dbtpn(char *recordname,char *value);
 
@@ -99,7 +99,7 @@ DBCORE_API int dbNotifyDump(void);
 
 /* This module provides code to handle process notify.
  * client code semantics are:
- * 1) The client code allocates storage for a processNotify structure. 
+ * 1) The client code allocates storage for a processNotify structure.
  *    This structure can be used for multiple calls to dbProcessNotify.
  *    The client is responsible for setting the following fields :
  *    requestType - The type of request.
@@ -108,7 +108,7 @@ DBCORE_API int dbNotifyDump(void);
  *    getCallback - If request is processGetRequest or putProcessGetRequest
  *    doneCallback - Must be set
  *    usrPvt - For exclusive use of client. dbNotify does not access this field
- * 2) The client calls dbProcessNotify. 
+ * 2) The client calls dbProcessNotify.
  * 3) putCallback is called after dbNotify has claimed the record instance
  *    but before a potential process is requested.
  *    The putCallback MUST issue the correct put request

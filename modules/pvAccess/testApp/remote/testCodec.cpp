@@ -138,7 +138,7 @@ public:
         std::size_t startPos = _readBuffer->getPosition();
         //buffer.put(readBuffer);
         //while (buffer.hasRemaining() && readBuffer.hasRemaining())
-        //	buffer.put(readBuffer.get());
+        //  buffer.put(readBuffer.get());
 
         std::size_t bufferRemaining = buffer->getRemaining();
         std::size_t readBufferRemaining =

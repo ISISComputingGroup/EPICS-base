@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -55,7 +55,7 @@ private:
 // This class exists for the purpose of avoiding file scope
 // object chicken and egg problems. It implements thread safe
 // lazy initialization. To avoid locking overhead retain a
-// copy of the epicsSingleton :: reference for future use. 
+// copy of the epicsSingleton :: reference for future use.
 template < class TYPE >
 class epicsSingleton {
 public:
@@ -63,54 +63,54 @@ public:
     public:
         reference ( epicsSingleton & es)
             :_pSingleton ( & es )
-{
-    es._singletonUntyped.
-        incrRefCount ( & epicsSingleton < TYPE > :: _build );
-}
+        {
+            es._singletonUntyped.
+                incrRefCount ( & epicsSingleton < TYPE > :: _build );
+        }
         reference ( const reference & ref)
             :_pSingleton ( ref._pSingleton )
-{
-    assert ( _pSingleton );
-    _pSingleton->_singletonUntyped.
-        incrRefCount ( & epicsSingleton < TYPE > :: _build );
-}
+        {
+            assert ( _pSingleton );
+            _pSingleton->_singletonUntyped.
+                incrRefCount ( & epicsSingleton < TYPE > :: _build );
+        }
         ~reference () {
-    assert ( _pSingleton );
-    _pSingleton->_singletonUntyped.
-        decrRefCount ( & epicsSingleton < TYPE > :: _destroy );
-}
-
+            assert ( _pSingleton );
+            _pSingleton->_singletonUntyped.
+                decrRefCount ( & epicsSingleton < TYPE > :: _destroy );
+        }
+        // this somewhat convoluted reference of the return
         // type ref through the epicsSingleton template is
         // required for the archaic Tornado gnu compiler
-typename epicsSingleton < TYPE > :: reference & 
+        typename epicsSingleton < TYPE > :: reference &
             operator = ( const reference & ref) {
-    if ( _pSingleton != ref._pSingleton ) {
-        assert ( _pSingleton );
-        _pSingleton->_singletonUntyped.
-            decrRefCount ( epicsSingleton < TYPE > :: _destroy );
-        _pSingleton = ref._pSingleton;
-        assert ( _pSingleton );
-        _pSingleton->_singletonUntyped.
-            incrRefCount ( & epicsSingleton < TYPE > :: _build ); 
-    }
-    return *this;
-}
+            if ( _pSingleton != ref._pSingleton ) {
+                assert ( _pSingleton );
+                _pSingleton->_singletonUntyped.
+                    decrRefCount ( epicsSingleton < TYPE > :: _destroy );
+                _pSingleton = ref._pSingleton;
+                assert ( _pSingleton );
+                _pSingleton->_singletonUntyped.
+                    incrRefCount ( & epicsSingleton < TYPE > :: _build );
+            }
+            return *this;
+        }
         TYPE * operator -> () {
-    assert ( _pSingleton );
-    return reinterpret_cast < TYPE * > 
-            ( _pSingleton->_singletonUntyped.pInstance () ); 
-}
+            assert ( _pSingleton );
+            return reinterpret_cast < TYPE * >
+                    ( _pSingleton->_singletonUntyped.pInstance () );
+        }
         const TYPE * operator -> () const {
-    assert ( _pSingleton );
-    return reinterpret_cast < const TYPE * > 
-            ( _pSingleton->_singletonUntyped.pInstance () ); 
-}
+            assert ( _pSingleton );
+            return reinterpret_cast < const TYPE * >
+                    ( _pSingleton->_singletonUntyped.pInstance () );
+        }
         TYPE & operator * () {
-    return * this->operator -> ();
-}
+            return * this->operator -> ();
+        }
         const TYPE & operator * () const {
-    return * this->operator -> ();
-}
+            return * this->operator -> ();
+        }
     private:
         epicsSingleton * _pSingleton;
     };
@@ -119,24 +119,24 @@ typename epicsSingleton < TYPE > :: reference &
     constexpr
 #endif
     epicsSingleton () {}
-
-
+    // mutex lock/unlock pair overhead incurred
+    // when either of these are called
     reference getReference () {
         return reference ( * this );
-}
+    }
     const reference getReference () const {
         epicsSingleton < TYPE > * pConstCastAway =
             const_cast < epicsSingleton < TYPE > * > ( this );
         return pConstCastAway->getReference ();
-}
+    }
 private:
     SingletonUntyped _singletonUntyped;
     static void * _build () { return new TYPE (); }
     static void _destroy ( void * pDestroyTypeless) {
-    TYPE * pDestroy = 
-        reinterpret_cast < TYPE * > ( pDestroyTypeless );
-    delete pDestroy;
-}
+        TYPE * pDestroy =
+            reinterpret_cast < TYPE * > ( pDestroyTypeless );
+        delete pDestroy;
+    }
     epicsSingleton ( const epicsSingleton & );
     epicsSingleton & operator = ( const epicsSingleton & );
 };

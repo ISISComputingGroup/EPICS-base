@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /**
@@ -32,17 +32,17 @@
 #endif
 #define FALSE 0
 
-/* deprecated, use static */
+/** \brief Deprecated synonym for \c static */
 #ifndef LOCAL
 #   define LOCAL static
 #endif
 
-/* number of elements in an array */
+/** \brief Number of elements in array */
 #ifndef NELEMENTS
 #   define NELEMENTS(array) (sizeof (array) / sizeof ((array) [0]))
 #endif
 
-/* byte offset of member in structure - deprecated, use offsetof */
+/** \brief Deprecated synonym for \c offsetof */
 #ifndef OFFSET
 #   define OFFSET(structure, member) offsetof(structure, member)
 #endif
@@ -69,16 +69,16 @@
 # endif
 #endif
 
-/*Process Variable Name Size */
+/** \brief Size of a record name including the nil terminator */
 #define PVNAME_STRINGSZ 61
-/* PVNAME_STRINGSZ includes the nil terminator */
+/** \brief Size of a record name without the nil terminator */
 #define PVNAME_SZ (PVNAME_STRINGSZ - 1)
 
 /** \brief Buffer size for the string representation of a DBF_*LINK field
  */
 #define PVLINK_STRINGSZ 1024
 
-/* dbAccess enums/menus can have up to this many choices */
+/** \brief dbAccess enums/menus can have up to this many choices */
 #define DB_MAX_CHOICES 30
 
 #endif /* INC_dbDefs_H */

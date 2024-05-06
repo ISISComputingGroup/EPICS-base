@@ -7,7 +7,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*asTrapWrite.h*/
+
 /**
  * \file asTrapWrite.h
  * \brief API for monitoring external put operations to an IOC.
@@ -50,7 +50,7 @@ typedef struct asTrapWriteMessage {
     void *userPvt;
     int dbrType; /**< \brief Data type from ca/db_access.h, NOT dbFldTypes.h */
     int no_elements; /**< \brief Array length  */
-    void *data;     /* Might be NULL if no data is available */
+    void *data;     /**< \brief Might be NULL if no data is available */
 } asTrapWriteMessage;
 
 /**

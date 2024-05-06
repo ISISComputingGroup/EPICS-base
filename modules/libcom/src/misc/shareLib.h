@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /**
  * \file shareLib.h
@@ -33,8 +33,8 @@
  * this is the pascal calling convention which is used by visual basic and other
  * high level tools. This is only necessary if a C/C++ function needs to be called
  * from other languages or from high level tools. The epicsShareAPI keyword
- * must be present between the function's returned data type and the function's 
- * name. All compilers targeting windows accept the __stdcall keyword in this 
+ * must be present between the function's returned data type and the function's
+ * name. All compilers targeting windows accept the __stdcall keyword in this
  * location. Functions with variable argument lists should not use the epicsShareAPI
  * keyword because __stdcall (pascal) calling convention cannot support variable
  * length ed argument lists.
@@ -47,12 +47,12 @@
  *             it may get removed from these at some point in the future.
  *
  * -# epicsShare{Func,Class,Extern,Def} - specifies shareable library (DLL)
- * export/import related information in the source code. On windows these keywords 
- * allow faster dispatching of calls to DLLs because more is known at compile time. 
+ * export/import related information in the source code. On windows these keywords
+ * allow faster dispatching of calls to DLLs because more is known at compile time.
  * It is also not necessary to maintain a linker input files specifying the DLL
- * entry points. This maintenance can be more laborious with C++ decorated symbol 
- * names. These keywords are only necessary if the address of a function or data 
- * internal to a shareable library (DLL) needs to be visible outside of this shareable 
+ * entry points. This maintenance can be more laborious with C++ decorated symbol
+ * names. These keywords are only necessary if the address of a function or data
+ * internal to a shareable library (DLL) needs to be visible outside of this shareable
  * library (DLL). All compilers targeting windows accept the __declspec(dllexport)
  * and __declspec(dllimport) keywords. For GCC version 4 and above the first three
  * keywords specify a visibility attribute of "default", which marks the symbol as
@@ -60,7 +60,7 @@
  * significantly reduce the number of symbols exported to a shared library. See the
  * URL below for more information.
  *
- * In header files declare references to externally visible variables, classes and 
+ * In header files declare references to externally visible variables, classes and
  * functions like this:
  *
  *     #include "shareLib.h"
@@ -99,7 +99,7 @@
  * marker.
  *
  * Sometimes a header file for a shareable library exported interface will
- * have some preprocessor switches like this if this header file must also  
+ * have some preprocessor switches like this if this header file must also
  * include header files describing interfaces to other shareable libraries.
  *
  *     #ifdef epicsExportSharedSymbols
@@ -119,7 +119,7 @@
  *     epicsShareExtern int myExtVar;
  *     class epicsShareClass myClass {};
  *
- * Fortunately, the above is only the concern of library authors and will have no 
+ * Fortunately, the above is only the concern of library authors and will have no
  * impact on persons using functions and or external data from a library.
  */
 
@@ -157,7 +157,7 @@
 #           define epicsShareFunc
 #       endif
 #   endif
-#   define epicsShareDef 
+#   define epicsShareDef
 #   define epicsShareAPI __stdcall /* function removes arguments */
 #   define READONLY const
 
@@ -187,18 +187,18 @@
  */
 #elif defined(VAXC)
 
-    /* 
+    /*
      * VAXC creates FORTRAN common blocks when
      * we use "extern int fred"/"int fred=4". Therefore,
      * the initialization is not loaded unless we
      * call a function in that object module.
      *
      * DEC CXX does not have this problem.
-     * We suspect (but do not know) that DEC C 
+     * We suspect (but do not know) that DEC C
      *  also does not have this problem.
      */
-#   define epicsShareExtern globalref 
-#   define epicsShareDef globaldef 
+#   define epicsShareExtern globalref
+#   define epicsShareDef globaldef
 #   define READONLY const
 #   define epicsShareClass
 #   define epicsShareFunc

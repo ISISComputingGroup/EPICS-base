@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* devBoSoft.c - Device Support Routines for  Soft Binary Output*/
@@ -29,16 +29,16 @@
 #include "boRecord.h"
 #include "epicsExport.h"
 
-
+/* Create the dset for devBoSoft */
 static long init_record(dbCommon *pcommon);
 static long write_bo(boRecord *prec);
 
 bodset devBoSoft = {
     {5, NULL, NULL, init_record, NULL},
-	write_bo
+    write_bo
 };
 epicsExportAddress(dset, devBoSoft);
-
+
 static long init_record(dbCommon *pcommon)
 {
    long status=0;
@@ -46,7 +46,7 @@ static long init_record(dbCommon *pcommon)
     /* don't convert */
    status=2;
    return status;
- 
+
 } /* end init_record() */
 
 static long write_bo(boRecord *prec)

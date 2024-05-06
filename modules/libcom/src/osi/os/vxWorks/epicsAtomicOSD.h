@@ -1,11 +1,11 @@
 /*************************************************************************\
 * Copyright (c) 2011 LANS LLC, as Operator of
 *     Los Alamos National Laboratory.
-* Copyright (c) 2011 UChicago Argonne, LLC, as Operator of 
+* Copyright (c) 2011 UChicago Argonne, LLC, as Operator of
 *     Argonne National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -83,13 +83,13 @@ EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
 #endif
 
 /*
- * we make the probably correct guess that if ULONG_MAX 
+ * we make the probably correct guess that if ULONG_MAX
  * is the same as UINT_MAX then sizeof ( atomic_t )
  * will be the same as sizeof ( size_t )
  *
  * if ULONG_MAX != UINT_MAX then its 64 bit vxWorks and
- * WRS doesnt not supply at this time the atomic interface 
- * for 8 byte integers that is needed - so that architecture 
+ * WRS doesnt not supply at this time the atomic interface
+ * for 8 byte integers that is needed - so that architecture
  * receives the lock synchronized version
  */
 #if ULONG_MAX == UINT_MAX
@@ -122,8 +122,8 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
 #define EPICS_ATOMIC_ADD_SIZET
 EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, size_t delta )
 {
-    /* 
-     * vxAtomicLib doc indicates that vxAtomicAdd is 
+    /*
+     * vxAtomicLib doc indicates that vxAtomicAdd is
      * implemented using signed arithmetic, but it
      * does not change the end result because twos
      * complement addition is used in either case
@@ -131,15 +131,15 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, size_t delta 
     atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
     const atomic_t oldVal = vxAtomicAdd ( pTarg, (atomic_t) delta );
     return delta + ( size_t ) oldVal;
-} 
-#endif 
+}
+#endif
 
 #ifndef EPICS_ATOMIC_SUB_SIZET
 #define EPICS_ATOMIC_SUB_SIZET
 EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta )
 {
-    /* 
-     * vxAtomicLib doc indicates that vxAtomicSub is 
+    /*
+     * vxAtomicLib doc indicates that vxAtomicSub is
      * implemented using signed arithmetic, but it
      * does not change the end result because twos
      * complement subtraction is used in either case

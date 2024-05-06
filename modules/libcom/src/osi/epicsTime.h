@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /** \file epicsTime.h
   * \brief EPICS time-stamps (epicsTimeStamp), epicsTime C++ class
@@ -23,7 +23,7 @@
 #include "osdTime.h"
 #include "errMdef.h"
 
-/* The EPICS Epoch is 00:00:00 Jan 1, 1990 UTC */
+/** \brief The EPICS Epoch is 00:00:00 Jan 1, 1990 UTC */
 #define POSIX_TIME_AT_EPICS_EPOCH 631152000u
 
 #ifdef __cplusplus
@@ -40,14 +40,14 @@ extern "C" {
  * epicsTimeStamp can safely represent time stamps until the year 2106.
  */
 typedef struct epicsTimeStamp {
-    epicsUInt32    secPastEpoch;   /* seconds since 0000 Jan 1, 1990 */
-    epicsUInt32    nsec;           /* nanoseconds within second */
+    epicsUInt32    secPastEpoch;   /**< \brief seconds since 0000 Jan 1, 1990 */
+    epicsUInt32    nsec;           /**< \brief nanoseconds within second */
 } epicsTimeStamp;
 
 /** \brief Type of UTAG field (dbCommon::utag)
  */
 typedef epicsUInt64     epicsUTag;
-/*TS_STAMP is deprecated */
+
 /** \brief Old time-stamp data type, deprecated.
  * \deprecated TS_STAMP was provided for compatibility with Base-3.13 code.
  * It will be removed in some future release of EPICS 7.
@@ -77,45 +77,45 @@ struct timeval; /* BSD */
  * epicsTime routines return \c S_time_ error status values:
  * @{
  */
-
+/** \brief Success */
 #define epicsTimeOK 0
-
+/** \brief No time provider */
 #define S_time_noProvider       (M_time| 1) /*No time provider*/
-
+/** \brief Bad event number */
 #define S_time_badEvent         (M_time| 2) /*Bad event number*/
-    /* exceptions */
+/** \brief Invalid arguments */
 #define S_time_badArgs          (M_time| 3) /*Invalid arguments*/
-
+/** \brief Out of memory */
 #define S_time_noMemory         (M_time| 4) /*Out of memory*/
-
+/** \brief Provider not synchronized */
 #define S_time_unsynchronized   (M_time| 5) /*Provider not synchronized*/
-
+/** \brief Invalid timezone */
 #define S_time_timezone         (M_time| 6) /*Invalid timezone*/
-    /* convert to and from EPICS epicsTimeStamp format */
+/** \brief Time conversion error */
 #define S_time_conversion       (M_time| 7) /*Time conversion error*/
+/** @} */
 
-    /* convert to and from ANSI time_t */
 /** \name epicsTimeEvent numbers
  * Some special values for eventNumber:
  * @{
-     */
+ */
 #define epicsTimeEventCurrentTime 0
 #define epicsTimeEventBestTime -1
 #define epicsTimeEventDeviceTime -2
-
+/** @} */
 
 /** \name generalTime functions
  * These are implemented in the "generalTime" framework:
  * @{
-     */
-
+ */
+/** \brief Get current time into \p *pDest */
 LIBCOM_API int epicsStdCall epicsTimeGetCurrent ( epicsTimeStamp * pDest );
-    /* convert to and from POSIX RTs "struct timespec" */
+/** \brief Get time of event \p eventNumber into \p *pDest */
 LIBCOM_API int epicsStdCall epicsTimeGetEvent (
     epicsTimeStamp *pDest, int eventNumber);
-
+/** \brief Get monotonic time into \p *pDest */
 LIBCOM_API int epicsTimeGetMonotonic ( epicsTimeStamp * pDest );
-    /* convert to and from BSDs "struct timeval" */
+/** @} */
 
 /** \name ISR-callable
  * These routines may be called from an Interrupt Service Routine, and
@@ -123,65 +123,65 @@ LIBCOM_API int epicsTimeGetMonotonic ( epicsTimeStamp * pDest );
  * that sucessfully returned a result from the equivalent non-ISR routine.
  * @{
  */
-    /* convert to and from NTP timestamp format */
+/** \brief Get current time into \p *pDest (ISR-safe) */
 LIBCOM_API int epicsTimeGetCurrentInt(epicsTimeStamp *pDest);
-
+/** \brief Get time of event \p eventNumber into \p *pDest (ISR-safe) */
 LIBCOM_API int epicsTimeGetEventInt(epicsTimeStamp *pDest, int eventNumber);
-    /* convert to and from WIN32s FILETIME (implemented only on WIN32) */
+/** @} */
 
 /** \name ANSI C time_t conversions
  * Convert to and from ANSI C \c time_t
  * @{
-     */
-
+ */
+/** \brief Convert epicsTimeStamp to ANSI C \c time_t */
 LIBCOM_API int epicsStdCall epicsTimeToTime_t (
     time_t * pDest, const epicsTimeStamp * pSrc );
-
+/** \brief Convert ANSI C \c time_t to epicsTimeStamp */
 LIBCOM_API int epicsStdCall epicsTimeFromTime_t (
     epicsTimeStamp * pDest, time_t src );
+/** @} */
 
-/* epicsTime routines return S_time_ error status values */
 /** \name ANSI C struct tm conversions
  * Convert to and from ANSI C's <tt>struct tm</tt> with nanoseconds
  * @{
  */
-/** \brief Success */
+/** \brief Convert epicsTimeStamp to <tt>struct tm</tt> in local time zone */
 LIBCOM_API int epicsStdCall epicsTimeToTM (
     struct tm * pDest, unsigned long * pNSecDest, const epicsTimeStamp * pSrc );
-
+/** \brief Convert epicsTimeStamp to <tt>struct tm</tt> in UTC/GMT */
 LIBCOM_API int epicsStdCall epicsTimeToGMTM (
     struct tm * pDest, unsigned long * pNSecDest, const epicsTimeStamp * pSrc );
-/*Some special values for eventNumber*/
+/** \brief Set epicsTimeStamp from <tt>struct tm</tt> in local time zone */
 LIBCOM_API int epicsStdCall epicsTimeFromTM (
     epicsTimeStamp * pDest, const struct tm * pSrc, unsigned long nSecSrc );
-
+/** \brief Set epicsTimeStamp from <tt>struct tm</tt> in UTC/GMT */
 LIBCOM_API int epicsStdCall epicsTimeFromGMTM (
     epicsTimeStamp * pDest, const struct tm * pSrc, unsigned long nSecSrc );
-/* These are implemented in the "generalTime" framework */
+/** @} */
 
 /** \name POSIX RT struct timespec conversions
  * Convert to and from the POSIX RealTime <tt>struct timespec</tt>
  * format.
  * @{ */
-/* These are callable from an Interrupt Service Routine */
+/** \brief Convert epicsTimeStamp to <tt>struct timespec</tt> */
 LIBCOM_API int epicsStdCall epicsTimeToTimespec (
     struct timespec * pDest, const epicsTimeStamp * pSrc );
-
+/** \brief Set epicsTimeStamp from <tt>struct timespec</tt> */
 LIBCOM_API int epicsStdCall epicsTimeFromTimespec (
     epicsTimeStamp * pDest, const struct timespec * pSrc );
-/* convert to and from ANSI C's "time_t" */
+/** @} */
 
 /** \name BSD's struct timeval conversions
  * Convert to and from the BSD <tt>struct timeval</tt> format.
  * @{ */
-/* convert to and from ANSI C's "struct tm" with nano seconds */
+/** \brief Convert epicsTimeStamp to <tt>struct timeval</tt> */
 LIBCOM_API int epicsStdCall epicsTimeToTimeval (
     struct timeval * pDest, const epicsTimeStamp * pSrc );
-
+/** \brief Set epicsTimeStamp from <tt>struct timeval</tt> */
 LIBCOM_API int epicsStdCall epicsTimeFromTimeval (
     epicsTimeStamp * pDest, const struct timeval * pSrc );
+/** @} */
 
-/*arithmetic operations */
 /** \name Arithmetic operations
  * Arithmetic operations on epicsTimeStamp objects and time differences
  * which are normally expressed as a \c double in seconds.
@@ -203,16 +203,16 @@ LIBCOM_API epicsInt64 epicsStdCall epicsTimeDiffInNS (
 /** \name Comparison operators
  * Comparisons between epicsTimeStamp objects, returning 0=false, 1=true.
  * @{ */
-/*comparison operations: returns (0,1) if (false,true) */
+/** \brief \p left equals \p right */
 LIBCOM_API int epicsStdCall epicsTimeEqual (
     const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight);
 /** \brief \p left not equal to \p right */
 LIBCOM_API int epicsStdCall epicsTimeNotEqual (
     const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight);
-
+/** \brief \p left was before \p right */
 LIBCOM_API int epicsStdCall epicsTimeLessThan (
     const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight);
-/*convert to ASCII string */
+/** \brief \p right was no later than \p left */
 LIBCOM_API int epicsStdCall epicsTimeLessThanEqual (
     const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight);
 /** \brief \p left was after \p right */
@@ -227,7 +227,7 @@ LIBCOM_API int epicsStdCall epicsTimeGreaterThanEqual (
 LIBCOM_API size_t epicsStdCall epicsTimeToStrftime (
     char * pBuff, size_t bufLength, const char * pFormat, const epicsTimeStamp * pTS );
 
-/* dump current state to standard out */
+/** \brief Dump current state to stdout */
 LIBCOM_API void epicsStdCall epicsTimeShow (
     const epicsTimeStamp *, unsigned interestLevel );
 
@@ -251,7 +251,7 @@ LIBCOM_API epicsUInt64 epicsMonotonicResolution(void);
 /** \brief Fetch monotonic counter, returns the number of nanoseconds since
  * some unspecified time. */
 LIBCOM_API epicsUInt64 epicsMonotonicGet(void);
-/* Fetch monotonic counter, return is nano-seconds since an unspecified time */
+/** @} */
 
 #ifdef EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 LIBCOM_API void osdMonotonicInit(void);

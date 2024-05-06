@@ -6,7 +6,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* mbboRecord.c - Record Support Routines for multi bit binary Output records */
@@ -255,7 +255,7 @@ CONTINUE:
 
     if ( pact ) {
         /* Update timestamp again for asynchronous devices */
-    recGblGetTimeStampSimm(prec, prec->simm, NULL);
+        recGblGetTimeStampSimm(prec, prec->simm, NULL);
     }
 
     monitor(prec);

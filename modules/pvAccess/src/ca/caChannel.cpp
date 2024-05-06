@@ -537,7 +537,7 @@ static void ca_put_get_handler(struct event_handler_args args)
     channelPut->getDone(args);
 }
 
-} // namespace
+} // extern "C"
 
 
 void CAChannelPut::put(PVStructure::shared_pointer const & pvPutStructure,
@@ -725,7 +725,7 @@ CAChannelMonitorPtr CAChannelMonitor::create(
 CAChannelMonitor::CAChannelMonitor(
     CAChannel::shared_pointer const & channel,
     MonitorRequester::shared_pointer const & monitorRequester,
-    PVStructurePtr const & pvRequest) 
+    PVStructurePtr const & pvRequest)
 :
     channel(channel),
     monitorRequester(monitorRequester),
@@ -840,9 +840,9 @@ Status CAChannelMonitor::start()
         result = ca_flush_io();
     if (result == ECA_NORMAL)
         return Status::Ok;
-{
+    {
         epicsGuard<epicsMutex> G(mutex);
-         isStarted = false;     
+        isStarted = false;
     }
     return Status(Status::STATUSTYPE_ERROR, string(ca_message(result)));
 }

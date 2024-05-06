@@ -639,7 +639,7 @@ for more information on simulation mode and its fields.
 
 =cut
 
-	field(SIOL,DBF_INLINK) {
+        field(SIOL,DBF_INLINK) {
 		prompt("Simulation Input Link")
 		promptgroup("90 - Simulate")
 		interest(1)

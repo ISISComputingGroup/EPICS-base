@@ -5,7 +5,7 @@
 *     National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /**
@@ -257,8 +257,8 @@ EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
  * \return the original value stored in the target
  */
 EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
-                                            EpicsAtomicPtrT * pTarget, 
-                                            EpicsAtomicPtrT oldVal, 
+                                            EpicsAtomicPtrT * pTarget,
+                                            EpicsAtomicPtrT oldVal,
                                             EpicsAtomicPtrT newVal );
 
 #ifdef __cplusplus
@@ -266,11 +266,11 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
 #endif
 
 /*
- * options for in-line compiler intrinsic or OS specific 
+ * options for in-line compiler intrinsic or OS specific
  * implementations of the above function prototypes
  *
  * for some of the compilers we must define the
- * in-line functions before they get used in the c++ 
+ * in-line functions before they get used in the c++
  * in-line functions below
  */
 #include "epicsAtomicCD.h"
@@ -280,8 +280,8 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
 namespace epics {
 namespace atomic {
 
-/* 
- * overloaded c++ interface 
+/*
+ * overloaded c++ interface
  */
 
 /** \brief C++ API for atomic size_t increment
@@ -400,8 +400,8 @@ EPICS_ATOMIC_INLINE int subtract ( int & v, int delta )
  * \param newValue new value for \p v
  */
 EPICS_ATOMIC_INLINE void set ( size_t & v , size_t newValue )
-{ 
-    epicsAtomicSetSizeT  ( & v, newValue ); 
+{
+    epicsAtomicSetSizeT  ( & v, newValue );
 }
 
 /** \brief C++ API for atomic int assignment
@@ -519,7 +519,7 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT compareAndSwap ( EpicsAtomicPtrT & v,
 }
 
 } /* end of name space atomic */
-} /* end of name space epics */ 
+} /* end of name space epics */
 
 #endif /* ifdef __cplusplus */
 

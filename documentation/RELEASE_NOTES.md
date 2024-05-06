@@ -1436,7 +1436,7 @@ set to their default values.
     void startitup(void) {
         epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
         epicsThreadId tid;
-    
+
         opts.priority = epicsThreadPriorityMedium;
         tid = epicsThreadCreateOpt("my thread", &threadMain, NULL, &opts);
     }
@@ -1919,14 +1919,14 @@ number instead, like this:
 
 ```
     #include <epicsVersion.h>
-    
+
     #ifndef VERSION_INT
     #  define VERSION_INT(V,R,M,P) ( ((V)<<24) | ((R)<<16) | ((M)<<8) | (P))
     #endif
     #ifndef EPICS_VERSION_INT
     #  define EPICS_VERSION_INT VERSION_INT(EPICS_VERSION, EPICS_REVISION, EPICS_MODIFICATION, EPICS_PATCH_LEVEL)
     #endif
-    
+
     #if EPICS_VERSION_INT >= VERSION_INT(3,16,1,0)
         /* Code where Base has INT64 support */
     #else
@@ -2252,7 +2252,7 @@ excerpts from a database file:
     record(ai, math:pi) {
         field(INP, {const: 3.14159265358979})   # Correct
         field(SIOL, "{const: 3.142857}")        # Wrong
-        
+
         info(autosave, {            # White-space and comments are allowed
             fields:[DESC, SIMM],
             pass0:[VAL]
@@ -2401,7 +2401,7 @@ this:
 
 ```
     #include "epicsTime.h"
-    
+
     #ifndef M_time
       /* S_time_... status values were not provided before Base 3.16 */
       #define S_time_unsynchronized epicsTimeERROR

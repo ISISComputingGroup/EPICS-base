@@ -6,7 +6,7 @@
 * Copyright (c) 2012 ITER Organization
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* osi/os/vxWorks/epicsThread.c */
 
@@ -60,7 +60,7 @@ LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
 #else
 #define ARCH_STACK_FACTOR 2
 #endif
-static const unsigned stackSizeTable[epicsThreadStackBig+1] = 
+static const unsigned stackSizeTable[epicsThreadStackBig+1] =
    {4000*ARCH_STACK_FACTOR, 6000*ARCH_STACK_FACTOR, 11000*ARCH_STACK_FACTOR};
 
 /* Table and lock for epicsThreadMap() */
@@ -84,7 +84,7 @@ static SEM_ID epicsThreadOnceMutex = 0;
 /* osi =  199 - vx */
 
 static unsigned int getOsiPriorityValue(int ossPriority)
-{   
+{
     if ( ossPriority < 100 ) {
         return epicsThreadPriorityMax;
     }
@@ -135,7 +135,7 @@ static void epicsThreadInit(void)
 void epicsThreadRealtimeLock(void)
 {}
 
-unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass) 
+unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
 {
 
     if (stackSizeClass<epicsThreadStackSmall) {
@@ -326,9 +326,9 @@ void epicsThreadMustJoin(epicsThreadId id)
 
     semGive(joinSem);   /* Rendezvous with thread */
 
-        status = taskWait(tid, WAIT_FOREVER);
+    status = taskWait(tid, WAIT_FOREVER);
     if (status && errno != S_objLib_OBJ_ID_ERROR) {
-            perror(fn);
+        perror(fn);
         cantProceed("%s: ", fn);
     }
 #endif
@@ -502,7 +502,7 @@ void epicsThreadShow(epicsThreadId id, unsigned int level)
  * The array size is equal to the number of epicsThreadPrivateIds created + 1
  * when epicsThreadPrivateSet is called.
  * Until the first call to epicsThreadPrivateCreate by a application papTSD=0
- * After first call papTSD[0] is value of nepicsThreadPrivate when 
+ * After first call papTSD[0] is value of nepicsThreadPrivate when
  * epicsThreadPrivateSet was last called by the thread. This is also
  * the value of epicsThreadPrivateId.
  * The algorithm allows for epicsThreadPrivateCreate being called after

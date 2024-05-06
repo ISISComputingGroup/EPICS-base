@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* iocsh.h  ioc: call registered function*/
 /* Author:  Marty Kraimer Date: 27APR2000 */
@@ -211,7 +211,7 @@ LIBCOM_API void epicsStdCall iocshRegister(
  */
 LIBCOM_API void epicsStdCall iocshRegisterVariable (
     const iocshVarDef *piocshVarDef);
-/* iocshFree frees storage used by iocshRegister*/
+
 /**
  * @brief Returns a struct of type iocshCmdDef whose element values are determined
  * by the name parameter.  This function calls the function registryFind, defined in
@@ -222,7 +222,7 @@ LIBCOM_API void epicsStdCall iocshRegisterVariable (
  */
 LIBCOM_API const iocshCmdDef * epicsStdCall iocshFindCommand(
     const char* name) EPICS_DEPRECATED;
-/* This should only be called when iocsh is no longer needed*/
+
 /**
  * @brief Returns a struct of type iocshVarDef whose element values are determined
  * by the name parameter.  This function calls the function registryFind, defined in
@@ -234,8 +234,8 @@ LIBCOM_API const iocshCmdDef * epicsStdCall iocshFindCommand(
 LIBCOM_API const iocshVarDef * epicsStdCall iocshFindVariable(
     const char* name);
 
-/** shorthand for @code iocshLoad(pathname, NULL) @endcode */
-/** shorthand for @code iocshRun(cmd, NULL) @endcode */
+/* iocshFree frees storage used by iocshRegister*/
+/* This should only be called when iocsh is no longer needed*/
 /**
  * @brief Frees all memory allocated to registered commands and variables.
  * 

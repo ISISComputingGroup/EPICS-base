@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #include <memLib.h>
@@ -14,7 +14,7 @@
 #include "epicsThread.h"
 #include "osiPoolStatus.h"
 
-/* 
+/*
  * It turns out that memPartInfoGet() and memFindMax() are very CPU intensive on vxWorks
  * so we must spawn off a thread that periodically polls. Although this isn't 100% safe, I
  * don't see what else to do.
@@ -53,7 +53,7 @@ static void osdSufficentSpaceInPoolInit ( void *pArgIn )
 }
 
 /*
- * osiSufficentSpaceInPool () 
+ * osiSufficentSpaceInPool ()
  */
 LIBCOM_API int epicsStdCall osiSufficentSpaceInPool ( size_t contiguousBlockSize )
 {

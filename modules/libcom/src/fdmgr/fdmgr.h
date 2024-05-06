@@ -5,11 +5,11 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* fdmgr.h
  *
- *      Header file associated with a file descriptor manager 
+ *      Header file associated with a file descriptor manager
  *      for use with the UNIX system call select
  *
  *      Author  Jeffrey O. Hill
@@ -105,7 +105,7 @@ fdmgrAlarmId    id          /* alarm to delete                      */
  *
  * write callbacks are called only once after each call to
  * fdmgr_add_callback()
- * 
+ *
  */
 LIBCOM_API int epicsStdCall fdmgr_add_callback(
 fdctx           *pfdctx,    /* fd mgr ctx from fdmgr_init()         */
@@ -119,7 +119,7 @@ void            *param      /* first parameter passed to the func   */
  *
  * Clear interest in a type of file descriptor activity (IO).
  *
- */ 
+ */
 LIBCOM_API int epicsStdCall fdmgr_clear_callback(
 fdctx           *pfdctx,    /* fd mgr ctx from fdmgr_init()         */
 SOCKET          fd,         /* file descriptor                      */
@@ -128,11 +128,11 @@ enum fdi_type   fdi         /* file descriptor interest type        */
 
 /*
  *
- * Wait a specified delay relative from the current time for file 
- * descriptor activity (IO) or timeouts (timer expiration). Application 
- * specified functions (handlers) will not be called unless the 
+ * Wait a specified delay relative from the current time for file
+ * descriptor activity (IO) or timeouts (timer expiration). Application
+ * specified functions (handlers) will not be called unless the
  * application waits in this function or polls it frequently
- * enough. 
+ * enough.
  *
  */
 LIBCOM_API int epicsStdCall fdmgr_pend_event(

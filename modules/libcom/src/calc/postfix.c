@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  * Subroutines used to convert an infix expression to a postfix expression
@@ -36,16 +36,16 @@
 
 /* element types */
 typedef enum {
-	OPERAND,
-	LITERAL_OPERAND,
-	STORE_OPERATOR,
-	UNARY_OPERATOR,
-	VARARG_OPERATOR,
-	BINARY_OPERATOR,
-	SEPERATOR,
-	CLOSE_PAREN,
-	CONDITIONAL,
-	EXPR_TERMINATOR,
+        OPERAND,
+        LITERAL_OPERAND,
+        STORE_OPERATOR,
+        UNARY_OPERATOR,
+        VARARG_OPERATOR,
+        BINARY_OPERATOR,
+        SEPERATOR,
+        CLOSE_PAREN,
+        CONDITIONAL,
+        EXPR_TERMINATOR,
 } element_type;
 
 
@@ -136,7 +136,7 @@ static const ELEMENT operands[] = {
 };
 
 static const ELEMENT operators[] = {
-/* name 	prio's	stack	element type	opcode */
+/* name         prio's  stack   element type    opcode */
 {"!=",          3, 3,   -1,     BINARY_OPERATOR,NOT_EQ},
 {"#",           3, 3,   -1,     BINARY_OPERATOR,NOT_EQ},
 {"%",           5, 5,   -1,     BINARY_OPERATOR,MODULO},
@@ -186,22 +186,22 @@ static int
     if (**ppsrc == '\0') return FALSE;
 
     if (opnd) {
-	ptable = operands;
-	pel = ptable + NELEMENTS(operands) - 1;
+        ptable = operands;
+        pel = ptable + NELEMENTS(operands) - 1;
     } else {
-	ptable = operators;
-	pel = ptable + NELEMENTS(operators) - 1;
+        ptable = operators;
+        pel = ptable + NELEMENTS(operators) - 1;
     }
 
     while (pel >= ptable) {
-	size_t len = strlen(pel->name);
+        size_t len = strlen(pel->name);
 
-	if (epicsStrnCaseCmp(*ppsrc, pel->name, len) == 0) {
-	    *ppel = pel;
-	    *ppsrc += len;
-	    return TRUE;
-	}
-	--pel;
+        if (epicsStrnCaseCmp(*ppsrc, pel->name, len) == 0) {
+            *ppel = pel;
+            *ppsrc += len;
+            return TRUE;
+        }
+        --pel;
     }
     return FALSE;
 }
@@ -224,10 +224,10 @@ LIBCOM_API long
     char *pnext;
 
     if (psrc == NULL || *psrc == '\0' ||
-	pout == NULL || perror == NULL) {
-	if (perror) *perror = CALC_ERR_NULL_ARG;
-	if (pout) *pout = END_EXPRESSION;
-	return -1;
+        pout == NULL || perror == NULL) {
+        if (perror) *perror = CALC_ERR_NULL_ARG;
+        if (pout) *pout = END_EXPRESSION;
+        return -1;
     }
 
     /* place the expression elements into postfix */
@@ -235,13 +235,13 @@ LIBCOM_API long
     *perror = CALC_ERR_NONE;
 
     while (get_element(operand_needed, &psrc, &pel)) {
-	switch (pel->type) {
+        switch (pel->type) {
 
-	case OPERAND:
-	    *pout++ = pel->code;
-	    runtime_depth += pel->runtime_effect;
-	    operand_needed = FALSE;
-	    break;
+        case OPERAND:
+            *pout++ = pel->code;
+            runtime_depth += pel->runtime_effect;
+            operand_needed = FALSE;
+            break;
 
         case LITERAL_OPERAND:
             runtime_depth += pel->runtime_effect;
@@ -284,55 +284,55 @@ LIBCOM_API long
             operand_needed = FALSE;
             break;
 
-	case STORE_OPERATOR:
-	    if (pout == pdest || pstacktop > stack ||
-		*--pout < FETCH_A || *pout > FETCH_L) {
-		*perror = CALC_ERR_BAD_ASSIGNMENT;
-		goto bad;
-	    }
-	    /* Convert fetch into a store on the stack */
-	    *++pstacktop = *pel;
-	    pstacktop->code = STORE_A + *pout - FETCH_A;
-	    runtime_depth -= 1;
-	    operand_needed = TRUE;
-	    break;
+        case STORE_OPERATOR:
+            if (pout == pdest || pstacktop > stack ||
+                *--pout < FETCH_A || *pout > FETCH_L) {
+                *perror = CALC_ERR_BAD_ASSIGNMENT;
+                goto bad;
+            }
+            /* Convert fetch into a store on the stack */
+            *++pstacktop = *pel;
+            pstacktop->code = STORE_A + *pout - FETCH_A;
+            runtime_depth -= 1;
+            operand_needed = TRUE;
+            break;
 
-	case UNARY_OPERATOR:
-	case VARARG_OPERATOR:
-	    /* Move operators of >= priority to the output */
-	    while ((pstacktop > stack) &&
-		   (pstacktop->in_stack_pri >= pel->in_coming_pri)) {
-		*pout++ = pstacktop->code;
-		if (pstacktop->type == VARARG_OPERATOR) {
-		    *pout++ = 1 - pstacktop->runtime_effect;
-		}
-		runtime_depth += pstacktop->runtime_effect;
-		pstacktop--;
-	    }
+        case UNARY_OPERATOR:
+        case VARARG_OPERATOR:
+            /* Move operators of >= priority to the output */
+            while ((pstacktop > stack) &&
+                   (pstacktop->in_stack_pri >= pel->in_coming_pri)) {
+                *pout++ = pstacktop->code;
+                if (pstacktop->type == VARARG_OPERATOR) {
+                    *pout++ = 1 - pstacktop->runtime_effect;
+                }
+                runtime_depth += pstacktop->runtime_effect;
+                pstacktop--;
+            }
 
-	    /* Push new operator onto stack */
-	    pstacktop++;
-	    *pstacktop = *pel;
-	    break;
+            /* Push new operator onto stack */
+            pstacktop++;
+            *pstacktop = *pel;
+            break;
 
-	case BINARY_OPERATOR:
-	    /* Move operators of >= priority to the output */
-	    while ((pstacktop > stack) &&
-		   (pstacktop->in_stack_pri >= pel->in_coming_pri)) {
-		*pout++ = pstacktop->code;
-		if (pstacktop->type == VARARG_OPERATOR) {
-		    *pout++ = 1 - pstacktop->runtime_effect;
-		}
-		runtime_depth += pstacktop->runtime_effect;
-		pstacktop--;
-	    }
+        case BINARY_OPERATOR:
+            /* Move operators of >= priority to the output */
+            while ((pstacktop > stack) &&
+                   (pstacktop->in_stack_pri >= pel->in_coming_pri)) {
+                *pout++ = pstacktop->code;
+                if (pstacktop->type == VARARG_OPERATOR) {
+                    *pout++ = 1 - pstacktop->runtime_effect;
+                }
+                runtime_depth += pstacktop->runtime_effect;
+                pstacktop--;
+            }
 
-	    /* Push new operator onto stack */
-	    pstacktop++;
-	    *pstacktop = *pel;
+            /* Push new operator onto stack */
+            pstacktop++;
+            *pstacktop = *pel;
 
-	    operand_needed = TRUE;
-	    break;
+            operand_needed = TRUE;
+            break;
 
         case SEPERATOR:
             if (pstacktop == stack) {
@@ -388,108 +388,108 @@ LIBCOM_API long
             }
             break;
 
-	case CONDITIONAL:
-	    /* Move operators of > priority to the output */
-	    while ((pstacktop > stack) &&
-		   (pstacktop->in_stack_pri > pel->in_coming_pri)) {
-		*pout++ = pstacktop->code;
-		if (pstacktop->type == VARARG_OPERATOR) {
-		    *pout++ = 1 - pstacktop->runtime_effect;
-		}
-		runtime_depth += pstacktop->runtime_effect;
-		pstacktop--;
-	    }
+        case CONDITIONAL:
+            /* Move operators of > priority to the output */
+            while ((pstacktop > stack) &&
+                   (pstacktop->in_stack_pri > pel->in_coming_pri)) {
+                *pout++ = pstacktop->code;
+                if (pstacktop->type == VARARG_OPERATOR) {
+                    *pout++ = 1 - pstacktop->runtime_effect;
+                }
+                runtime_depth += pstacktop->runtime_effect;
+                pstacktop--;
+            }
 
-	    /* Add new element to the output */
-	    *pout++ = pel->code;
-	    runtime_depth += pel->runtime_effect;
+            /* Add new element to the output */
+            *pout++ = pel->code;
+            runtime_depth += pel->runtime_effect;
 
-	    /* For : operator, also push COND_END code to stack */
-	    if (pel->name[0] == ':') {
-		if (--cond_count < 0) {
-		    *perror = CALC_ERR_CONDITIONAL;
-		    goto bad;
-		}
-		pstacktop++;
-		*pstacktop = *pel;
-		pstacktop->code = COND_END;
-		pstacktop->runtime_effect = 0;
-	    } else {
-		cond_count++;
-	    }
+            /* For : operator, also push COND_END code to stack */
+            if (pel->name[0] == ':') {
+                if (--cond_count < 0) {
+                    *perror = CALC_ERR_CONDITIONAL;
+                    goto bad;
+                }
+                pstacktop++;
+                *pstacktop = *pel;
+                pstacktop->code = COND_END;
+                pstacktop->runtime_effect = 0;
+            } else {
+                cond_count++;
+            }
 
-	    operand_needed = TRUE;
-	    break;
+            operand_needed = TRUE;
+            break;
 
-	case EXPR_TERMINATOR:
-	    /* Move everything from stack to the output */
-	    while (pstacktop > stack) {
-		if (pstacktop->name[0] == '(') {
-		    *perror = CALC_ERR_PAREN_OPEN;
-		    goto bad;
-		}
-		*pout++ = pstacktop->code;
-		if (pstacktop->type == VARARG_OPERATOR) {
-		    *pout++ = 1 - pstacktop->runtime_effect;
-		}
-		runtime_depth += pstacktop->runtime_effect;
-		pstacktop--;
-	    }
+        case EXPR_TERMINATOR:
+            /* Move everything from stack to the output */
+            while (pstacktop > stack) {
+                if (pstacktop->name[0] == '(') {
+                    *perror = CALC_ERR_PAREN_OPEN;
+                    goto bad;
+                }
+                *pout++ = pstacktop->code;
+                if (pstacktop->type == VARARG_OPERATOR) {
+                    *pout++ = 1 - pstacktop->runtime_effect;
+                }
+                runtime_depth += pstacktop->runtime_effect;
+                pstacktop--;
+            }
 
-	    if (cond_count != 0) {
-		*perror = CALC_ERR_CONDITIONAL;
-		goto bad;
-	    }
-	    if (runtime_depth > 1) {
-		*perror = CALC_ERR_TOOMANY;
-		goto bad;
-	    }
+            if (cond_count != 0) {
+                *perror = CALC_ERR_CONDITIONAL;
+                goto bad;
+            }
+            if (runtime_depth > 1) {
+                *perror = CALC_ERR_TOOMANY;
+                goto bad;
+            }
 
-	    operand_needed = TRUE;
-	    break;
+            operand_needed = TRUE;
+            break;
 
-	default:
-	    *perror = CALC_ERR_INTERNAL;
-	    goto bad;
-	}
+        default:
+            *perror = CALC_ERR_INTERNAL;
+            goto bad;
+        }
 
-	if (runtime_depth < 0) {
-	    *perror = CALC_ERR_UNDERFLOW;
-	    goto bad;
-	}
-	if (runtime_depth >= CALCPERFORM_STACK) {
-	    *perror = CALC_ERR_OVERFLOW;
-	    goto bad;
-	}
+        if (runtime_depth < 0) {
+            *perror = CALC_ERR_UNDERFLOW;
+            goto bad;
+        }
+        if (runtime_depth >= CALCPERFORM_STACK) {
+            *perror = CALC_ERR_OVERFLOW;
+            goto bad;
+        }
     }
 
     if (*psrc != '\0') {
-	*perror = CALC_ERR_SYNTAX;
-	goto bad;
+        *perror = CALC_ERR_SYNTAX;
+        goto bad;
     }
 
     /* Move everything from stack to the output */
     while (pstacktop > stack) {
-	if (pstacktop->name[0] == '(') {
-	    *perror = CALC_ERR_PAREN_OPEN;
-	    goto bad;
-	}
-	*pout++ = pstacktop->code;
-	if (pstacktop->type == VARARG_OPERATOR) {
-	    *pout++ = 1 - pstacktop->runtime_effect;
-	}
-	runtime_depth += pstacktop->runtime_effect;
-	pstacktop--;
+        if (pstacktop->name[0] == '(') {
+            *perror = CALC_ERR_PAREN_OPEN;
+            goto bad;
+        }
+        *pout++ = pstacktop->code;
+        if (pstacktop->type == VARARG_OPERATOR) {
+            *pout++ = 1 - pstacktop->runtime_effect;
+        }
+        runtime_depth += pstacktop->runtime_effect;
+        pstacktop--;
     }
     *pout = END_EXPRESSION;
 
     if (cond_count != 0) {
-	*perror = CALC_ERR_CONDITIONAL;
-	goto bad;
+        *perror = CALC_ERR_CONDITIONAL;
+        goto bad;
     }
     if (operand_needed || runtime_depth != 1) {
-	*perror = CALC_ERR_INCOMPLETE;
-	goto bad;
+        *perror = CALC_ERR_INCOMPLETE;
+        goto bad;
     }
     return 0;
 
@@ -507,24 +507,24 @@ LIBCOM_API const char *
     calcErrorStr(short error)
 {
     static const char *errStrs[] = {
-	"No error",
-	"Too many results returned",
-	"Badly formed numeric literal",
-	"Bad assignment target",
-	"Comma without enclosing parentheses",
-	"Close parenthesis found without open",
-	"Parenthesis still open at end of expression",
-	"Unbalanced conditional ?: operators",
-	"Incomplete expression, operand missing",
-	"Not enough operands provided",
-	"Runtime stack overflow",
-	"Syntax error, unknown operator/operand",
-	"NULL or empty input argument to postfix()",
-	"Internal error, unknown element type",
+        "No error",
+        "Too many results returned",
+        "Badly formed numeric literal",
+        "Bad assignment target",
+        "Comma without enclosing parentheses",
+        "Close parenthesis found without open",
+        "Parenthesis still open at end of expression",
+        "Unbalanced conditional ?: operators",
+        "Incomplete expression, operand missing",
+        "Not enough operands provided",
+        "Runtime stack overflow",
+        "Syntax error, unknown operator/operand",
+        "NULL or empty input argument to postfix()",
+        "Internal error, unknown element type",
     };
-    
+
     if (error < CALC_ERR_NONE || error > CALC_ERR_INTERNAL)
-	return NULL;
+        return NULL;
     return errStrs[error];
 }
 
@@ -537,106 +537,106 @@ LIBCOM_API void
     calcExprDump(const char *pinst)
 {
     static const char *opcodes[] = {
-	"End Expression",
+        "End Expression",
     /* Operands */
-	"LITERAL_DOUBLE", "LITERAL_INT", "VAL",
-	"FETCH_A", "FETCH_B", "FETCH_C", "FETCH_D", "FETCH_E", "FETCH_F",
-	"FETCH_G", "FETCH_H", "FETCH_I", "FETCH_J", "FETCH_K", "FETCH_L",
+        "LITERAL_DOUBLE", "LITERAL_INT", "VAL",
+        "FETCH_A", "FETCH_B", "FETCH_C", "FETCH_D", "FETCH_E", "FETCH_F",
+        "FETCH_G", "FETCH_H", "FETCH_I", "FETCH_J", "FETCH_K", "FETCH_L",
     /* Assignment */
-	"STORE_A", "STORE_B", "STORE_C", "STORE_D", "STORE_E", "STORE_F",
-	"STORE_G", "STORE_H", "STORE_I", "STORE_J", "STORE_K", "STORE_L",
+        "STORE_A", "STORE_B", "STORE_C", "STORE_D", "STORE_E", "STORE_F",
+        "STORE_G", "STORE_H", "STORE_I", "STORE_J", "STORE_K", "STORE_L",
     /* Trigonometry Constants */
-	"CONST_PI",
-	"CONST_D2R",
-	"CONST_R2D",
+        "CONST_PI",
+        "CONST_D2R",
+        "CONST_R2D",
     /* Arithmetic */
-	"UNARY_NEG",
-	"ADD",
-	"SUB",
-	"MULT",
-	"DIV",
-	"MODULO",
-	"POWER",
+        "UNARY_NEG",
+        "ADD",
+        "SUB",
+        "MULT",
+        "DIV",
+        "MODULO",
+        "POWER",
     /* Algebraic */
-	"ABS_VAL",
-	"EXP",
-	"LOG_10",
-	"LOG_E",
-	"MAX",
-	"MIN",
-	"SQU_RT",
+        "ABS_VAL",
+        "EXP",
+        "LOG_10",
+        "LOG_E",
+        "MAX",
+        "MIN",
+        "SQU_RT",
     /* Trigonometric */
-	"ACOS",
-	"ASIN",
-	"ATAN",
-	"ATAN2",
-	"COS",
-	"COSH",
-	"SIN",
-	"SINH",
-	"TAN",
-	"TANH",
+        "ACOS",
+        "ASIN",
+        "ATAN",
+        "ATAN2",
+        "COS",
+        "COSH",
+        "SIN",
+        "SINH",
+        "TAN",
+        "TANH",
     /* Numeric */
-	"CEIL",
-	"FLOOR",
-	"FINITE",
-	"ISINF",
-	"ISNAN",
-	"NINT",
-	"RANDOM",
+        "CEIL",
+        "FLOOR",
+        "FINITE",
+        "ISINF",
+        "ISNAN",
+        "NINT",
+        "RANDOM",
     /* Boolean */
-	"REL_OR",
-	"REL_AND",
-	"REL_NOT",
+        "REL_OR",
+        "REL_AND",
+        "REL_NOT",
     /* Bitwise */
-	"BIT_OR",
-	"BIT_AND",
-	"BIT_EXCL_OR",
-	"BIT_NOT",
+        "BIT_OR",
+        "BIT_AND",
+        "BIT_EXCL_OR",
+        "BIT_NOT",
         "RIGHT_SHIFT_ARITH",
         "LEFT_SHIFT_ARITH",
         "RIGHT_SHIFT_LOGIC",
     /* Relationals */
-	"NOT_EQ",
-	"LESS_THAN",
-	"LESS_OR_EQ",
-	"EQUAL",
-	"GR_OR_EQ",
-	"GR_THAN",
+        "NOT_EQ",
+        "LESS_THAN",
+        "LESS_OR_EQ",
+        "EQUAL",
+        "GR_OR_EQ",
+        "GR_THAN",
     /* Conditional */
-	"COND_IF",
-	"COND_ELSE",
-	"COND_END",
+        "COND_IF",
+        "COND_ELSE",
+        "COND_END",
     /* Misc */
-	"NOT_GENERATED"
+        "NOT_GENERATED"
     };
     char op;
     double lit_d;
     epicsInt32 lit_i;
-    
+
     while ((op = *pinst) != END_EXPRESSION) {
-	switch (op) {
-	case LITERAL_DOUBLE:
-	    memcpy(&lit_d, ++pinst, sizeof(double));
-	    printf("\tDouble %g\n", lit_d);
-	    pinst += sizeof(double);
-	    break;
-	case LITERAL_INT:
-	    memcpy(&lit_i, ++pinst, sizeof(epicsInt32));
-	    printf("\tInteger %d (0x%x)\n", lit_i, lit_i);
-	    pinst += sizeof(epicsInt32);
-	    break;
-	case MIN:
-	case MAX:
-	case FINITE:
-	case ISNAN:
-	    printf("\t%s, %d arg(s)\n", opcodes[(int) op], *++pinst);
-	    pinst++;
-	    break;
-	default:
-	    printf("\t%s\n", opcodes[(int) op]);
-	    pinst++;
-	}
+        switch (op) {
+        case LITERAL_DOUBLE:
+            memcpy(&lit_d, ++pinst, sizeof(double));
+            printf("\tDouble %g\n", lit_d);
+            pinst += sizeof(double);
+            break;
+        case LITERAL_INT:
+            memcpy(&lit_i, ++pinst, sizeof(epicsInt32));
+            printf("\tInteger %d (0x%x)\n", lit_i, lit_i);
+            pinst += sizeof(epicsInt32);
+            break;
+        case MIN:
+        case MAX:
+        case FINITE:
+        case ISNAN:
+            printf("\t%s, %d arg(s)\n", opcodes[(int) op], *++pinst);
+            pinst++;
+            break;
+        default:
+            printf("\t%s\n", opcodes[(int) op]);
+            pinst++;
+        }
     }
 }
 #ifdef RTEMS_HAS_ALTIVEC

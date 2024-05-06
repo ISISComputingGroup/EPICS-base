@@ -233,7 +233,7 @@ CONTINUE:
 
     if ( pact ) {
         /* Update timestamp again for asynchronous devices */
-    recGblGetTimeStampSimm(prec, prec->simm, NULL);
+        recGblGetTimeStampSimm(prec, prec->simm, NULL);
     }
 
     /* update bits to reflect any change made by dset */

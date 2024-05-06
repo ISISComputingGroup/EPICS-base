@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*!
@@ -66,8 +66,8 @@ public:
     ~epicsGuard ();
 private:
     T * _pTargetMutex;
-    epicsGuard ( const epicsGuard & ); 
-    epicsGuard & operator = ( const epicsGuard & ); 
+    epicsGuard ( const epicsGuard & );
+    epicsGuard & operator = ( const epicsGuard & );
     friend class epicsGuardRelease < T >;
 };
 
@@ -114,8 +114,8 @@ public:
 private:
     epicsGuard < T > & _guard;
     T * _pTargetMutex;
-    epicsGuardRelease ( const epicsGuardRelease & ); 
-    epicsGuardRelease & operator = ( const epicsGuardRelease & ); 
+    epicsGuardRelease ( const epicsGuardRelease & );
+    epicsGuardRelease & operator = ( const epicsGuardRelease & );
 };
 
 // same interface as epicsMutex
@@ -150,23 +150,23 @@ inline epicsGuard < T > :: ~epicsGuard ()
 }
 
 template < class T >
-inline void epicsGuard < T > :: assertIdenticalMutex ( 
+inline void epicsGuard < T > :: assertIdenticalMutex (
     const T & mutexToVerify ) const
 {
     assert ( _pTargetMutex == & mutexToVerify );
 }
 
 template < class T >
-inline epicsGuardRelease < T > :: 
+inline epicsGuardRelease < T > ::
     epicsGuardRelease ( epicsGuard<T> & guardIn ) :
-    _guard ( guardIn ), 
+    _guard ( guardIn ),
     _pTargetMutex ( guardIn._pTargetMutex )
 {
-    // Setting the guard's _pTargetMutex to nill will 
-    // allow assertIdenticalMutex to catch situations 
-    // where a guard is being used and it has been 
-    // released, and also situations where ~epicsGuard () 
-    // runs and an epicsGuardRelease is still referencing 
+    // Setting the guard's _pTargetMutex to nill will
+    // allow assertIdenticalMutex to catch situations
+    // where a guard is being used and it has been
+    // released, and also situations where ~epicsGuard ()
+    // runs and an epicsGuardRelease is still referencing
     // the guard will be detected.
     _guard._pTargetMutex = 0;
     _pTargetMutex->unlock ();

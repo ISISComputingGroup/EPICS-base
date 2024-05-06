@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #ifndef INC_epicsExport_H
@@ -79,7 +79,7 @@ typedef void (*REGISTRAR)(void);
  * \note C++ code needs to wrap with @code extern "C" { } @endcode
  */
 #define epicsExportAddress(typ, obj) \
-epicsShareExtern typ *EPICS_EXPORT_POBJ(typ,obj); \
+    epicsShareExtern typ *EPICS_EXPORT_POBJ(typ,obj); \
     epicsShareDef typ *EPICS_EXPORT_POBJ(typ, obj) = (typ *) (char *) &obj
 
 /** \brief Declare a registrar function for exporting.
@@ -125,4 +125,4 @@ epicsShareExtern typ *EPICS_EXPORT_POBJ(typ,obj); \
 }
 #endif
 
-#endif /* epicsExporth */
+#endif /* INC_epicsExport_H */

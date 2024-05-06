@@ -725,7 +725,7 @@ void dbChannelGetArrayInfo(dbChannel *chan,
         prset->get_array_info)
     {
         void *pfieldsave = dbChannelField(chan);
-
+        /* it is expected that this call always succeeds */
         prset->get_array_info(&chan->addr, no_elements, offset);
         *pfield = dbChannelField(chan);
         dbChannelField(chan) = pfieldsave;

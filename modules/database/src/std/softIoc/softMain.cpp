@@ -8,7 +8,7 @@
 * found in the file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* Author: Andrew Johnson	Date: 2003-04-08 */
+/* Author: Andrew Johnson   Date: 2003-04-08 */
 
 #include <iostream>
 #include <string>
@@ -185,10 +185,10 @@ int main(int argc, char *argv[])
             case 'd':
                 lazy_dbd(dbd_file);
                 if (verbose) {
-                std::cout<<"dbLoadRecords(\""<<optarg<<"\"";
-                if(!macros.empty())
-                    std::cout<<", \""<<macros<<"\"";
-                std::cout<<")\n";
+                    std::cout<<"dbLoadRecords(\""<<optarg<<"\"";
+                    if(!macros.empty())
+                        std::cout<<", \""<<macros<<"\"";
+                    std::cout<<")\n";
                 }
                 errIf(dbLoadRecords(optarg, macros.c_str()),
                       std::string("Failed to load: ")+optarg);
@@ -226,11 +226,11 @@ int main(int argc, char *argv[])
             // ignore any extra positional args (historical)
 
             if (verbose)
-            std::cout<<"# Begin "<<argv[optind]<<"\n";
+                std::cout<<"# Begin "<<argv[optind]<<"\n";
             errIf(iocsh(argv[optind]),
                         std::string("Error in ")+argv[optind]);
             if (verbose)
-            std::cout<<"# End "<<argv[optind]<<"\n";
+                std::cout<<"# End "<<argv[optind]<<"\n";
 
             epicsThreadSleep(0.2);
             ranScript = true;    /* Assume the script has done any necessary initialization */
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
 
         if (loadedDb) {
             if (verbose)
-            std::cout<<"iocInit()\n";
+                std::cout<<"iocInit()\n";
             iocInit();
             epicsThreadSleep(0.2);
         }

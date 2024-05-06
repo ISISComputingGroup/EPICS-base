@@ -7,9 +7,9 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* devLibImpl.h */
+
 /**
  * \file devLibVMEImpl.h
  * \author Marty Kraimer, Jeff Hill
@@ -37,35 +37,35 @@ extern "C" {
  */
 typedef struct devLibVME {
     /** \brief Map a bus address to the CPU's address space. */
-	long (*pDevMapAddr) (epicsAddressType addrType, unsigned options,
-			size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress);
+    long (*pDevMapAddr) (epicsAddressType addrType, unsigned options,
+        size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress);
 
-
+    /** \brief Read a word, detect and protect against bus errors. */
     long (*pDevReadProbe) (unsigned wordSize, volatile const void *ptr,
         void *pValueRead);
-
+    /** \brief Write a word, detect and protect against bus errors. */
     long (*pDevWriteProbe) (unsigned wordSize, volatile void *ptr,
         const void *pValueWritten);
 
     /** \brief Connect ISR to a VME interrupt vector. */
-	long (*pDevConnectInterruptVME) (unsigned vectorNumber, 
-						void (*pFunction)(void *), void  *parameter);
-
-	long (*pDevDisconnectInterruptVME) (unsigned vectorNumber,
-						void (*pFunction)(void *));
+    long (*pDevConnectInterruptVME) (unsigned vectorNumber,
+        void (*pFunction)(void *), void  *parameter);
+    /** \brief Disconnect ISR from a VME interrupt vector. */
+    long (*pDevDisconnectInterruptVME) (unsigned vectorNumber,
+        void (*pFunction)(void *));
 
     /** \brief Enable VME interrupt level to CPU. */
-	long (*pDevEnableInterruptLevelVME) (unsigned level);
+    long (*pDevEnableInterruptLevelVME) (unsigned level);
+    /** \brief Disable VME interrupt level to CPU. */
+    long (*pDevDisableInterruptLevelVME) (unsigned level);
 
-	long (*pDevDisableInterruptLevelVME) (unsigned level);
-        /* malloc/free A24 address space */
     /** \brief Malloc a block accessible from the VME A24 address space. */
-        void *(*pDevA24Malloc)(size_t nbytes);
+    void *(*pDevA24Malloc)(size_t nbytes);
     /** \brief Free a block allocated for the VME A24 address space. */
-        void (*pDevA24Free)(void *pBlock);
+    void (*pDevA24Free)(void *pBlock);
 
     /** \brief Init devLib */
-        long (*pDevInit)(void);
+    long (*pDevInit)(void);
 
     /** \brief Check if interrupt vector has an ISR connected. */
     int (*pDevInterruptInUseVME)(unsigned vectorNumber);

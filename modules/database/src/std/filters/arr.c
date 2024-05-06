@@ -105,7 +105,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
 
     switch (pfl->type) {
     case dbfl_type_val:
-        /* Only filter arrays */
+        /* TODO Treat scalars as arrays with 1 element */
         break;
 
     case dbfl_type_ref:
@@ -116,10 +116,10 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
         }
         nTarget = wrapArrayIndices(&start, my->incr, &end, nSource);
         if (nTarget > 0) {
-
+            /* copy the data */
             pTarget = freeListCalloc(my->arrayFreeList);
             if (!pTarget) break;
-    /* Extract from buffer */
+            /* must do the wrap-around with the original no_elements */
             offset = (offset + start) % pfl->no_elements;
             dbExtractArray(pSource, pTarget, pfl->field_size,
                 nTarget, pfl->no_elements, offset, my->incr);

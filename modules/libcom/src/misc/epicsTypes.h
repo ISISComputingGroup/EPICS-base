@@ -54,7 +54,7 @@ typedef epicsUInt16     epicsEnum16;
 typedef float           epicsFloat32;
 typedef double          epicsFloat64;
 typedef epicsInt32      epicsStatus;
-
+ /** @} */
 
 #define MAX_STRING_SIZE 40
 

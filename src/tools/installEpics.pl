@@ -4,6 +4,7 @@
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
+# SPDX-License-Identifier: EPICS
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
@@ -71,9 +72,36 @@ foreach my $source (@ARGV) {
     rename $temp, $target or die "$tool: Rename failed: $!\n" .
         "$tool:\t$temp -> $target\n";
 
-    # chmod 0555 <read-only> DOES work on Win32, but the above
-    # chmod 0777 fails to install a newer version on top.
     MyChmod($mode, $target);
+}
+
+#
+# chmod doesn't always behave as expected on WIN32, so use
+# Win32::File::SetAttributes to be sure.
+# The READONLY attribute is the only one we are concerned with.
+sub MyChmod {
+    my($mode, $target) = @_;
+    if ($^O eq "MSWin32")
+    {
+        require Win32::File;
+        my($attr);
+        Win32::File::GetAttributes($target, $attr);
+        # if write access is requested anywhere in the mode
+        # then remove read-only, otherwise set it
+        if ($mode & 0222)
+        {
+            $attr &= $WINATTR_READONLY;
+        }
+        else
+        {
+            $attr |= $WINATTR_READONLY;
+        }
+        Win32::File::SetAttributes($target, $attr);
+    }
+    else
+    {
+        chmod $mode, $target;
+    }
 }
 
 sub Usage {
@@ -94,32 +122,3 @@ END
 
     exit $opt_h ? 0 : 2;
 }
-#
-# chmod doesn't always behave as expected on WIN32, so use
-# Win32::File::SetAttributes to be sure.
-# The READONLY attribute is the only one we are concerned with.
-sub MyChmod {
-    my($mode, $target) = @_;
-	if ($^O eq "MSWin32")
-	{
-	    require Win32::File;
-	    my($attr);
-	    Win32::File::GetAttributes($target, $attr);
-		# if write access is requested anywhere in the mode then remove read-only, otherwise set it
-	    if ($mode & 0222)
-		{
-		    $attr &= $WINATTR_READONLY;
-		}
-		else
-		{
-		    $attr |= $WINATTR_READONLY;
-		}
-		Win32::File::SetAttributes($target, $attr);
-	}
-	else
-	{
-	    chmod $mode, $target;
-	}
-}
-
-#	EOF installEpics.pl

@@ -104,96 +104,8 @@ everything that has to be done since it's so easy to miss steps.</p>
     <tr>
       <td>&nbsp;</td>
       <td>Release Manager</td>
-<<<<<<< HEAD
-      <td>Review and update this checklist for the upcoming release.</td>
-      </tr>
-    <tr>
-      <td>&nbsp;</td>
-      <td>Website Manager</td>
-      <td>Create a release milestone on Launchpad. If a target release date is
-        known set "Date Targeted" to the expected release date. Note that
-        pre-release and release-candidate versions should not get Launchpad
-        milestones, only the final release.</td>
-      </tr>
-    <tr>
-      <th colspan="3">Creating pre-release and release-candidate versions</th>
-      </tr>
-    <tr>
-      <td><input type="checkbox"></td>
-      <td>Release Manager</td>
-      <!-- Submodules... -->
-      <td>Edit and commit changes to the EPICS version number file
-        configure/CONFIG_BASE_VERSION.</td>
-      </tr>
-    <tr>
-      <td><input type="checkbox"></td>
-      <td>Release Manager</td>
-      <td>Tag the module in Git, using these tag conventions:
-        <ul>
-          <li>
-            <tt>R7.0.3.1-pre<i>n</i></tt>
-            &mdash; pre-release tag
-            </li>
-          <li>
-            <tt>R7.0.3.1-rc<i>n</i></tt>
-            &mdash; release candidate tag
-            </li>
-          </ul>
-        <blockquote><tt>
-          cd base-7.0<br />
-          git tag -m 'ANJ: Tagged for 7.0.3.1-rc1' R7.0.3.1-rc1
-          </tt></blockquote>
-        Note that submodules must <em>not</em> be tagged with the version used
-        for the top-level, they each have their own separate version numbers
-        that are only tagged at the final release.</td>
-      </tr>
-    <tr>
-      <td><input type="checkbox"></td>
-      <td>Release Manager</td>
-      <td>Export the tagged version into a tarfile. The <tt>make-tar.sh</tt>
-        script generates a gzipped tarfile directly from the tag, excluding the
-        files and directories that are only used for continuous integration:
-        <blockquote><tt>
-          cd base-7.0<br />
-          ./.tools/make-tar.sh R7.0.3.1-rc1 base-7.0.3.1-rc1.tar.gz base-7.0.3.1-rc1/
-          </tt></blockquote>
-        Create a GPG signature file of the tarfile as follows:
-        <blockquote><tt>
-          gpg --armor --sign --detach-sig base-7.0.3.1-rc1.tar.gz
-          </tt></blockquote>
-        </td>
-      </tr>
-    <tr>
-      <td><input type="checkbox"></td>
-      <td>Release Manager</td>
-      <td>Test the tarfile by extracting its contents and building it on at
-        least one supported platform.</td>
-      </tr>
-    <tr>
-      <td><input type="checkbox"></td>
-      <td>Website Manager</td>
-      <td>Copy the tarfile and its signature to the Base download area of the
-        website and add the new files to the website Base download index
-        page.</td>
-      </tr>
-    <tr>
-      <td><input type="checkbox"></td>
-      <td>Website Manager</td>
-      <td>Create or update a website subdirectory to hold the release
-        documentation, and copy in selected files from the base/documentation
-        and base/html directories of the tarfile.</td>
-      </tr>
-    <tr>
-      <td><input type="checkbox"></td>
-      <td>Website Manager</td>
-      <td>Create or modify the webpage for the new release with links to the
-        release documents and tar file. Pre-release and release-candidate
-        versions should use the page and URL for the final release version
-        number.</td>
-=======
       <td>Review and update this checklist for the upcoming release.
         Update the release version number in the tags and messages below.</td>
->>>>>>> vendor_7_0_8
       </tr>
     <tr>
       <th colspan="3">Testing</th>
@@ -286,11 +198,7 @@ everything that has to be done since it's so easy to miss steps.</p>
 
           <li>Tag the module:
             <blockquote><tt>
-<<<<<<< HEAD
-              git tag -m 'ANJ: Tag for EPICS 7.0.3.1' &lt;module-version&gt;
-=======
               git tag -m 'ANJ: Tag for EPICS 7.0.8' &lt;module-version&gt;
->>>>>>> vendor_7_0_8
               </tt></blockquote>
             </li>
 
@@ -361,11 +269,7 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td>Tag the epics-base module in Git:
         <blockquote><tt>
           cd base-7.0<br />
-<<<<<<< HEAD
-          git tag -m 'ANJ: Tagged for 7.0.3.1' R7.0.3.1
-=======
           git tag -m 'ANJ: Tagged for release' R7.0.8
->>>>>>> vendor_7_0_8
           </tt></blockquote>
         <p>Don't push to GitHub yet.</p>
         </td>
@@ -399,20 +303,12 @@ everything that has to be done since it's so easy to miss steps.</p>
         files and directories that are only used for continuous integration:
         <blockquote><tt>
           cd base-7.0<br />
-<<<<<<< HEAD
-          ./.tools/make-tar.sh R7.0.3.1 base-7.0.3.1.tar.gz base-7.0.3.1/
-          </tt></blockquote>
-        Create a GPG signature file of the tarfile as follows:
-        <blockquote><tt>
-          gpg --armor --sign --detach-sig base-7.0.3.1.tar.gz
-=======
           ./.tools/make-tar.sh R7.0.8 ../base-7.0.8.tar.gz base-7.0.8/
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
           cd ..<br />
           gpg --armor --sign --detach-sig base-7.0.8.tar.gz
->>>>>>> vendor_7_0_8
           </tt></blockquote>
         </td>
       </tr>
@@ -478,11 +374,7 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td>Upload the tar file and its <tt>.asc</tt> signature file to the
         epics-controls web-server.
         <blockquote><tt>
-<<<<<<< HEAD
-          scp base-7.0.3.1.tar.gz base-7.0.3.1.tar.gz.asc epics-controls:download/base<br />
-=======
           scp base-7.0.8.tar.gz base-7.0.8.tar.gz.asc epics-controls:download/base<br />
->>>>>>> vendor_7_0_8
           </tt></blockquote>
         </td>
       </tr>

@@ -6,7 +6,7 @@
 * Copyright (c) 2013 ITER Organization.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /**
@@ -85,8 +85,8 @@ typedef void (*EPICSTHREADFUNC)(void *parm);
 #define epicsThreadPriorityScanHigh     70
 #define epicsThreadPriorityIocsh        91
 #define epicsThreadPriorityBaseMax      91
+/** @} */
 
-/* stack sizes for each stackSizeClass are implementation and CPU dependent */
 /** Stack sizes for each stackSizeClass are implementation and CPU dependent. */
 typedef enum {
     epicsThreadStackSmall, epicsThreadStackMedium, epicsThreadStackBig
@@ -104,7 +104,7 @@ typedef enum {
 LIBCOM_API unsigned int epicsStdCall epicsThreadGetStackSize(
     epicsThreadStackSizeClass size);
 
-/* (epicsThreadId)0 is guaranteed to be an invalid thread id */
+/** (epicsThreadId)0 is guaranteed to be an invalid thread id */
 typedef struct epicsThreadOSD *epicsThreadId;
 
 typedef epicsThreadId epicsThreadOnceId;
@@ -388,11 +388,11 @@ public:
     //! Wait for the thread epicsRunnable::run() to return.
     void exitWait () throw ();
     //! Wait for the thread epicsRunnable::run() to return.
-    //! @param delay Wait up to this many seconds.
-    //! @returns true if run() returned.  false on timeout.
-    bool exitWait ( const double delay ) throw (); 
+    //! \param delay Wait up to this many seconds.
+    //! \return true if run() returned.  false on timeout.
+    bool exitWait ( const double delay ) throw ();
     //! @throws A special exitException which will be caught and ignored.
-    //! @note This exitException doesn't not derive from std::exception
+    //! \note This exitException doesn't not derive from std::exception
     static void exit ();
     //! cf. epicsThreadResume()
     void resume () throw ();
@@ -406,7 +406,7 @@ public:
     void setPriority ( unsigned int ) throw ();
     bool priorityIsEqual ( const epicsThread & ) const throw ();
     bool isSuspended () const throw ();
-    //! @return true if call through this thread's epicsRunnable::run()
+    //! \return true if call through this thread's epicsRunnable::run()
     bool isCurrentThread () const throw ();
     bool operator == ( const epicsThread & ) const throw ();
     //! Say something interesting about this thread to stdout.
@@ -437,7 +437,7 @@ private:
     epicsThread ( const epicsThread & );
     epicsThread & operator = ( const epicsThread & );
     friend void epicsThreadCallEntryPoint ( void * );
-    void printLastChanceExceptionMessage ( 
+    void printLastChanceExceptionMessage (
         const char * pExceptionTypeName,
         const char * pExceptionContext );
     /* exceptions */
@@ -452,7 +452,7 @@ protected:
 };
 
 template < class T >
-class epicsThreadPrivate : 
+class epicsThreadPrivate :
     private epicsThreadPrivateBase {
 public:
     epicsThreadPrivate ();

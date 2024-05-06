@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* osdEvent.c */
 /*
@@ -36,7 +36,7 @@ typedef struct epicsEventOSD {
  * epicsEventCreate ()
  */
 LIBCOM_API epicsEventId epicsEventCreate (
-    epicsEventInitialState initialState ) 
+    epicsEventInitialState initialState )
 {
     epicsEventOSD *pSem;
 
@@ -75,7 +75,7 @@ LIBCOM_API epicsEventStatus epicsEventTrigger ( epicsEventId pSem )
  * epicsEventWait ()
  */
 LIBCOM_API epicsEventStatus epicsEventWait ( epicsEventId pSem ) 
-{ 
+{
     DWORD status;
     status = WaitForSingleObject (pSem->handle, INFINITE);
     if ( status == WAIT_OBJECT_0 ) {
@@ -144,7 +144,7 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
  * epicsEventTryWait ()
  */
 LIBCOM_API epicsEventStatus epicsEventTryWait ( epicsEventId pSem ) 
-{ 
+{
     DWORD status;
 
     status = WaitForSingleObject ( pSem->handle, 0 );
@@ -163,5 +163,5 @@ LIBCOM_API epicsEventStatus epicsEventTryWait ( epicsEventId pSem )
  * epicsEventShow ()
  */
 LIBCOM_API void epicsEventShow ( epicsEventId id, unsigned level ) 
-{ 
+{
 }

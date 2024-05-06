@@ -177,7 +177,7 @@ static long process(struct dbCommon *pcommon)
 
     if ( pact ) {
         /* Update timestamp again for asynchronous devices */
-    recGblGetTimeStampSimm(prec, prec->simm, NULL);
+        recGblGetTimeStampSimm(prec, prec->simm, NULL);
     }
 
     monitor(prec);

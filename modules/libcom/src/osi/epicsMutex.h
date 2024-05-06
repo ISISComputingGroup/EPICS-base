@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /**\file epicsMutex.h
@@ -45,7 +45,7 @@
 
 #include "libComAPI.h"
 
-
+/**\brief An identifier for an epicsMutex for use with the C API */
 typedef struct epicsMutexParm *epicsMutexId;
 
 /** Return status from some C API routines. */
@@ -249,7 +249,7 @@ LIBCOM_API void epicsStdCall epicsMutexShowAll(
 
 /**@privatesection
  * The following are interfaces to the OS dependent
- * implementation and should NOT be called directly by 
+ * implementation and should NOT be called directly by
  * user code.
  */
 struct epicsMutexOSD * epicsMutexOsdCreate(void);

@@ -6,7 +6,7 @@
 * Copyright (c) 2013 ITER Organization.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* Author:  Marty Kraimer Date:    18JAN2000 */
@@ -31,7 +31,7 @@
 #endif
 
 #if USE_MEMLOCK
-#include <sys/mman.h>
+#include <sys/mman.h> 
 #endif
 
 /* epicsStdio uses epicsThreadOnce(), require explicit use to avoid unexpected recursion */
@@ -666,7 +666,7 @@ static epicsThreadOSD *createImplicit(void)
                  (pthreadInfo->schedParam.sched_priority - pcommonAttr->minPriority) * 100.0 /
                     (pcommonAttr->maxPriority - pcommonAttr->minPriority + 1);
         }
-	}
+    }
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 
     status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);

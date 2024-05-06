@@ -7,14 +7,14 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* devLib.c - support for allocation of common device resources */
 
 /*
  *  Original Author: Marty Kraimer
- *      Author:          Jeff Hill 
- *      Date:        03-10-93   
+ *      Author:          Jeff Hill
+ *      Date:        03-10-93
  *
  * NOTES:
  * .01  06-14-93    joh needs devAllocInterruptVector() routine
@@ -92,7 +92,7 @@ typedef struct{
 static long devLibInit(void);
 
 static long addrVerify(
-            epicsAddressType addrType, 
+            epicsAddressType addrType,
             size_t base,
             size_t size);
 
@@ -113,7 +113,7 @@ static void report_conflict(
             const char *pOwnerName);
 
 static void report_conflict_device(
-            epicsAddressType addrType, 
+            epicsAddressType addrType,
             const rangeItem *pRange);
 
 static void devInsertAddress(
@@ -216,7 +216,7 @@ long devRegisterAddress(
     if (size == 0) {
         return S_dev_lowValue;
     }
- 
+
 #ifdef DEBUG
     printf ("Req Addr 0X%X Size 0X%X\n", base, size);
 #endif
@@ -234,7 +234,7 @@ long devRegisterAddress(
         }
         else if (base + (size - 1) <= pRange->end) {
 #           ifdef DEBUG
-                printf ("Found free block Begin 0X%X End 0X%X\n", 
+                printf ("Found free block Begin 0X%X End 0X%X\n",
                         pRange->begin, pRange->end);
 #           endif
             break;
@@ -334,7 +334,7 @@ static long devInstallAddr (
      * always map through the virtual os in case the memory
      * management is set up there
      */
-    status = (*pdevLibVME->pDevMapAddr) (addrType, 0, base, 
+    status = (*pdevLibVME->pDevMapAddr) (addrType, 0, base,
                 size, &pPhysicalAddress);
     if (status) {
         errPrintf (status, __FILE__, __LINE__, "%s base=0X%X size = 0X%X",
@@ -437,7 +437,7 @@ static void report_conflict (
 
     pRange = (rangeItem *) ellFirst(&addrAlloc[addrType]);
     while (pRange) {
-    
+
         if (pRange->begin <= base + (size-1) && pRange->end >= base) {
             report_conflict_device (addrType, pRange);
         }
@@ -498,7 +498,7 @@ long devUnregisterAddress(
         pRange = (rangeItem *) ellNext(&pRange->node);
     }
     epicsMutexUnlock(addrListLock);
-    
+
     if (!pRange) {
         return S_dev_addressNotFound;
     }
@@ -506,7 +506,7 @@ long devUnregisterAddress(
     if (strcmp(pOwnerName,pRange->pOwnerName)!=0) {
         s = S_dev_addressOverlap;
         errPrintf (
-            s, 
+            s,
             __FILE__,
             __LINE__,
     "unregister address for %s at 0X%X failed because %s owns it",
@@ -514,7 +514,7 @@ long devUnregisterAddress(
             (unsigned int)baseAddress,
             pRange->pOwnerName);
         return s;
-    }   
+    }
 
     epicsMutexMustLock(addrListLock);
     ellDelete (&addrAlloc[addrType], &pRange->node);
@@ -820,7 +820,7 @@ static long blockFind (
      * align size of block
      */
     newSize = requestSize;
-    if (mask & newSize) { 
+    if (mask & newSize) {
         newSize |= mask;
         newSize++;
     }
@@ -888,7 +888,7 @@ long devNoResponseProbe (epicsAddressType addrType,
             }
 
             /*
-             * every byte in the block must 
+             * every byte in the block must
              * map to a physical address
              */
             s = (*pdevLibVME->pDevMapAddr) (addrType, 0, probe, wordSize, &pPhysical);
@@ -923,7 +923,7 @@ void        *parameter )
         }
     }
 
-    return (*pdevLibVME->pDevConnectInterruptVME) (vectorNumber, 
+    return (*pdevLibVME->pDevConnectInterruptVME) (vectorNumber,
                     pFunction, parameter);
 }
 
@@ -1008,7 +1008,7 @@ void                    *parameter)
     switch(intType){
     case intVME:
     case intVXI:
-        return (*pdevLibVME->pDevConnectInterruptVME) (vectorNumber, 
+        return (*pdevLibVME->pDevConnectInterruptVME) (vectorNumber,
                     pFunction, parameter);
     default:
         return S_dev_uknIntType;
@@ -1024,7 +1024,7 @@ void                    *parameter)
 long    devDisconnectInterrupt(
 epicsInterruptType      intType,
 unsigned                vectorNumber,
-void                    (*pFunction)(void *) 
+void                    (*pFunction)(void *)
 )
 {
     long status;
@@ -1039,7 +1039,7 @@ void                    (*pFunction)(void *)
     switch(intType){
     case intVME:
     case intVXI:
-        return (*pdevLibVME->pDevDisconnectInterruptVME) (vectorNumber, 
+        return (*pdevLibVME->pDevDisconnectInterruptVME) (vectorNumber,
                     pFunction);
     default:
         return S_dev_uknIntType;
@@ -1139,10 +1139,10 @@ void *devLibA24Calloc(size_t size)
 void *devLibA24Malloc(size_t size)
 {
     void *ret;
-    
+
     if (devLibA24Debug)
         epicsPrintf ("devLibA24Malloc(%u) entered\n", (unsigned int)size);
-    
+
     ret = pdevLibVME->pDevA24Malloc(size);
     return(ret);
 }
@@ -1151,6 +1151,6 @@ void devLibA24Free(void *pBlock)
 {
     if (devLibA24Debug)
         epicsPrintf("devLibA24Free(%p) entered\n", pBlock);
-    
+
     pdevLibVME->pDevA24Free(pBlock);
 }

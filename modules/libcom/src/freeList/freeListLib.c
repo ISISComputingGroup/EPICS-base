@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* Author:  Marty Kraimer Date:    04-19-94 */
 
@@ -55,7 +55,7 @@ typedef struct {
 }FREELISTPVT;
 
 LIBCOM_API void epicsStdCall 
-	freeListInitPvt(void **ppvt,int size,int nmalloc)
+    freeListInitPvt(void **ppvt,int size,int nmalloc)
 {
     FREELISTPVT *pfl;
     int bypass = epicsAtomicGetIntT(&freeListBypass);

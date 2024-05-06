@@ -197,14 +197,14 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
         if (dbrType < 0 || dbrType > DBR_ENUM || dbfType > DBF_DEVICE)
             return S_db_badDbrtype;
 
-            ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
+        ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
         ppv_link->lastGetdbrType = dbrType;
         status = ppv_link->getCvt(dbChannelField(chan), pbuffer, paddr);
     }
     else
     {
         /* filter, array, or special */
-            ppv_link->getCvt = NULL;
+        ppv_link->getCvt = NULL;
 
         if (ellCount(&chan->filters)) {
             /* If filters are involved in a read, create field log and run filters */

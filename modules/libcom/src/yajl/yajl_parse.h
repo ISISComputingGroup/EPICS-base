@@ -28,21 +28,21 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    /** error codes returned from this interface */
+    /** Error codes returned from this interface. */
     typedef enum {
-        /** no error was encountered */
+        /** No error was encountered. */
         yajl_status_ok,
-        /** a client callback returned zero, stopping the parse */
+        /** A client callback returned zero, stopping the parse. */
         yajl_status_client_canceled,
         /** An error occured during the parse. Call yajl_get_error() for
          *  more information about the encountered error. */
         yajl_status_error
     } yajl_status;
 
-    /** attain a human readable, english, string for an error */
+    /** Return a human readable, English, string for an error. */
     YAJL_API const char * yajl_status_to_string(yajl_status code);
 
-    /** an opaque handle to a parser */
+    /** An opaque handle to a parser. */
     typedef struct yajl_handle_t * yajl_handle;
 
     /** YAJL is an event driven parser. This means as json elements are
@@ -202,7 +202,7 @@ extern "C" {
      */
     YAJL_API int yajl_config(yajl_handle hand, int option, ...);
 
-    /** free a parser handle */
+    /** Free a parser handle. */
     YAJL_API void yajl_free(yajl_handle hand);
 
     /** Parse some json!
@@ -251,7 +251,7 @@ extern "C" {
      */
     YAJL_API size_t yajl_get_bytes_consumed(yajl_handle hand);
 
-    /** free an error returned from yajl_get_error */
+    /** Free an error string returned from yajl_get_error(). */
     YAJL_API void yajl_free_error(yajl_handle hand, unsigned char * str);
 
 #ifdef __cplusplus

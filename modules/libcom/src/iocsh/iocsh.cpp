@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* iocsh.cpp */
 /* Author:  Marty Kraimer Date: 27APR2000 */
@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
+
 #ifdef _WIN32
 #include <io.h> /* for isatty() */
 #include <string>
@@ -855,12 +856,12 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf,
 
     case iocshArgPersistentString:
         if (arg != NULL) {
-        argBuf->sval = (char *) malloc(strlen(arg) + 1);
-        if (argBuf->sval == NULL) {
-            showError(filename, lineno, "Out of memory");
-            return 0;
-        }
-        strcpy(argBuf->sval, arg);
+            argBuf->sval = (char *) malloc(strlen(arg) + 1);
+            if (argBuf->sval == NULL) {
+                showError(filename, lineno, "Out of memory");
+                return 0;
+            }
+            strcpy(argBuf->sval, arg);
         } else {
           argBuf->sval = NULL;
         }
@@ -1078,13 +1079,13 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
      * Parse macro definitions, this check occurs before creating the
      * macro handle to simplify cleanup.
      */
-    
+
     if (macros) {
         if (macParseDefns(NULL, macros, &defines) < 0) {
             return -1;
         }
     }
-    
+
     // Check for existing context or construct a new one.
     context = (iocshContext *) epicsThreadPrivateGet(iocshContextId);
 
@@ -1095,7 +1096,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             free(context);
             return -1;
         }
-        
+
         epicsThreadPrivateSet(iocshContextId, (void *) context);
     }
     MAC_HANDLE *handle = context->handle;
@@ -1105,7 +1106,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
 
     macPushScope(handle);
     macInstallMacros(handle, defines);
-    
+
     wasOkToBlock = epicsThreadIsOkToBlock();
     epicsThreadSetOkToBlock(1);
 
@@ -1296,7 +1297,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         tokenize.stopRedirect();
     }
     macPopScope(handle);
-    
+
     if (!scope.outer) {
         macDeleteHandle(handle);
         free(context);
@@ -1321,59 +1322,59 @@ iocsh (const char *pathname)
 #ifdef _WIN32
 // Adjust stdout and stderr buffering for use with non-terminal programs such as procServ
     static int first_call = 1;
-	if (first_call)
-	{
-		if (setvbuf(stderr, NULL, _IONBF, BUFSIZ) != 0)
-		{
-		    fprintf(stderr, "iocsh: error setting stderr buffering\n");
-			fflush(stderr);
-		}
-		if (setvbuf(stdout, NULL, _IONBF, BUFSIZ) != 0)
-		{
-		    fprintf(stderr, "iocsh: error setting stdout buffering\n");
-			fflush(stderr);
-		}
-//		if ( !isatty(fileno(stdout)) )
-//		{
-//			if (setvbuf(stdout, NULL, _IOFBF, 256) != 0) // set a small buffer size to try and emulate line buffering (Windows does not support _IOLBF)
-//			{
-//				fprintf(stderr, "iocsh: error setting stdout buffering\n");
-//				fflush(stderr);
-//			}
-//		}
-		// set console title to executable name - will not get done automatically if we run executable from a batch file
-		char module_path[256];
-		GetModuleFileName(NULL, module_path, sizeof(module_path));
-		const char* module_name = strrchr(module_path, '\\');
-		if (module_name != NULL)
-		{
-			++module_name; // move past \ to real name
-		}
-		else
-		{
-			module_name = module_path;
-		}
-		SetConsoleTitle((std::string("IOC: ") + module_name).c_str());
-		const char* iocsh_showwin = macEnvExpand("$(IOCSH_SHOWWIN=)");
-		HWND conwin = GetConsoleWindow();
-		if ( conwin != NULL && iocsh_showwin != NULL )
-		{
-			switch(iocsh_showwin[0])
-			{
-				case 'M': // minimise
-				case 'm': 
-			        ShowWindowAsync(conwin, SW_MINIMIZE);
-					break;
+    if (first_call)
+    {
+        if (setvbuf(stderr, NULL, _IONBF, BUFSIZ) != 0)
+        {
+            fprintf(stderr, "iocsh: error setting stderr buffering\n");
+            fflush(stderr);
+        }
+        if (setvbuf(stdout, NULL, _IONBF, BUFSIZ) != 0)
+        {
+            fprintf(stderr, "iocsh: error setting stdout buffering\n");
+            fflush(stderr);
+        }
+//      if ( !isatty(fileno(stdout)) )
+//      {
+//          if (setvbuf(stdout, NULL, _IOFBF, 256) != 0) // set a small buffer size to try and emulate line buffering (Windows does not support _IOLBF)
+//          {
+//              fprintf(stderr, "iocsh: error setting stdout buffering\n");
+//              fflush(stderr);
+//          }
+//      }
+        // set console title to executable name - will not get done automatically if we run executable from a batch file
+        char module_path[256];
+        GetModuleFileName(NULL, module_path, sizeof(module_path));
+        const char* module_name = strrchr(module_path, '\\');
+        if (module_name != NULL)
+        {
+            ++module_name; // move past \ to real name
+        }
+        else
+        {
+            module_name = module_path;
+        }
+        SetConsoleTitle((std::string("IOC: ") + module_name).c_str());
+        const char* iocsh_showwin = macEnvExpand("$(IOCSH_SHOWWIN=)");
+        HWND conwin = GetConsoleWindow();
+        if ( conwin != NULL && iocsh_showwin != NULL )
+        {
+            switch(iocsh_showwin[0])
+            {
+                case 'M': // minimise
+                case 'm': 
+                    ShowWindowAsync(conwin, SW_MINIMIZE);
+                    break;
 
-				case 'H': // hide
-				case 'h':
-					ShowWindowAsync(conwin, SW_HIDE);
-					break;
+                case 'H': // hide
+                case 'h':
+                    ShowWindowAsync(conwin, SW_HIDE);
+                    break;
 
-				default:
-					break;
-			}
-		}
+                default:
+                    break;
+            }
+        }
         // disable quick edit mode, can cause ioc window to freeze if user clicks in it by mistake
         DWORD mode;
         HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE); 
@@ -1386,8 +1387,8 @@ iocsh (const char *pathname)
                 SetConsoleMode(hStdin, mode);
             }
         }
-		first_call = 0;
-	}
+        first_call = 0;
+    }
 #endif /* _WIN32 */
     return iocshLoad(pathname, NULL);
 }
@@ -1418,11 +1419,11 @@ iocshRun(const char *cmd, const char *macros)
  * Needed to work around the necessary limitations of macLib and
  * environment variables. In every other case of macro expansion
  * it is the expected outcome that defined macros override any
- * environment variables. 
+ * environment variables.
  *
- * iocshLoad/Run turn this on its head as it is very likely that 
- * an epicsEnvSet command may be run within the context of their 
- * calls. Thus, it would be expected that the new value would be 
+ * iocshLoad/Run turn this on its head as it is very likely that
+ * an epicsEnvSet command may be run within the context of their
+ * calls. Thus, it would be expected that the new value would be
  * returned in any future macro expansion.
  *
  * To do so, the epicsEnvSet command needs to be able to access
@@ -1433,10 +1434,10 @@ void epicsStdCall
 iocshEnvClear(const char *name)
 {
     iocshContext *context;
-    
+
     if (iocshContextId) {
         context = (iocshContext *) epicsThreadPrivateGet(iocshContextId);
-    
+
         if (context != NULL) {
             macPutValue(context->handle, name, NULL);
         }

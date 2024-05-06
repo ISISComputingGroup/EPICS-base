@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *  list functions attached to the interrupt vector table
@@ -58,54 +58,54 @@ int veclist(int all)
     int         status;
     unsigned    i;
 
-  	for(vec=0; vec<NVEC; vec++){
-    		proutine = intVecGet((FUNCPTR *)INUM_TO_IVEC(vec));
+    for(vec=0; vec<NVEC; vec++){
+        proutine = intVecGet((FUNCPTR *)INUM_TO_IVEC(vec));
 
-		status = cISRTest(proutine, &pCISR, &pparam);
-		if(status == OK){
-			cRoutine = TRUE;
-			proutine = pCISR;
-			strcpy(function_type, "C");
-		}
-		else{
-			cRoutine = FALSE;
-			strcpy(function_type, "MACRO");
-			pCISR = NULL;
-		}
- 
-		status = symFindByValue(
-				sysSymTbl, 
-				(int)proutine, 
-				name,
-				&value,
-				&type);
-		if(status<0 || value != (int)proutine){
-			sprintf(name, "0x%X", (unsigned int) proutine);
-		}
-		else if(!all){
+        status = cISRTest(proutine, &pCISR, &pparam);
+        if(status == OK){
+            cRoutine = TRUE;
+            proutine = pCISR;
+            strcpy(function_type, "C");
+        }
+        else{
+            cRoutine = FALSE;
+            strcpy(function_type, "MACRO");
+            pCISR = NULL;
+        }
+
+        status = symFindByValue(
+                sysSymTbl,
+                (int)proutine,
+                name,
+                &value,
+                &type);
+        if(status<0 || value != (int)proutine){
+            sprintf(name, "0x%X", (unsigned int) proutine);
+        }
+        else if(!all){
             int match = FALSE;
 
-			for(i=0; i<NELEMENTS(ignore_list); i++){
-				if(!strcmp(ignore_list[i],name)){
-					match = TRUE;
-					break;
-				}
-			}
-			if(match){
-				continue;
-			}
-		}
+            for(i=0; i<NELEMENTS(ignore_list); i++){
+                if(!strcmp(ignore_list[i],name)){
+                    match = TRUE;
+                    break;
+                }
+            }
+            if(match){
+                continue;
+            }
+        }
         printf( "vec 0x%02X %5s ISR %s",
-			vec, 
-			function_type,
-			name);
-		if(cRoutine){
-			printf("(0x%X)", (unsigned int) pparam);
-		}
-		printf("\n");
-	}
+            vec,
+            function_type,
+            name);
+        if(cRoutine){
+            printf("(0x%X)", (unsigned int) pparam);
+        }
+        printf("\n");
+    }
 
-	return OK;
+    return OK;
 }
 
 
@@ -128,54 +128,54 @@ int cISRTest(FUNCPTR proutine, FUNCPTR *ppisr, void **pparam)
     int             found_isr;
     int             found_param;
 
-	if(handler == NULL){
+    if(handler == NULL){
 #if CPU_FAMILY != PPC
-		handler = (FUNCPTR) intHandlerCreate(
-				(FUNCPTR) ISR_PATTERN, 
-				PARAM_PATTERN);
+        handler = (FUNCPTR) intHandlerCreate(
+                (FUNCPTR) ISR_PATTERN,
+                PARAM_PATTERN);
 #endif
-		if(handler == NULL){
-			return ERROR;
-		}
-	}
+        if(handler == NULL){
+            return ERROR;
+        }
+    }
 
-	found_isr = FALSE;
-	found_param = FALSE;
-	pchk = (unsigned char *) proutine;
-	pref = (unsigned char *) handler; 
+    found_isr = FALSE;
+    found_param = FALSE;
+    pchk = (unsigned char *) proutine;
+    pref = (unsigned char *) handler;
     for( ;
-		found_isr==FALSE || found_param==FALSE;
-		pchk++, pref++){
+        found_isr==FALSE || found_param==FALSE;
+        pchk++, pref++){
 
-		status = vxMemProbe(	
-				(char *) pchk,
-				READ,
-				sizeof(val),
-				(char *) &val);
-		if(status < 0){
-			return ERROR;
-		}
+        status = vxMemProbe(
+                (char *) pchk,
+                READ,
+                sizeof(val),
+                (char *) &val);
+        if(status < 0){
+            return ERROR;
+        }
 
-		if(val != *pref){
-			if(*pref == (unsigned char) ISR_PATTERN){
-				*ppisr = (FUNCPTR) fetch_pointer(pchk);
-				pref += sizeof(*ppisr)-1;
-				pchk += sizeof(*ppisr)-1;
-				found_isr = TRUE;	
-			}
-			else if(*pref == (unsigned char) PARAM_PATTERN){
-				*pparam = fetch_pointer(pchk);
-				pref += sizeof(*pparam)-1;
-				pchk += sizeof(*pparam)-1;
-				found_param = TRUE;
-			}
-			else{	
-				return ERROR;
-			}
-		}
-	}
+        if(val != *pref){
+            if(*pref == (unsigned char) ISR_PATTERN){
+                *ppisr = (FUNCPTR) fetch_pointer(pchk);
+                pref += sizeof(*ppisr)-1;
+                pchk += sizeof(*ppisr)-1;
+                found_isr = TRUE;
+            }
+            else if(*pref == (unsigned char) PARAM_PATTERN){
+                *pparam = fetch_pointer(pchk);
+                pref += sizeof(*pparam)-1;
+                pchk += sizeof(*pparam)-1;
+                found_param = TRUE;
+            }
+            else{
+                return ERROR;
+            }
+        }
+    }
 
-	return OK;
+    return OK;
 }
 
 
@@ -187,7 +187,7 @@ int cISRTest(FUNCPTR proutine, FUNCPTR *ppisr, void **pparam)
  *
  */
 struct char_array{
-	unsigned char byte[4];
+    unsigned char byte[4];
 };
 union pointer{
     void                *ptr_overlay;
@@ -200,9 +200,9 @@ void *fetch_pointer(unsigned char *plow_byte)
     union pointer   p;
     size_t          i;
 
-	for(i=0; i < sizeof(p); i++){
-		p.char_overlay.byte[i] = plow_byte[i];
-	}
+    for(i=0; i < sizeof(p); i++){
+        p.char_overlay.byte[i] = plow_byte[i];
+    }
 
-	return p.ptr_overlay;
+    return p.ptr_overlay;
 }

@@ -60,7 +60,7 @@ void Convert::getString(string *buf,PVField const *pvField,int /*indentLevel*/)
 size_t Convert::fromString(PVStructurePtr const &pvStructure, StringArray const & from, size_t fromStartIndex)
 {
     size_t processed = 0;
-    
+
     PVFieldPtrArray const & fieldsData = pvStructure->getPVFields();
     if (fieldsData.size() != 0) {
         size_t length = pvStructure->getStructure()->getNumberFields();
@@ -93,7 +93,7 @@ size_t Convert::fromString(PVStructurePtr const &pvStructure, StringArray const 
             }
         }
     }
-    
+
     return processed;
 }
 

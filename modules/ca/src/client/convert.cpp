@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *  C O N V E R T . C
@@ -13,11 +13,11 @@
  *  Author: D. Kersteins
  *
  *
- *  NOTES: 
+ *  NOTES:
  *
  *  1) All routines in this file have an encode argument which
  *  determines if we are converting from the standard format to
- *  the local format or vise versa. To date only float and double data 
+ *  the local format or vise versa. To date only float and double data
  *  types must be converted differently depending on the encode
  *  argument - joh
  *
@@ -45,38 +45,38 @@
  *
  * net format: big endian and IEEE float
  */
-typedef void ( * CACVRTFUNCPTR ) ( 
+typedef void ( * CACVRTFUNCPTR ) (
     const void *pSrc, void *pDest, int hton, arrayElementCount count );
 
-inline  void dbr_htond ( 
+inline  void dbr_htond (
     const dbr_double_t * pHost, dbr_double_t * pNet )
 {
     AlignedWireRef < epicsFloat64 > tmp ( *pNet );
     tmp = *pHost;
 }
-inline void dbr_ntohd ( 
+inline void dbr_ntohd (
     const dbr_double_t * pNet, dbr_double_t * pHost )
 {
     *pHost = AlignedWireRef < const epicsFloat64 > ( *pNet );
 }
-inline void dbr_htonf ( 
+inline void dbr_htonf (
     const dbr_float_t * pHost, dbr_float_t * pNet )
 {
     AlignedWireRef < epicsFloat32 > tmp ( *pNet );
     tmp = *pHost;
 }
-inline void dbr_ntohf ( 
+inline void dbr_ntohf (
     const dbr_float_t * pNet, dbr_float_t * pHost )
 {
     *pHost = AlignedWireRef < const epicsFloat32 > ( *pNet );
 }
 
-inline epicsUInt16 dbr_ntohs( const epicsUInt16 & net ) 
+inline epicsUInt16 dbr_ntohs( const epicsUInt16 & net )
 {
     return AlignedWireRef < const epicsUInt16 > ( net );
 }
 
-inline epicsUInt16 dbr_htons ( const epicsUInt16 & host ) 
+inline epicsUInt16 dbr_htons ( const epicsUInt16 & host )
 {
     epicsUInt16 tmp;
     AlignedWireRef < epicsUInt16 > awr ( tmp );
@@ -102,7 +102,7 @@ inline epicsUInt32 dbr_htonl ( const epicsUInt32 & host )
  * otherwise vise-versa
  *
  * net format: big endian and IEEE float
- * 
+ *
  */
 
 /*
@@ -121,7 +121,7 @@ arrayElementCount   num             /* number of values     */
     /* convert "in place" -> nothing to do */
     if (s == d)
         return;
-    memcpy ( pDest, pSrc, num*MAX_STRING_SIZE );  
+    memcpy ( pDest, pSrc, num*MAX_STRING_SIZE );
 }
 
 /*
@@ -233,7 +233,7 @@ arrayElementCount   num         /* number of values     */
  *
  *
  *  NOTES:
- *  placing encode outside the loop results in more 
+ *  placing encode outside the loop results in more
  *  code but better performance.
  *
  */
@@ -290,10 +290,10 @@ arrayElementCount   num         /* number of values     */
 **      struct dbr_sts_string *d    pointer to destination struct
 **      int  encode;            boolean, if true vax to ieee
 **                           else ieee to vax
-**        
+**
 **  converts fields of struct in HOST format to NET format
-**     or 
-**  converts fields of struct in NET format to fields with HOST 
+**     or
+**  converts fields of struct in NET format to fields with HOST
 **      format;
 ****************************************************************************/
 
@@ -306,7 +306,7 @@ arrayElementCount   num         /* number of values     */
 {
     struct dbr_sts_string   *pSrc = (struct dbr_sts_string *) s;
     struct dbr_sts_string   *pDest = (struct dbr_sts_string *) d;
-            
+
     /* convert ieee to vax format or vax to ieee */
     pDest->status       = dbr_ntohs(pSrc->status);
     pDest->severity     = dbr_ntohs(pSrc->severity);
@@ -360,10 +360,10 @@ arrayElementCount   num         /* number of values     */
 **      int  encode;            boolean, if true vax to ieee
 **                           else ieee to vax
 **
-**     if encode 
+**     if encode
 **      converts struct in HOST format to ieee format
-**     else 
-**      converts fields of struct in NET format to fields with HOST 
+**     else
+**      converts fields of struct in NET format to fields with HOST
 **      format;
 ****************************************************************************/
 
@@ -386,10 +386,10 @@ arrayElementCount   num         /* number of values     */
 /****************************************************************************
 **  cvrt_sts_double(s,d)
 **
-**     if encode 
+**     if encode
 **      converts struct in HOST format to ieee format
-**     else 
-**      converts fields of struct in NET format to fields with HOST 
+**     else
+**      converts fields of struct in NET format to fields with HOST
 **      format;
 ****************************************************************************/
 
@@ -417,9 +417,9 @@ arrayElementCount   num         /* number of values     */
 **                           else ieee to vax
 **
 **  converts fields of struct in NET format to fields with HOST format
-**       or  
+**       or
 **  converts fields of struct in HOST format to fields with NET format
-**   
+**
 ****************************************************************************/
 
 static void cvrt_sts_enum(
@@ -445,9 +445,9 @@ arrayElementCount   num         /* number of values     */
 **  cvrt_gr_short()
 **
 **  converts fields of struct in NET format to fields with HOST format
-**       or  
+**       or
 **  converts fields of struct in HOST format to fields with NET format
-**   
+**
 ****************************************************************************/
 
 static void cvrt_gr_short(
@@ -484,9 +484,9 @@ arrayElementCount   num         /* number of values     */
 **  cvrt_gr_char()
 **
 **  converts fields of struct in NET format to fields with HOST format
-**       or  
+**       or
 **  converts fields of struct in HOST format to fields with NET format
-**   
+**
 ****************************************************************************/
 
 static void cvrt_gr_char(
@@ -525,9 +525,9 @@ arrayElementCount   num         /* number of values     */
 **  cvrt_gr_long()
 **
 **  converts fields of struct in NET format to fields with HOST format
-**       or  
+**       or
 **  converts fields of struct in HOST format to fields with NET format
-**   
+**
 ****************************************************************************/
 
 static void cvrt_gr_long(
@@ -563,10 +563,10 @@ arrayElementCount   num         /* number of values     */
 /****************************************************************************
 **  cvrt_gr_enum(s,d)
 **
-**     if encode 
+**     if encode
 **      converts struct in HOST format to ieee format
-**     else 
-**      converts fields of struct in NET format to fields with HOST 
+**     else
+**      converts fields of struct in NET format to fields with HOST
 **      format;
 ****************************************************************************/
 
@@ -598,10 +598,10 @@ arrayElementCount   num         /* number of values     */
 /****************************************************************************
 **  cvrt_gr_double(s,d)
 **
-**     if encode 
+**     if encode
 **      converts struct in HOST format to ieee format
-**     else 
-**      converts fields of struct in NET format to fields with HOST 
+**     else
+**      converts fields of struct in NET format to fields with HOST
 **      format;
 ****************************************************************************/
 
@@ -662,10 +662,10 @@ arrayElementCount   num         /* number of values     */
 **      int  encode;            boolean, if true vax to ieee
 **                           else ieee to vax
 **
-**     if encode 
+**     if encode
 **      converts struct in HOST format to ieee format
-**     else 
-**      converts fields of struct in NET format to fields with HOST 
+**     else
+**      converts fields of struct in NET format to fields with HOST
 **      format;
 ****************************************************************************/
 
@@ -729,9 +729,9 @@ arrayElementCount   num         /* number of values     */
 **                           else ieee to vax
 **
 **  converts fields of struct in NET format to fields with HOST format
-**       or  
+**       or
 **  converts fields of struct in HOST format to fields with NET format
-**   
+**
 ****************************************************************************/
 
 static void cvrt_ctrl_short(
@@ -771,9 +771,9 @@ arrayElementCount   num         /* number of values     */
 **  cvrt_ctrl_long(s,d)
 **
 **  converts fields of struct in NET format to fields with HOST format
-**       or  
+**       or
 **  converts fields of struct in HOST format to fields with NET format
-**   
+**
 ****************************************************************************/
 
 static void cvrt_ctrl_long(
@@ -813,9 +813,9 @@ arrayElementCount   num         /* number of values     */
 **  cvrt_ctrl_short(s,d)
 **
 **  converts fields of struct in NET format to fields with HOST format
-**       or  
+**       or
 **  converts fields of struct in HOST format to fields with NET format
-**   
+**
 ****************************************************************************/
 
 static void cvrt_ctrl_char(
@@ -832,7 +832,7 @@ arrayElementCount   num         /* number of values     */
     pDest->status           = dbr_ntohs(pSrc->status);
     pDest->severity         = dbr_ntohs(pSrc->severity);
 
-    if ( s == d ) 
+    if ( s == d )
         return;
 
     pDest->upper_disp_limit     = pSrc->upper_disp_limit;
@@ -852,10 +852,10 @@ arrayElementCount   num         /* number of values     */
 /****************************************************************************
 **  cvrt_ctrl_double(s,d)
 **
-**     if encode 
+**     if encode
 **      converts struct in HOST format to ieee format
-**     else 
-**      converts fields of struct in NET format to fields with HOST 
+**     else
+**      converts fields of struct in NET format to fields with HOST
 **      format;
 ****************************************************************************/
 
@@ -918,10 +918,10 @@ arrayElementCount   num         /* number of values     */
 /****************************************************************************
 **  cvrt_ctrl_float(s,d)
 **
-**     if encode 
+**     if encode
 **      converts struct in HOST format to ieee format
-**     else 
-**      converts fields of struct in NET format to fields with HOST 
+**     else
+**      converts fields of struct in NET format to fields with HOST
 **      format;
 ****************************************************************************/
 
@@ -983,10 +983,10 @@ arrayElementCount   num         /* number of values     */
 /****************************************************************************
 **  cvrt_ctrl_enum(s,d)
 **
-**     if encode 
+**     if encode
 **      converts struct in HOST format to ieee format
-**     else 
-**      converts fields of struct in NET format to fields with HOST 
+**     else
+**      converts fields of struct in NET format to fields with HOST
 **      format;
 ****************************************************************************/
 
@@ -1002,7 +1002,7 @@ arrayElementCount   num         /* number of values     */
 
     pDest->status           = dbr_ntohs(pSrc->status);
     pDest->severity         = dbr_ntohs(pSrc->severity);
-    pDest->no_str           = dbr_ntohs(pSrc->no_str); 
+    pDest->no_str           = dbr_ntohs(pSrc->no_str);
     if ( s != d ) {
         memcpy((void *)pDest->strs,(void *)pSrc->strs,sizeof(pSrc->strs));
     }
@@ -1042,7 +1042,7 @@ arrayElementCount   num         /* number of values     */
     pDest->status       = dbr_ntohs(pSrc->status);
     pDest->severity     = dbr_ntohs(pSrc->severity);
 
-    if ( s == d ) 
+    if ( s == d )
         return;
 
     if (num == 1)   /* single value */
@@ -1087,10 +1087,10 @@ arrayElementCount   num         /* number of values     */
 
 /****************************************************************************
 **  cvrt_time_string(s,d)
-**        
+**
 **  converts fields of struct in HOST format to NET format
-**     or 
-**  converts fields of struct in NET format to fields with HOST 
+**     or
+**  converts fields of struct in NET format to fields with HOST
 **      format;
 ****************************************************************************/
 
@@ -1103,7 +1103,7 @@ arrayElementCount   num         /* number of values     */
 {
     struct dbr_time_string  *pSrc = (struct dbr_time_string *) s;
     struct dbr_time_string  *pDest = (struct dbr_time_string *) d;
-            
+
     /* convert ieee to vax format or vax to ieee */
     pDest->status       = dbr_ntohs(pSrc->status);
     pDest->severity     = dbr_ntohs(pSrc->severity);
@@ -1151,10 +1151,10 @@ arrayElementCount   num         /* number of values     */
 /****************************************************************************
 **  cvrt_time_float(s,d)
 **
-**     if encode 
+**     if encode
 **      converts struct in HOST format to ieee format
-**     else 
-**      converts fields of struct in NET format to fields with HOST 
+**     else
+**      converts fields of struct in NET format to fields with HOST
 **      format;
 ****************************************************************************/
 
@@ -1179,10 +1179,10 @@ arrayElementCount   num         /* number of values     */
 /****************************************************************************
 **  cvrt_time_double(s,d)
 **
-**     if encode 
+**     if encode
 **      converts struct in HOST format to ieee format
-**     else 
-**      converts fields of struct in NET format to fields with HOST 
+**     else
+**      converts fields of struct in NET format to fields with HOST
 **      format;
 ****************************************************************************/
 
@@ -1210,9 +1210,9 @@ arrayElementCount   num         /* number of values     */
 **  cvrt_time_enum(s,d)
 **
 **  converts fields of struct in NET format to fields with HOST format
-**       or  
+**       or
 **  converts fields of struct in HOST format to fields with NET format
-**   
+**
 ****************************************************************************/
 
 static void cvrt_time_enum(
@@ -1261,7 +1261,7 @@ arrayElementCount   num         /* number of values     */
     pDest->stamp.secPastEpoch = dbr_ntohl(pSrc->stamp.secPastEpoch);
     pDest->stamp.nsec   = dbr_ntohl(pSrc->stamp.nsec);
 
-    if ( s == d ) 
+    if ( s == d )
         return;
 
     if (num == 1)   /* single value */
@@ -1338,10 +1338,10 @@ arrayElementCount   num         /* number of values     */
 **      struct dbr_stsack_string *d pointer to destination struct
 **      int  encode;            boolean, if true vax to ieee
 **                           else ieee to vax
-**        
+**
 **  converts fields of struct in HOST format to NET format
-**     or 
-**  converts fields of struct in NET format to fields with HOST 
+**     or
+**  converts fields of struct in NET format to fields with HOST
 **      format;
 ****************************************************************************/
 
@@ -1354,7 +1354,7 @@ arrayElementCount   num         /* number of values     */
 {
     struct dbr_stsack_string    *pSrc = (struct dbr_stsack_string *) s;
     struct dbr_stsack_string    *pDest = (struct dbr_stsack_string *) d;
-            
+
     /* convert ieee to vax format or vax to ieee */
     pDest->status       = dbr_ntohs(pSrc->status);
     pDest->severity     = dbr_ntohs(pSrc->severity);
@@ -1410,7 +1410,7 @@ static CACVRTFUNCPTR cac_dbr_cvrt[] = {
     cvrt_ctrl_long,
     cvrt_ctrl_double,
 
-    cvrt_put_ackt,  
+    cvrt_put_ackt,
     cvrt_put_ackt, /* DBR_PUT_ACKS identical to DBR_PUT_ACKT */
     cvrt_stsack_string,
     cvrt_string
@@ -1418,18 +1418,18 @@ static CACVRTFUNCPTR cac_dbr_cvrt[] = {
 
 #endif /* EPICS_CONVERSION_REQUIRED */
 
-int caNetConvert ( unsigned type, const void *pSrc, void *pDest, 
+int caNetConvert ( unsigned type, const void *pSrc, void *pDest,
                   int hton, arrayElementCount count )
 {
 #   ifdef EPICS_CONVERSION_REQUIRED
         if ( type >= NELEMENTS ( cac_dbr_cvrt ) ) {
             return ECA_BADTYPE;
-        }        
+        }
         ( * cac_dbr_cvrt [ type ] ) ( pSrc, pDest, hton, count );
 #   else
         if ( INVALID_DB_REQ ( type ) ) {
             return ECA_BADTYPE;
-        }        
+        }
         if ( pSrc != pDest ) {
             memcpy ( pDest, pSrc, dbr_size_n ( type, count ) );
         }

@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 //
 //      File descriptor management C++ class library
@@ -15,7 +15,7 @@
 //              johill@lanl.gov
 //              505 665 1831
 //
-// NOTES: 
+// NOTES:
 // 1) the routines in this file provide backward compatibility with the original
 // "C" based file descriptor manager API
 // 2) This library is _not_ thread safe
@@ -26,7 +26,7 @@
 #include "epicsAssert.h"
 #include "fdManager.h"
 #include "fdmgr.h"
- 
+
 static const fdRegType fdiToFdRegType[] = {fdrRead, fdrWrite, fdrException};
 static const unsigned fdiToFdRegTypeNElements = sizeof (fdiToFdRegType) / sizeof (fdiToFdRegType[0]);
 const unsigned mSecPerSec = 1000u;
@@ -47,8 +47,8 @@ private:
     pCallBackFDMgr pFunc;
     void *pParam;
     LIBCOM_API virtual void callBack ();
-	fdRegForOldFdmgr ( const fdRegForOldFdmgr & );
-	fdRegForOldFdmgr & operator = ( const fdRegForOldFdmgr & );
+    fdRegForOldFdmgr ( const fdRegForOldFdmgr & );
+    fdRegForOldFdmgr & operator = ( const fdRegForOldFdmgr & );
 };
 
 class oldFdmgr;
@@ -72,8 +72,8 @@ private:
     void *pParam;
     unsigned id;
     LIBCOM_API expireStatus expire ( const epicsTime & currentTime );
-	timerForOldFdmgr ( const timerForOldFdmgr & );
-	timerForOldFdmgr & operator = ( const timerForOldFdmgr & );
+    timerForOldFdmgr ( const timerForOldFdmgr & );
+    timerForOldFdmgr & operator = ( const timerForOldFdmgr & );
 };
 
 class oldFdmgr : public fdManager {
@@ -85,8 +85,8 @@ public:
 
 private:
     chronIntIdResTable <timerForOldFdmgr> resTbl;
-	oldFdmgr ( const oldFdmgr & );
-	oldFdmgr & operator = ( const oldFdmgr & );
+    oldFdmgr ( const oldFdmgr & );
+    oldFdmgr & operator = ( const oldFdmgr & );
 };
 
 #ifdef _MSC_VER
@@ -102,10 +102,10 @@ template class resTable<timerForOldFdmgr, chronIntId>;
 #endif
 
 LIBCOM_API fdRegForOldFdmgr::fdRegForOldFdmgr 
-    (const SOCKET fdIn, const fdRegType typeIn, 
-	    const bool onceOnlyIn, fdManager &managerIn, 
+    (const SOCKET fdIn, const fdRegType typeIn,
+        const bool onceOnlyIn, fdManager &managerIn,
         pCallBackFDMgr pFuncIn, void *pParamIn) :
-    fdReg (fdIn, typeIn, onceOnlyIn, managerIn), 
+    fdReg (fdIn, typeIn, onceOnlyIn, managerIn),
         pFunc (pFuncIn), pParam (pParamIn)
 {
     if (pFuncIn==NULL) {
@@ -121,9 +121,9 @@ LIBCOM_API void fdRegForOldFdmgr::callBack ()
     (*this->pFunc) (this->pParam);
 }
 
-timerForOldFdmgr::timerForOldFdmgr ( oldFdmgr &fdmgrIn, 
+timerForOldFdmgr::timerForOldFdmgr ( oldFdmgr &fdmgrIn,
     double delayIn, pCallBackFDMgr pFuncIn, void * pParamIn ) :
-    timer ( fdmgrIn.createTimer() ), 
+    timer ( fdmgrIn.createTimer() ),
     fdmgr ( fdmgrIn ), pFunc ( pFuncIn ), pParam( pParamIn )
 {
     if ( pFuncIn == NULL ) {
@@ -176,8 +176,8 @@ extern "C" LIBCOM_API fdmgrAlarmId epicsStdCall fdmgr_add_timeout (
 
     while (true) {
         try {
-            pTimer = new timerForOldFdmgr 
-			    (*pfdm, delay, pFunc, pParam);
+            pTimer = new timerForOldFdmgr
+                (*pfdm, delay, pFunc, pParam);
         }
         catch (...)
         {
@@ -261,7 +261,7 @@ extern "C" LIBCOM_API int epicsStdCall fdmgr_add_callback (
         return 0;
     }
 }
- 
+
 extern "C" LIBCOM_API int epicsStdCall fdmgr_clear_callback (
     fdctx *pfdctx, SOCKET fd, enum fdi_type fdi)
 {
@@ -316,7 +316,7 @@ extern "C" LIBCOM_API int epicsStdCall fdmgr_delete (fdctx *pfdctx)
  */
 extern "C" LIBCOM_API int epicsStdCall fdmgr_clear_fd (fdctx *pfdctx, SOCKET fd)
 {
-	return fdmgr_clear_callback(pfdctx, fd, fdi_read);
+    return fdmgr_clear_callback(pfdctx, fd, fdi_read);
 }
 
 /*
@@ -325,5 +325,5 @@ extern "C" LIBCOM_API int epicsStdCall fdmgr_clear_fd (fdctx *pfdctx, SOCKET fd)
 extern "C" LIBCOM_API int epicsStdCall fdmgr_add_fd ( 
     fdctx   *pfdctx, SOCKET  fd, void (*pfunc)(void *pParam), void *param)
 {
-	return fdmgr_add_callback (pfdctx, fd, fdi_read, pfunc, param);
+    return fdmgr_add_callback (pfdctx, fd, fdi_read, pfunc, param);
 }

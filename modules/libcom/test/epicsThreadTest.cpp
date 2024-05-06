@@ -188,7 +188,7 @@ void testJoining()
     opts2.joinable = 1;
     epicsThreadCreateOpt("parent", &joinTests, &stuff, &opts2);
 
-    // as selfjoin joins itself, we can't.
+    // Thread 'parent' joins itself, so we can't.
     testOk(finished.wait(10.0), "Join tests #1 completed");
 
     // Repeat with opposite thread priorities

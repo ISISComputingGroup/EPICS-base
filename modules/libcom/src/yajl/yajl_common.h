@@ -24,7 +24,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif    
+#endif
 
 /** \file yajl_common.h
  * \brief Common routines and macros used by other YAJL APIs.
@@ -64,7 +64,7 @@ extern "C" {
  */
 #define YAJL_MAX_DEPTH 128
 
-
+/** Marks a yajl routine for export from the DLL/shared library. */
 #define YAJL_API LIBCOM_API
 
 /** Pointer to a malloc() function, supporting client overriding memory
@@ -75,21 +75,21 @@ typedef void * (*yajl_malloc_func)(void *ctx, size_t sz);
  *  allocation routines */
 typedef void (*yajl_free_func)(void *ctx, void * ptr);
 
-/** pointer to a realloc function which can resize an allocation. */
+/** Pointer to a realloc() function which can resize an allocation. */
 typedef void * (*yajl_realloc_func)(void *ctx, void * ptr, size_t sz);
 
 /** A structure which can be passed to yajl_*_alloc() routines to allow the
  *  client to specify memory allocation functions to be used. */
 typedef struct
 {
-    /** pointer to a function that can allocate uninitialized memory */
+    /** Pointer to a function that can allocate uninitialized memory. */
     yajl_malloc_func malloc;
-    /** pointer to a function that can resize memory allocations */
+    /** Pointer to a function that can resize memory allocations. */
     yajl_realloc_func realloc;
     /** Pointer to a function that can free memory allocated using
      *  the above realloc or malloc functions. */
     yajl_free_func free;
-    /** a context pointer that will be passed to above allocation routines */
+    /** A context pointer that will be passed to above allocation routines. */
     void * ctx;
 } yajl_alloc_funcs;
 

@@ -386,7 +386,7 @@ bool AbstractCodec::readToBuffer(
     }
 
     // assumption: remainingBytes < MAX_ENSURE_DATA_BUFFER_SIZE &&
-    //			   requiredBytes < (socketBuffer.capacity() - 1)
+    //             requiredBytes < (socketBuffer.capacity() - 1)
 
     //
     // copy unread part to the beginning of the buffer
@@ -494,7 +494,7 @@ void AbstractCodec::ensureData(std::size_t size) {
         {
             // TODO check flags
             //if (flags && SEGMENTED_FLAGS_MASK == 0)
-            //	throw IllegalStateException("segmented message expected,
+            //  throw IllegalStateException("segmented message expected,
             //but current message flag does not indicate it");
 
 

@@ -49,7 +49,7 @@ epicsUInt64 epicsMonotonicGet(void)
     double dval;
     if (!QueryPerformanceCounter(&val)) {
         cantProceed("epicsMonotonicGet: Failed to read Windows Performance Counter\n");
-            return 0;
+        return 0;
     }
     dval = val.QuadPart - perfCounterOffset;
     return (epicsUInt64)(dval * sec2nsec / perfCounterFrequency + 0.5);

@@ -39,7 +39,7 @@
 extern "C" {
 #endif
 
-
+/** Return code for `No digits to convert` */
 #define S_stdlib_noConversion (M_stdlib | 1) /* No digits to convert */
 /** Return code for `Extraneous characters` */
 #define S_stdlib_extraneous   (M_stdlib | 2) /* Extraneous characters */
@@ -157,7 +157,7 @@ LIBCOM_API int
 LIBCOM_API int
     epicsParseUInt64(const char *str, epicsUInt64 *to, int base, char **units);
 
-
+/**  Macro utilizing ::epicsParseFloat to convert */
 #define epicsParseFloat32(str, to, units) epicsParseFloat(str, to, units)
 /**  Macro utilizing ::epicsParseDouble to convert */
 #define epicsParseFloat64(str, to, units) epicsParseDouble(str, to, units)

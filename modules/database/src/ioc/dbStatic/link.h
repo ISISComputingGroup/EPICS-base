@@ -52,8 +52,8 @@ DBCORE_API extern const maplinkType pamaplinkType[LINK_NTYPES];
 #define VXIDYNAMIC      0
 #define VXISTATIC       1
 
-/* structure of a PV_LINK DB_LINK and a CA_LINK	*/
-/*Options defined by pvlMask			*/
+/* structure of a PV_LINK DB_LINK and a CA_LINK */
+/*Options defined by pvlMask                    */
 #define pvlOptMsMode       0x3  /*Maximize Severity mode selection*/
 #define pvlOptNMS            0  /*Don't Maximize Severity*/
 #define pvlOptMS             1  /*Maximize Severity always*/

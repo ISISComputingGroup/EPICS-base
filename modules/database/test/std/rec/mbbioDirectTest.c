@@ -51,7 +51,7 @@ static
 void testmbbioRecords(unsigned int count, unsigned int value)
 {
     unsigned int i;
-    
+
     for (i = 1; i <= count; i++)
     {
         testDiag("  ### do%d ###", i);
@@ -66,7 +66,7 @@ void putN(const char* pattern, unsigned int count, unsigned int value)
 {
     char field[40];
     unsigned int i;
-    
+
     for (i = 1; i <= count; i++)
     {
         sprintf(field, pattern, i);
@@ -79,7 +79,7 @@ void testN(const char* pattern, unsigned int count, unsigned int value)
 {
     char field[40];
     unsigned int i;
-    
+
     for (i = 1; i <= count; i++)
     {
         sprintf(field, pattern, i);
@@ -96,7 +96,7 @@ MAIN(mbbioDirectTest)
     unsigned int simvalue = 0;
     char macros [40];
     const unsigned int N = 2;
-    
+
     testPlan(N*((32+1)*2*4+4+3));
 
     testdbPrepare();

@@ -148,7 +148,7 @@ namespace epics { namespace pvData {
          */
         virtual void serialize(ByteBuffer *buffer,
             SerializableControl *flusher) const = 0;
-	/**
+        /**
          * Deserialize buffer.
          * @param buffer serialization buffer.
          * @param flusher deserialization control.
@@ -211,7 +211,7 @@ namespace epics { namespace pvData {
          */
         virtual void serialize(ByteBuffer *buffer,
             SerializableControl *flusher,BitSet *bitSet) const = 0;
-	/**
+        /**
          * Deserialize buffer.
          * @param buffer serialization buffer.
          * @param flusher deserialization control.

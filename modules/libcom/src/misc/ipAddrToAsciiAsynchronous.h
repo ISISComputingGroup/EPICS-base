@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /**
@@ -104,7 +104,7 @@ public:
 class LIBCOM_API ipAddrToAsciiTransaction {
 public:
     /// Destroy this transaction object and remove from the parent engine object
-    virtual void release () = 0; 
+    virtual void release () = 0;
 
     /** \brief Convert an IP address to ascii, asynchronously
      *
@@ -126,7 +126,7 @@ public:
      *
      * \param level 0 prints basic info, greater than 0 prints information from the callback's show() method too
      */
-    virtual void show ( unsigned level ) const = 0; 
+    virtual void show ( unsigned level ) const = 0;
 protected:
     virtual ~ipAddrToAsciiTransaction () = 0;
 };

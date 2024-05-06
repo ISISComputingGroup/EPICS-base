@@ -5,9 +5,9 @@
 *     Operator of Los Alamos National Laboratory.
 * SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* devLib.h */
+
 /**
  * \file devLibVME.h
  * \author Marty Kraimer, Jeff Hill
@@ -45,7 +45,7 @@ typedef enum {
     atISA,      /**< \brief Memory mapped ISA access. */
     atVMECSR,   /**< \brief VME-64 CR/CSR address space. */
     atLast      /**< \brief Invalid, must be the last entry. */
-		} epicsAddressType;
+} epicsAddressType;
 
 /** \brief A string representation of each of the bus address types */
 LIBCOM_API extern const char *epicsAddressTypeName[];
@@ -151,7 +151,7 @@ LIBCOM_API long devRegisterAddress(
     const char          *pOwnerName,
     epicsAddressType    addrType,
     size_t              logicalBaseAddress,
-			size_t size,
+                        size_t size,
     volatile void       **pPhysicalAddress);
 
 /** \brief Release a bus address range previously registered.
@@ -267,7 +267,7 @@ LIBCOM_API long devEnableInterruptLevelVME (unsigned level);
  * \return 0, or an error status value.
  */
 LIBCOM_API long devDisableInterruptLevelVME (unsigned level);
-
+/** @} */
 
 /** \name Memory for VME DMA Operations
  * These routines manage memory that can be directly accessed
@@ -301,7 +301,7 @@ LIBCOM_API void *devLibA24Calloc(size_t size);
  * \param pBlock Block to be released.
  */
 LIBCOM_API void devLibA24Free(void *pBlock);
-
+/** @} */
 
 /** \name ISA Interrupt Management
  * Routines to manage ISAbus interrupts.
