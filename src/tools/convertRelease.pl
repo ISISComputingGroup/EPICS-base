@@ -165,8 +165,9 @@ sub binDirs {
     foreach my $app (@includes) {
         my $path = $macros{$app} . "/bin/$arch";
         next unless -d $path;
-        if $^O eq 'MSWin32' {
-            # reduce length of PATH by only adding bin directories with DLLs present
+        if ($^O eq 'MSWin32') {
+            # reduce length of PATH by only adding
+            # bin directories with DLLs present
             my @dlls = glob("$path/*.dll");
             next unless scalar(@dlls);
         }
