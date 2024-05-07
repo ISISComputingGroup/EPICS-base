@@ -1,3 +1,6 @@
+# area detector already includes PVA, so avoid
+# including it twice
+ifeq ($(AREA_DETECTOR),)
 # QSRV/PVXS for PVA
 #ifdef PVXS_MAJOR_VERSION # prefer QSRV2 :)
 #$(APPNAME)_DBD += pvxsIoc.dbd
@@ -10,3 +13,4 @@ $(APPNAME)_DBD += PVAServerRegister.dbd
 $(APPNAME)_DBD += qsrv.dbd
 endif
 #endif
+endif
