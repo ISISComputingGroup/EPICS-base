@@ -65,7 +65,10 @@ $(APPNAME)_SRCS_vxWorks += -nil-
 # Add support from base/src/vxWorks if needed
 #$(APPNAME)_OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 
+## area detector already includes PVA, so avoid including it twice
+ifeq ($(AREA_DETECTOR),)
 include $(CONFIG)/CONFIG_PVA_ISIS
+endif
 
 # Finally link to the EPICS Base libraries
 $(APPNAME)_LIBS += $(EPICS_BASE_IOC_LIBS)
