@@ -109,6 +109,9 @@ BOOL WINAPI DllMain (
 		break;
 
 	case DLL_PROCESS_DETACH:
+        if (lpReserved != NULL) {
+            break; // do not do cleanup if process termination scenario
+        }
         if (dllHandleIndex != TLS_OUT_OF_INDEXES) {
             success = TlsFree ( dllHandleIndex );
         }
