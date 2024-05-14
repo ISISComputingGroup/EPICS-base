@@ -23,59 +23,66 @@ ifndef DISABLE_TOP_RULES
   # Rules for a regular application top directory
   #
 
-distclean: realclean cvsclean realuninstall
+  # When run by 'make distclean' the realuninstall target also
+  # removes any modules/RELEASE.<host>.local files
+  distclean: realclean cvsclean realuninstall
 
-realuninstall: uninstallDirs
-	$(RMDIR) $(INSTALL_LOCATION_BIN)
-	$(RMDIR) $(INSTALL_LOCATION_LIB)
+  realuninstall: uninstallDirs
+	$(RMDIR) $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB)
+  ifeq (modules,$(filter modules,$(DIRS)))
+    ifeq (distclean,$(filter distclean,$(MAKECMDGOALS)))
+	$(RM) $(wildcard modules/RELEASE.*.local)
+    endif
+  endif
 
-UNINSTALL_DIRS += $(INSTALL_DB) $(INSTALL_DBD) $(INSTALL_DOC) $(INSTALL_HTML)
-UNINSTALL_DIRS += $(INSTALL_INCLUDE) $(INSTALL_TEMPLATES) $(DIRECTORY_TARGETS)
-ifneq ($(INSTALL_LOCATION),$(TOP))
-  UNINSTALL_DIRS += $(INSTALL_CONFIG)
-endif
-uninstallDirs:
+  UNINSTALL_DIRS += $(INSTALL_DB) $(INSTALL_DBD) $(INSTALL_DOC) $(INSTALL_HTML)
+  UNINSTALL_DIRS += $(INSTALL_INCLUDE) $(INSTALL_TEMPLATES) $(DIRECTORY_TARGETS)
+  ifneq ($(INSTALL_LOCATION),$(TOP))
+    UNINSTALL_DIRS += $(INSTALL_CONFIG)
+  endif
+  uninstallDirs:
 	$(RMDIR) $(UNINSTALL_DIRS)
 
-uninstall: archuninstall uninstallDirs
+  # Remove the bin and lib directories if they have no sub-directories
+  #
+  EMPTY_INSTALL_DIRS = \
+      $(if $(wildcard $(INSTALL_LOCATION_BIN)/*),,$(INSTALL_LOCATION_BIN)) \
+      $(if $(wildcard $(INSTALL_LOCATION_LIB)/*),,$(INSTALL_LOCATION_LIB))
+  uninstall: archuninstall uninstallDirs
+	$(RMDIR) $(EMPTY_INSTALL_DIRS)
 
-archuninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS)) | cleandirs
+  archuninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 
-archPart = $(word 2, $(subst $(DIVIDER), ,$@))
-uninstall$(DIVIDER)%:
-	$(RMDIR) $(INSTALL_LOCATION_BIN)/$(archPart)
-	$(RMDIR) $(INSTALL_LOCATION_LIB)/$(archPart)
+  uninstall$(DIVIDER)%:
+	$(RMDIR) $(addsuffix /$(subst uninstall$(DIVIDER),,$@), \
+	    $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB))
 
-# Remove the bin and lib directories if they have no sub-directories
-#
-cleandirs:
-	@$(NOP)
-ifeq ($(wildcard $(INSTALL_LOCATION_BIN)/*),)
-	$(RMDIR) $(INSTALL_LOCATION_BIN)
-endif
-ifeq ($(wildcard $(INSTALL_LOCATION_LIB)/*),)
-	$(RMDIR) $(INSTALL_LOCATION_LIB)
-endif
+  # Only run this at the top of the parent
+  runtests test-results:
+	@$(SHOWTESTFAILURES)
 
 else
   #
   # Using a disabled rule aborts
   #
 
-  cleandirs distclean uninstall realuninstall archuninstall:
+  distclean uninstall realuninstall archuninstall:
 	$(error Target '$@' not available in a submodule)
 
 endif # DISABLE_TOP_RULES
 
+# Clean out old results
+before-runtests before-test-results: rm-failure-file
+rm-failure-file:
+	$(RM) $(TESTS_FAILED_PATH)
 
 help:
 	@echo "Usage: gnumake [options] [target] ..."
 	@echo "Targets supported by all Makefiles:"
 	@echo "     all            - Same as install (default rule)"
-	@echo "     inc            - Installs header files"
+	@echo "     inc            - Installs header, dbd and html files"
 	@echo "     build          - Builds and installs all targets"
 	@echo "     install        - Builds and installs all targets"
-	@echo "     buildInstall   - Same as install (deprecated)"
 	@echo "     clean          - Removes the O.<arch> dirs created by running make"
 	@echo "                      In O.<arch> dir, clean removes build created files"
 	@echo "     realclean      - Removes ALL O.<arch> dirs"
@@ -100,13 +107,14 @@ ifndef DISABLE_TOP_RULES
 	@echo "     uninstall$(DIVIDER)<arch> - Remove bin & lib directories for <arch> only."
 	@echo "     uninstall      - Remove install directories created by this hostarch."
 	@echo "     realuninstall  - Removes ALL install dirs"
-	@echo "     distclean      - Same as realclean cvsclean realuninstall."
+	@echo "     distclean      - Does realclean cvsclean realuninstall and deletes any"
+	@echo "                      generated modules/RELEASE.<host>.local files"
 endif
 	@echo "     help           - Prints this list of valid make targets "
 	@echo "Object targets are supported by the O.<arch> level Makefile .e.g"
 	@echo "     xxxRecord.o"
 
-.PHONY: cleandirs distclean uninstall help
+.PHONY: distclean uninstall rm-failure-file help
 .PHONY: realuninstall archuninstall uninstallDirs
 
 ifndef DISABLE_TOP_RULES

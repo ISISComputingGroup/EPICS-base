@@ -2,6 +2,7 @@
 * Copyright (c) 2002 The University of Saskatchewan
 * Copyright (c) 2014 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -16,6 +17,8 @@
 #include <readline/history.h>
 
 #include "epicsExit.h"
+#include "envDefs.h"
+#include "epicsReadlinePvt.h"
 
 static struct osdContext {
     char dummy; /* Required for older compilers */
@@ -89,7 +92,7 @@ osdReadline (const char *prompt, struct readlineContext *context)
             }
             if ((linelen + 1) >= linesize) {
                 char *cp;
-    
+
                 linesize += 50;
                 cp = (char *)realloc(line, linesize);
                 if (cp == NULL) {

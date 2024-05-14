@@ -16,8 +16,14 @@ include $(TOP)/configure/CONFIG
 
 INC += valgrind/valgrind.h
 
+EXPAND_COMMON = libComVersion.h@
+
+EXPAND_ME += EPICS_LIBCOM_MAJOR_VERSION
+EXPAND_ME += EPICS_LIBCOM_MINOR_VERSION
+EXPAND_ME += EPICS_LIBCOM_MAINTENANCE_VERSION
+EXPAND_ME += EPICS_LIBCOM_DEVELOPMENT_FLAG
+
 INC += libComVersion.h
-INC += libComVersionNum.h
 
 include $(LIBCOM)/as/Makefile
 include $(LIBCOM)/bucketLib/Makefile
@@ -45,12 +51,12 @@ include $(LIBCOM)/timer/Makefile
 include $(LIBCOM)/yacc/Makefile
 include $(LIBCOM)/yajl/Makefile
 
+# Generate library API header file
+API_HEADER = libComAPI.h
+Com_API = libCom
+
 # Library to build:
 LIBRARY=Com
-
-ifeq ($(COMMANDLINE_LIBRARY),WINEDITLINE)
-Com_LIBS_WIN32 = WinEditLine
-endif
 
 Com_SYS_LIBS_WIN32 = ws2_32 advapi32 user32 dbghelp
 
@@ -61,22 +67,8 @@ ifeq ($(T_A),$(EPICS_HOST_ARCH))
   DELAY_INSTALL_LIBS = YES
 endif
 
-EXPANDVARS += EPICS_LIBCOM_MAJOR_VERSION
-EXPANDVARS += EPICS_LIBCOM_MINOR_VERSION
-EXPANDVARS += EPICS_LIBCOM_MAINTENANCE_VERSION
-EXPANDVARS += EPICS_LIBCOM_DEVELOPMENT_FLAG
-
-EXPANDFLAGS += $(foreach var,$(EXPANDVARS),-D$(var)="$(strip $($(var)))")
-
 # shared library ABI version.
 SHRLIB_VERSION = $(EPICS_LIBCOM_MAJOR_VERSION).$(EPICS_LIBCOM_MINOR_VERSION).$(EPICS_LIBCOM_MAINTENANCE_VERSION)
-
-#   libs needed for PROD and TESTPRODUCT
-#PROD_LIBS = Com
-#ifeq ($(COMMANDLINE_LIBRARY),WINEDITLINE)
-#PROD_LIBS_WIN32 = WinEditLine
-#endif
-#PROD_SYS_LIBS_WIN32 = ws2_32 advapi32
 
 include $(TOP)/configure/RULES
 
@@ -87,8 +79,3 @@ include $(LIBCOM)/flex/RULES
 include $(LIBCOM)/misc/RULES
 include $(LIBCOM)/osi/RULES
 include $(LIBCOM)/yajl/RULES
-
-# Can't use EXPAND as generated headers must appear
-# in O.Common, but EXPAND emits rules for O.$(T_A)
-../O.Common/libComVersionNum.h: ../libComVersionNum.h@
-	$(EXPAND_TOOL) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@

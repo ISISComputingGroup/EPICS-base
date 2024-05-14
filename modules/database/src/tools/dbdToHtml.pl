@@ -3,6 +3,7 @@
 #*************************************************************************
 # Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
+# SPDX-License-Identifier: EPICS
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
@@ -19,26 +20,9 @@ use EPICS::macLib;
 use EPICS::Readfile;
 
 BEGIN {
-    $::XHTML = eval "require Pod::Simple::XHTML; 1";
-    $::ENTITIES = eval "require HTML::Entities; 1";
+    $::XHTML = eval "require EPICS::PodXHtml; 1";
     if (!$::XHTML) {
-        require Pod::Simple::HTML;
-    }
-    if (!$::ENTITIES) {
-        my %entities = (
-            q{>} => 'gt',
-            q{<} => 'lt',
-            q{'} => '#39',
-            q{"} => 'quot',
-            q{&} => 'amp',
-        );
-
-        sub encode_entities {
-            my $str = shift;
-            my $ents = join '', keys %entities;
-            $str =~ s/([ $ents ])/'&' . ($entities{$1} || sprintf '#x%X', ord $1) . ';'/xge;
-            return $str;
-        }
+        require EPICS::PodHtml;
     }
 }
 
@@ -125,13 +109,19 @@ if ($opt_D) {   # Output dependencies only
 open my $out, '>', $opt_o or
     die "Can't create $opt_o: $!\n";
 
+$SIG{__DIE__} = sub {
+    die @_ if $^S;  # Ignore eval deaths
+    close $out;
+    unlink $opt_o;
+};
+
 my $podHtml;
 my $idify;
 my $contentType =
     '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >';
 
 if ($::XHTML) {
-    $podHtml = Pod::Simple::XHTML->new();
+    $podHtml = EPICS::PodXHtml->new();
     $podHtml->html_doctype(<< '__END_DOCTYPE');
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN'
@@ -151,9 +141,10 @@ __END_DOCTYPE
         my $title = shift;
         return $podHtml->idify($title, 1);
     }
-} else { # Fall back to HTML
+}
+else { # Regular HTML
     $Pod::Simple::HTML::Content_decl = $contentType;
-    $podHtml = Pod::Simple::HTML->new();
+    $podHtml = EPICS::PodHtml->new();
     $podHtml->html_css('style.css');
 
     $idify = sub {
@@ -163,7 +154,13 @@ __END_DOCTYPE
 }
 
 # Parse the Pod text from the root DBD object
-my $pod = join "\n", '=for html <div class="pod">', '',
+my $pod = join "\n",
+    '=for html <div class="pod">',
+    '',
+    'L<EPICS Component Reference Manual|ComponentReference>',
+    '',
+    '=for html <hr>',
+    '',
     map {
         # Handle a 'recordtype' Pod directive
         if (m/^ =recordtype \s+ (\w+) /x) {
@@ -183,15 +180,18 @@ my $pod = join "\n", '=for html <div class="pod">', '',
         }
         elsif (m/^ =title \s+ (.*)/x) {
             $title = $1;
-            "=head1 $title";
+            "=head1 EPICS Reference: $title";
         }
         else {
             $_;
         }
     } $dbd->pod,
-    '=for html </div>', '';
+    '=for html </div><hr>',
+    '',
+    'L<EPICS Component Reference Manual|ComponentReference>',
+    '';
 
-$podHtml->force_title(encode_entities($title));
+$podHtml->force_title($podHtml->encode_entities($title));
 $podHtml->perldoc_url_prefix('');
 $podHtml->perldoc_url_postfix('.html');
 $podHtml->output_fh($out);
@@ -317,7 +317,7 @@ sub DBD::Recfield::writable {
 
 =pod
 
-=head1 Converting Wiki Record Reference to POD
+=head1 Writing Record Reference as POD
 
 If you open the src/std/rec/aiRecord.dbd.pod file in your favourite plain text
 editor you'll see what input was required to generate the aiRecord.html file.
@@ -330,13 +330,14 @@ When we add POD markup to a record type, we rename its *Record.dbd file to
 system to find it by its new name. The POD content is effectively just a new
 kind of comment that appears in .dbd.pod files, which the formatter knows how to
 convert into HTML. The build also generates a plain *Record.dbd file from this
-same input file by stripping out all of the POD markup.
+same input file by stripping out all of the POD markup, so make sure to remove
+the old *Record.dbd file from your source directory.
 
 Documentation for Perl's POD markup standard can be found online at
-L<https://perldoc.perl.org/perlpod.html> or you may be able to type 'perldoc
-perlpod' into a Linux command-line to see the same text. We added a few POD
-keywords of our own to handle the table generation, and I'll cover those briefly
-below.
+L<https://perldoc.perl.org/perlpod> or you may be able to type
+C<perldoc perlpod> at a Linux command-line to see the same text.
+We added a few POD keywords of our own to handle the table generation, and we'll
+cover those briefly below.
 
 POD text can appear almost anywhere in a dbd.pod file. It always starts with a
 line "=[keyword] [additional text...]" where [keyword] is "title", "head1"
@@ -399,5 +400,9 @@ by documenting a record-specific menu definition. The "menu" keyword generates a
 table that lists all the choices found in the named menu. Any MENU fields in the
 field tables that refer to a locally-defined menu will generate a link to a
 document section which must be titled "Menu [menuName]".
+
+The "title" keyword should only appear once in each file, it sets the document
+title as well as generating a "head1" heading with "EPICS Reference:" pre-pended
+to the text.
 
 =cut

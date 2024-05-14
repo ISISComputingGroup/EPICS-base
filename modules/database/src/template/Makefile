@@ -11,6 +11,12 @@ TEMPLATES += top/iocApp/src/Makefile
 TEMPLATES += top/iocApp/src/build.mak
 TEMPLATES += top/iocApp/src/_APPNAME_Main.cpp
 
+TEMPLATES += top/supportApp/Makefile
+TEMPLATES += top/supportApp/Db/Makefile
+TEMPLATES += top/supportApp/src/Makefile
+TEMPLATES += top/supportApp/protocol/Makefile
+TEMPLATES += top/supportApp/src/_APPNAME_.dbd
+
 TEMPLATES += top/exampleApp/Makefile
 TEMPLATES += top/exampleApp/Db/Makefile
 TEMPLATES += top/exampleApp/Db/circle.db

@@ -36,13 +36,15 @@ void ResponseHandler::handleResponse(osiSockAddr* responseFrom,
         Transport::shared_pointer const & transport, int8 version, int8 command,
         size_t payloadSize, ByteBuffer* payloadBuffer) {
     if(_debugLevel >= 3) {   // TODO make a constant of sth (0 - off, 1 - debug, 2 - more/trace, 3 - messages)
-        char ipAddrStr[48];
+        char ipAddrStr[24];
         ipAddrToDottedIP(&responseFrom->ia, ipAddrStr, sizeof(ipAddrStr));
 
-        std::cerr<<"Message [0x"<<std::hex<<(int)command<<", v0x"<<std::hex
+        std::ios::fmtflags initialflags = std::cerr.flags();
+        std::cerr<<"Message ["<<std::hex<<std::showbase<<(int)command<<", v"
                  <<int(version)<<"] received from "<<ipAddrStr<<" on "<<transport->getRemoteName()
                  <<" : "<<_description<<"\n"
                  <<HexDump(*payloadBuffer, payloadSize).limit(0xffff);
+        std::cerr.flags(initialflags);
     }
 }
 }

@@ -150,14 +150,17 @@ struct swap<8> {
 #undef _PVA_swap64
 
 /* PVD serialization doesn't pay attention to alignement,
- * which some targets really care about and treat unaligned
+ * which some targets (ARM and powerpc) really care about and treat unaligned
  * access as a fault, or with a heavy penalty (~= to a syscall).
  *
  * For those targets,, we will have to live with the increase
  * in execution time and/or object code size of byte-wise copy.
+ *
+ * Treat x86 32/64 as an outlier, and assume all other targets
+ * need, or greatly benefit, from aligned access.
  */
 
-#ifdef _ARCH_PPC
+#if !(defined(__x86_64__) || defined(_M_AMD64) || defined(__i386__) || defined(_M_IX86))
 
 template<typename T>
 union alignu {
@@ -493,23 +496,6 @@ public:
     EPICS_ALWAYS_INLINE bool reverse() const
     {
         return sizeof(T)>1 && _reverseEndianess;
-    }
-    /**
-     * Adjust position to the next multiple of 'size.
-     * @param  size The alignment requirement, must be a power of 2. (unchecked)
-     * @param  fill value to use for padding bytes (default '\0').
-     *
-     * @note This alignment is absolute, not necessarily with respect to _buffer.
-     */
-    inline void align(std::size_t size, char fill='\0')
-    {
-        const std::size_t k = size - 1, bufidx = (std::size_t)_position;
-        if(bufidx&k) {
-            std::size_t npad = size-(bufidx&k);
-            assert(npad<=getRemaining());
-            std::fill(_position, _position+npad, fill);
-            _position += npad;
-        }
     }
     /**
      * Put a boolean value into the byte buffer.

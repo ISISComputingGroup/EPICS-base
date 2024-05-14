@@ -19,7 +19,7 @@ parse_CPPFLAGS = -DDEFAULT_SKELETON_FILE=$(SKELETON_FILE)
 
 INC += flex.skel.static
 
-# flex.c is included in parse.c
+# flex.c, scan.c and yylex.c are #included by parse.c
 e_flex_SRCS += ccl.c
 e_flex_SRCS += dfa.c
 e_flex_SRCS += ecs.c
@@ -29,7 +29,6 @@ e_flex_SRCS += nfa.c
 e_flex_SRCS += sym.c
 e_flex_SRCS += tblcmp.c
 e_flex_SRCS += parse.c
-e_flex_OBJS += epicsTempFile$(OBJ)
 
 PROD_HOST += e_flex
 

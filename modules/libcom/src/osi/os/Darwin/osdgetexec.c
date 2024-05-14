@@ -1,10 +1,14 @@
+/*************************************************************************\
+* SPDX-License-Identifier: EPICS
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
+\*************************************************************************/
 
 #include <string.h>
 #include <stdlib.h>
 
 #include <mach-o/dyld.h>
 
-#define epicsExportSharedSymbols
 #include <osiFileName.h>
 
 char *epicsGetExecName(void)
@@ -17,8 +21,7 @@ char *epicsGetExecName(void)
         if(!temp) {
             /* we treat alloc failure as terminal */
             free(ret);
-            ret = NULL;
-            break;
+            return NULL;
         }
         ret = temp;
 
@@ -31,9 +34,11 @@ char *epicsGetExecName(void)
         /* max has been updated with required size */
     }
 
-    /* TODO: _NSGetExecutablePath() doesn't follow symlinks */
+    /* Resolve soft-links */
+    char *res = realpath(ret, NULL);
+    free(ret);
 
-    return ret;
+    return res;
 }
 
 char *epicsGetExecDir(void)
@@ -42,7 +47,7 @@ char *epicsGetExecDir(void)
     if(ret) {
         char *sep = strrchr(ret, '/');
         if(sep) {
-            /* nil the charactor after the / */
+            /* nil the character after the / */
             sep[1] = '\0';
         }
     }

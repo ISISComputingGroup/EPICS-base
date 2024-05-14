@@ -3,13 +3,14 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* epicsMutexTest.c */
 
-/* 
- * Author:  Marty Kraimer Date:    26JAN2000 
+/*
+ * Author:  Marty Kraimer Date:    26JAN2000
  *          Jeff Hill (added mutex performance test )
  */
 
@@ -17,10 +18,10 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
-#include <stdio.h>
 #include <errno.h>
 #include <time.h>
 
+#include "epicsStdio.h"
 #include "epicsTime.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
@@ -165,7 +166,7 @@ inline void tenQuadRecursiveLockPairsSquared ( epicsMutex & mutex )
 void epicsMutexPerformance ()
 {
     epicsMutex mutex;
-	unsigned i;
+    unsigned i;
 
     // test a single lock pair
     epicsTime begin = epicsTime::getMonotonic ();
@@ -206,7 +207,7 @@ struct verifyTryLock {
 
 extern "C" void verifyTryLockThread ( void *pArg )
 {
-    struct verifyTryLock *pVerify = 
+    struct verifyTryLock *pVerify =
         ( struct verifyTryLock * ) pArg;
 
     testOk1(epicsMutexTryLock(pVerify->mutex) == epicsMutexLockTimeout);
@@ -222,7 +223,7 @@ void verifyTryLock ()
 
     testOk1(epicsMutexTryLock(verify.mutex) == epicsMutexLockOK);
 
-    epicsThreadCreate ( "verifyTryLockThread", 40, 
+    epicsThreadCreate ( "verifyTryLockThread", 40,
         epicsThreadGetStackSize(epicsThreadStackSmall),
         verifyTryLockThread, &verify );
 
@@ -265,7 +266,7 @@ MAIN(epicsMutexTest)
     stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
     for(i=0; i<nthreads; i++) {
         name[i] = (char *)calloc(10,sizeof(char));
-        sprintf(name[i],"task%d",i);
+        epicsSnprintf(name[i], 10, "task%d",i);
         pinfo[i] = (info *)calloc(1,sizeof(info));
         pinfo[i]->threadnum = i;
         pinfo[i]->mutex = mutex;

@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -17,9 +18,9 @@
  *  Copyright, 1986, The Regents of the University of California.
  *
  *
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #ifdef _MSC_VER
@@ -34,12 +35,11 @@
 #include "errlog.h"
 #include "locationException.h"
 
-#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "cac.h"
 
-epicsShareDef epicsThreadPrivateId caClientCallbackThreadId;
+epicsThreadPrivateId caClientCallbackThreadId;
 
 static epicsThreadOnceId cacOnce = EPICS_THREAD_ONCE_INIT;
 
@@ -153,13 +153,13 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         this->localPort = htons ( tmpAddr.ia.sin_port );
     }
 
-    std::auto_ptr < CallbackGuard > pCBGuard;
+    ca::auto_ptr < CallbackGuard > pCBGuard;
     if ( ! enablePreemptiveCallback ) {
         pCBGuard.reset ( new CallbackGuard ( this->cbMutex ) );
     }
 
     // multiple steps ensure exception safety
-    this->pCallbackGuard = pCBGuard;
+    this->pCallbackGuard = PTRMOVE(pCBGuard);
 }
 
 ca_client_context::~ca_client_context ()
@@ -224,7 +224,7 @@ void ca_client_context::changeExceptionEvent (
     epicsGuard < epicsMutex > guard ( this->mutex );
     this->ca_exception_func = pfunc;
     this->ca_exception_arg = arg;
-// should block here until releated callback in progress completes
+// should block here until related callback in progress completes
 }
 
 void ca_client_context::replaceErrLogHandler (
@@ -237,7 +237,7 @@ void ca_client_context::replaceErrLogHandler (
     else {
         this->pVPrintfFunc = epicsVprintf;
     }
-// should block here until releated callback in progress completes
+// should block here until related callback in progress completes
 }
 
 void ca_client_context::registerForFileDescriptorCallBack (
@@ -252,7 +252,7 @@ void ca_client_context::registerForFileDescriptorCallBack (
         // w/o having sent the wakeup message
         this->_sendWakeupMsg ();
     }
-// should block here until releated callback in progress completes
+// should block here until related callback in progress completes
 }
 
 int ca_client_context :: printFormated (
@@ -392,9 +392,19 @@ void ca_client_context :: vSignal (
     }
 
     epicsTime current = epicsTime::getCurrent ();
-    char date[64];
-    current.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
-    this->printFormated ( "    Current Time: %s\n", date );
+    try {
+        char date[64];
+        current.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
+        this->printFormated ( "    Current Time: %s\n", date );
+    }
+    catch ( std::exception & except ) {
+        errlogPrintf (
+            "CA client library thread \"%s\" caught C++ exception \"%s\"\n",
+            epicsThreadGetNameSelf (), except.what () );
+        epicsTimeStamp now = current;
+        this->printFormated ( "    Current Time: %u.%u\n",
+                now.secPastEpoch, now.nsec );
+    }
 
     /*
      *  Terminate execution if unsuccessful
@@ -475,7 +485,7 @@ int ca_client_context::pendIO ( const double & timeout )
     }
 
     int status = ECA_NORMAL;
-    epicsTime beg_time = epicsTime::getMonotonic ();
+    epicsTime beg_time = epicsTime::getCurrent ();
     double remaining = timeout;
 
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -493,7 +503,7 @@ int ca_client_context::pendIO ( const double & timeout )
             this->blockForEventAndEnableCallbacks ( this->ioDone, remaining );
         }
 
-        double delay = epicsTime::getMonotonic () - beg_time;
+        double delay = epicsTime::getCurrent () - beg_time;
         if ( delay < timeout ) {
             remaining = timeout - delay;
         }
@@ -522,7 +532,7 @@ int ca_client_context::pendEvent ( const double & timeout )
         return ECA_EVDISALLOW;
     }
 
-    epicsTime current = epicsTime::getMonotonic ();
+    epicsTime current = epicsTime::getCurrent ();
 
     {
         epicsGuard < epicsMutex > guard ( this->mutex );
@@ -563,7 +573,7 @@ int ca_client_context::pendEvent ( const double & timeout )
         this->noWakeupSincePend = true;
     }
 
-    double elapsed = epicsTime::getMonotonic() - current;
+    double elapsed = epicsTime::getCurrent() - current;
     double delay;
 
     if ( timeout > elapsed ) {
@@ -736,12 +746,12 @@ void ca_client_context::installDefaultService ( cacService & service )
     ca_client_context::pDefaultService = & service;
 }
 
-void epicsShareAPI caInstallDefaultService ( cacService & service )
+void epicsStdCall caInstallDefaultService ( cacService & service )
 {
     ca_client_context::installDefaultService ( service );
 }
 
-epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
+LIBCA_API int epicsStdCall ca_clear_subscription ( evid pMon )
 {
     oldChannelNotify & chan = pMon->channel ();
     ca_client_context & cac = chan.getClientCtx ();
@@ -768,9 +778,9 @@ epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
       // we will definately stall out here if all of the
       // following are true
       //
-      // o user creates non-preemtive mode client library context
+      // o user creates non-preemptive mode client library context
       // o user doesnt periodically call a ca function
-      // o user calls this function from an auxiillary thread
+      // o user calls this function from an auxiliary thread
       //
       CallbackGuard cbGuard ( cac.cbMutex );
       epicsGuard < epicsMutex > guard ( cac.mutex );

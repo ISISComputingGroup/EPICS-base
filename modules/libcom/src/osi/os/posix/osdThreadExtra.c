@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -11,14 +12,14 @@
 
 /* This is part of the posix implementation of epicsThread */
 
-#define epicsExportSharedSymbols
+#include "epicsAtomic.h"
 #include "epicsStdio.h"
 #include "ellLib.h"
 #include "epicsEvent.h"
 #include "epicsThread.h"
 
-epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
-epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
+EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
+EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
 
 void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level)
 {
@@ -35,11 +36,12 @@ void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level)
             status = pthread_getschedparam(pthreadInfo->tid,&policy,&param);
             if(!status) priority = param.sched_priority;
         }
-        fprintf(epicsGetStdout(),"%16.16s %14p %12lu    %3d%8d %8.8s\n",
+        fprintf(epicsGetStdout(),"%16.16s %14p %12lu    %3d%8d %8.8s%s\n",
              pthreadInfo->name,(void *)
              pthreadInfo,(unsigned long)pthreadInfo->tid,
              pthreadInfo->osiPriority,priority,
-             pthreadInfo->isSuspended?"SUSPEND":"OK");
+             pthreadInfo->isSuspended?"SUSPEND":"OK",
+             epicsAtomicGetIntT(&pthreadInfo->isRunning) ? "" : " ZOMBIE");
     }
 }
 

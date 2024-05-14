@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -27,6 +28,7 @@
 #include "dbEvent.h"
 #include "dbFldTypes.h"
 #include "errMdef.h"
+#include "menuYesNo.h"
 #include "special.h"
 #include "recSup.h"
 #include "recGbl.h"
@@ -105,7 +107,7 @@ static void monitor(compressRecord *prec)
         db_post_events(prec, &prec->nuse, monitor_mask);
         prec->ouse = prec->nuse;
     }
-    db_post_events(prec, prec->bptr, monitor_mask);
+    db_post_events(prec, (void*)&prec->val, monitor_mask);
 }
 
 static void put_value(compressRecord *prec, double *psource, int n)
@@ -165,9 +167,9 @@ static int compress_array(compressRecord *prec,
     }
     if (prec->n <= 0)
         prec->n = 1;
-    n = prec->n;
-    if (no_elements < n)
+    if (no_elements < prec->n && prec->pbuf != menuYesNoYES)
         return 1; /*dont do anything*/
+    n = no_elements;
 
     /* determine number of samples to take */
     if (no_elements < nsam * n)
@@ -271,7 +273,7 @@ static int array_average(compressRecord *prec,
     prec->inx = 0;
     return 0;
 }
-
+
 static int compress_scalar(struct compressRecord *prec,double *psource)
 {
     double value = *psource;
@@ -291,19 +293,13 @@ static int compress_scalar(struct compressRecord *prec,double *psource)
     /* for scalars, Median not implemented => use average */
     case (compressALG_N_to_1_Average):
     case (compressALG_N_to_1_Median):
-        if (inx == 0)
-            *pdest = value;
-        else {
-            *pdest += value;
-            if (inx + 1 >= prec->n)
-                *pdest = *pdest / (inx + 1);
-        }
+        *pdest = (inx * (*pdest) + value) / (inx + 1);
         break;
     }
     inx++;
-    if (inx >= prec->n) {
+    if ((inx >= prec->n) || (prec->pbuf == menuYesNoYES)) {
         put_value(prec,pdest,1);
-        prec->inx = 0;
+        prec->inx = (inx >= prec->n) ? 0 : inx;
         return 0;
     } else {
         prec->inx = inx;
@@ -403,7 +399,6 @@ static long cvt_dbaddr(DBADDR *paddr)
 {
     compressRecord *prec = (compressRecord *) paddr->precord;
 
-    paddr->pfield = prec->bptr;
     paddr->no_elements = prec->nsam;
     paddr->field_type = DBF_DOUBLE;
     paddr->field_size = sizeof(double);
@@ -424,6 +419,8 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
     compressRecord *prec = (compressRecord *) paddr->precord;
     epicsUInt32 off = prec->off;
     epicsUInt32 nuse = prec->nuse;
+
+    paddr->pfield = prec->bptr;
 
     if (prec->balg == bufferingALG_FIFO) {
         epicsUInt32 nsam = prec->nsam;

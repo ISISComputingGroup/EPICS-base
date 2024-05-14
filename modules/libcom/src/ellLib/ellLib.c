@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -13,7 +14,6 @@
 
 #include <stdlib.h>
 
-#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "ellLib.h"
 
@@ -34,20 +34,18 @@ void ellAdd (ELLLIST *pList, ELLNODE *pNode)
 
     pList->node.previous = pNode;
     pList->count++;
-
-    return;
 }
 /****************************************************************************
  *
- * This function concatinates the second linked list to the end of the first
+ * This function concatenates the second linked list to the end of the first
  * list.  The second list is left empty.  Either list (or both) lists may
- * be empty at the begining of the operation.
+ * be empty at the beginning of the operation.
  *
  *****************************************************************************/
 void ellConcat (ELLLIST *pDstList, ELLLIST *pAddList)
 {
     if (pAddList->count == 0)
-        return;	/* Add list is empty, nothing to add. */
+        return; /* Add list is empty, nothing to add. */
 
     if (pDstList->count == 0) {
         /* Destination list is empty... just transfer the add list over. */
@@ -65,8 +63,6 @@ void ellConcat (ELLLIST *pDstList, ELLLIST *pAddList)
     pAddList->count = 0;
     pAddList->node.next = NULL;
     pAddList->node.previous = NULL;
-
-    return;
 }
 /****************************************************************************
  *
@@ -86,8 +82,6 @@ void ellDelete (ELLLIST *pList, ELLNODE *pNode)
         pNode->previous->next = pNode->next;
 
     pList->count--;
-
-    return;
 }
 /****************************************************************************
  *
@@ -136,8 +130,6 @@ void ellExtract (ELLLIST *pSrcList, ELLNODE *pStartNode, ELLNODE *pEndNode, ELLL
     }
     pSrcList->count -= count;
     pDstList->count += count;
-
-    return;
 }
 /****************************************************************************
  *
@@ -194,8 +186,6 @@ void ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode)
         pNode->next->previous = pNode;
 
     plist->count++;
-
-    return;
 }
 /****************************************************************************
  *

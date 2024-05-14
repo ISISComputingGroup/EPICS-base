@@ -1,6 +1,7 @@
 /*************************************************************************\
 * Copyright (c) 2014 Brookhaven Science Associates, as Operator of
 *     Brookhaven National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -9,7 +10,6 @@
 #include <string.h>
 #include <errno.h>
 
-#define epicsExportSharedSymbols
 
 #include "dbDefs.h"
 #include "errlog.h"
@@ -42,7 +42,7 @@ epicsThreadPool* epicsThreadPoolCreate(epicsThreadPoolConfig *opts)
 
     /* caller likely didn't initialize the options structure */
     if (opts && opts->maxThreads == 0) {
-        errlogMessage("Error: epicsThreadPoolCreate() options provided, but not initialized");
+        errlogMessage(ERL_ERROR ": epicsThreadPoolCreate() options provided, but not initialized");
         return NULL;
     }
 
@@ -78,7 +78,7 @@ epicsThreadPool* epicsThreadPoolCreate(epicsThreadPoolConfig *opts)
 
     if (pool->threadsRunning == 0 && pool->conf.initialThreads != 0) {
         epicsMutexUnlock(pool->guard);
-        errlogPrintf("Error: Unable to create any threads for thread pool\n");
+        errlogPrintf(ERL_ERROR ": Unable to create any threads for thread pool\n");
         goto cleanup;
 
     }
@@ -326,7 +326,7 @@ void sharedPoolsInit(void* unused)
     sharedPoolsGuard = epicsMutexMustCreate();
 }
 
-epicsShareFunc epicsThreadPool* epicsThreadPoolGetShared(epicsThreadPoolConfig *opts)
+LIBCOM_API epicsThreadPool* epicsThreadPoolGetShared(epicsThreadPoolConfig *opts)
 {
     ELLNODE *node;
     epicsThreadPool *cur;
@@ -383,7 +383,7 @@ epicsShareFunc epicsThreadPool* epicsThreadPoolGetShared(epicsThreadPoolConfig *
     return cur;
 }
 
-epicsShareFunc void epicsThreadPoolReleaseShared(epicsThreadPool *pool)
+LIBCOM_API void epicsThreadPoolReleaseShared(epicsThreadPool *pool)
 {
     if (!pool)
         return;

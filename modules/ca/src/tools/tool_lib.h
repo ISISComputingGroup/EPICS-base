@@ -5,8 +5,9 @@
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
 *     Synchrotronstrahlung.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -64,7 +65,7 @@ typedef enum { absolute, relative, incremental, incrementalByChan } TimeT;
 typedef enum { dec, bin, oct, hex } IntFormatT;
 
 /* Structure representing one PV (= channel) */
-typedef struct 
+typedef struct
 {
     char* name;
     chid  chid;
@@ -78,6 +79,7 @@ typedef struct
     epicsTimeStamp tsPreviousS;
     char firstStampPrinted;
     char onceConnected;
+    evid evid;
 } pv;
 
 
@@ -98,6 +100,7 @@ extern char *dbr2str (const void *value, unsigned type);
 extern void print_time_val_sts (pv *pv, unsigned long reqElems);
 extern int  create_pvs (pv *pvs, int nPvs, caCh *pCB );
 extern int  connect_pvs (pv *pvs, int nPvs );
+extern void use_ca_timeout_env (double* timeout);
 
 /*
  * no additions below this endif

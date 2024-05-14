@@ -6,8 +6,9 @@
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
 *     Synchrotronstrahlung.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -51,17 +52,17 @@ void usage (void)
 
 /*+**************************************************************************
  *
- * Function:	cainfo
+ * Function:    cainfo
  *
- * Description:	Print CA info data or call ca_client_status
+ * Description: Print CA info data or call ca_client_status
  *
- * Arg(s) In:	pvs       -  Pointer to an array of pv structures
+ * Arg(s) In:   pvs       -  Pointer to an array of pv structures
  *              nPvs      -  Number of elements in the pvs array
  *
- * Return(s):	Error code: 0 = OK, 1 = Error
+ * Return(s):   Error code: 0 = OK, 1 = Error
  *
  **************************************************************************-*/
- 
+
 int cainfo (pv *pvs, int nPvs)
 {
     int n;
@@ -114,17 +115,17 @@ int cainfo (pv *pvs, int nPvs)
 
 /*+**************************************************************************
  *
- * Function:	main
+ * Function:    main
  *
- * Description:	cainfo main()
- * 		Evaluate command line options, set up CA, connect the
- * 		channels, print the data as requested
+ * Description: cainfo main()
+ *              Evaluate command line options, set up CA, connect the
+ *              channels, print the data as requested
  *
- * Arg(s) In:	[options] <pv-name> ...
+ * Arg(s) In:   [options] <pv-name> ...
  *
- * Arg(s) Out:	none
+ * Arg(s) Out:  none
  *
- * Return(s):	Standard return code (0=success, 1=error)
+ * Return(s):   Standard return code (0=success, 1=error)
  *
  **************************************************************************-*/
 
@@ -140,6 +141,8 @@ int main (int argc, char *argv[])
 
     LINE_BUFFER(stdout);        /* Configure stdout buffering */
 
+    use_ca_timeout_env ( &caTimeout);
+
     while ((opt = getopt(argc, argv, ":nhVw:s:p:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
@@ -149,15 +152,20 @@ int main (int argc, char *argv[])
             printf( "\nEPICS Version %s, CA Protocol version %s\n", EPICS_VERSION_STRING, ca_version() );
             return 0;
         case 'w':               /* Set CA timeout value */
+            /*
+             * epicsScanDouble is a macro defined as epicsParseDouble,
+             * (found in modules/libcom/src/misc) which will only
+             * change caTimeout here if it finds an acceptable value.
+             */
             if(epicsScanDouble(optarg, &caTimeout) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid timeout value "
-                        "- ignored. ('cainfo -h' for help.)\n", optarg);
-                caTimeout = DEFAULT_TIMEOUT;
+                        "- ignored, using '%.1f'. ('cainfo -h' for help.)\n",
+                        optarg, caTimeout);
             }
             break;
         case 's':               /* ca_client_status interest level */
-            if (sscanf(optarg,"%du", &statLevel) != 1)
+            if (sscanf(optarg,"%u", &statLevel) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid interest level "
                         "- ignored. ('cainfo -h' for help.)\n", optarg);

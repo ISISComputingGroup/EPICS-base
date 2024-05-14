@@ -4,15 +4,16 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2013 ITER Organization.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* callback.c */
 
-/* general purpose callback tasks		*/
+/* general purpose callback tasks               */
 /*
  *      Original Author:        Marty Kraimer
- *      Date:   	        07-18-91
+ *      Date:                   07-18-91
 */
 
 #include <stddef.h>
@@ -33,7 +34,6 @@
 #include "errMdef.h"
 #include "taskwd.h"
 
-#define epicsExportSharedSymbols
 #include "callback.h"
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
@@ -58,6 +58,7 @@ typedef struct cbQueueSet {
     int shutdown; // use atomic
     int threadsConfigured;
     int threadsRunning;
+    epicsThreadId *threads;
 } cbQueueSet;
 
 static cbQueueSet callbackQueue[NUM_CALLBACK_PRIORITIES];
@@ -65,7 +66,7 @@ static cbQueueSet callbackQueue[NUM_CALLBACK_PRIORITIES];
 int callbackThreadsDefault = 1;
 /* Don't know what a reasonable default is (yet).
  * For the time being: parallel means 2 if not explicitly specified */
-epicsShareDef int callbackParallelThreadsDefault = 2;
+int callbackParallelThreadsDefault = 2;
 epicsExportAddress(int,callbackParallelThreadsDefault);
 
 /* Timer for Delayed Requests */
@@ -85,7 +86,7 @@ static epicsEventId startStopEvent;
 static char *threadNamePrefix[NUM_CALLBACK_PRIORITIES] = {
     "cbLow", "cbMedium", "cbHigh"
 };
-#define FULL_MSG(name) "callbackRequest: " name " ring buffer full\n"
+#define FULL_MSG(name) "callbackRequest: " ERL_ERROR " " name " ring buffer full\n"
 static char *fullMessage[NUM_CALLBACK_PRIORITIES] = {
     FULL_MSG("cbLow"), FULL_MSG("cbMedium"), FULL_MSG("cbHigh")
 };
@@ -242,10 +243,14 @@ void callbackStop(void)
 
     for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
         cbQueueSet *mySet = &callbackQueue[i];
+        int j;
 
         while (epicsAtomicGetIntT(&mySet->threadsRunning)) {
             epicsEventSignal(mySet->semWakeUp);
             epicsEventWaitWithTimeout(startStopEvent, 0.1);
+        }
+        for(j=0; j<mySet->threadsConfigured; j++) {
+            epicsThreadMustJoin(mySet->threads[j]);
         }
     }
 }
@@ -263,7 +268,11 @@ void callbackCleanup(void)
 
         assert(epicsAtomicGetIntT(&mySet->threadsRunning)==0);
         epicsEventDestroy(mySet->semWakeUp);
+        mySet->semWakeUp = NULL;
         epicsRingPointerDelete(mySet->queue);
+        mySet->queue = NULL;
+        free(mySet->threads);
+        mySet->threads = NULL;
     }
 
     epicsTimerQueueRelease(timerQueue);
@@ -295,17 +304,25 @@ void callbackInit(void)
             cantProceed("epicsRingPointerLockedCreate failed for %s\n",
                 threadNamePrefix[i]);
         callbackQueue[i].queueOverflow = FALSE;
+
         if (callbackQueue[i].threadsConfigured == 0)
             callbackQueue[i].threadsConfigured = callbackThreadsDefault;
 
+        callbackQueue[i].threads = callocMustSucceed(callbackQueue[i].threadsConfigured,
+                                                     sizeof(*callbackQueue[i].threads),
+                                                     "callbackInit");
+
         for (j = 0; j < callbackQueue[i].threadsConfigured; j++) {
+            epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+            opts.joinable = 1;
+            opts.priority = threadPriority[i];
+            opts.stackSize = epicsThreadStackBig;
             if (callbackQueue[i].threadsConfigured > 1 )
                 sprintf(threadName, "%s-%d", threadNamePrefix[i], j);
             else
                 strcpy(threadName, threadNamePrefix[i]);
-            tid = epicsThreadCreate(threadName, threadPriority[i],
-                epicsThreadGetStackSize(epicsThreadStackBig),
-                (EPICSTHREADFUNC)callbackTask, &priorityValue[i]);
+            callbackQueue[i].threads[j] = tid = epicsThreadCreateOpt(threadName,
+                (EPICSTHREADFUNC)callbackTask, &priorityValue[i], &opts);
             if (tid == 0) {
                 cantProceed("Failed to spawn callback thread %s\n", threadName);
             } else {
@@ -324,15 +341,23 @@ int callbackRequest(epicsCallback *pcallback)
     cbQueueSet *mySet;
 
     if (!pcallback) {
-        epicsInterruptContextMessage("callbackRequest: pcallback was NULL\n");
+        epicsInterruptContextMessage("callbackRequest: " ERL_ERROR " pcallback was NULL\n");
+        return S_db_notInit;
+    }
+    if (!pcallback->callback) {
+        epicsInterruptContextMessage("callbackRequest: " ERL_ERROR " pcallback->callback was NULL\n");
         return S_db_notInit;
     }
     priority = pcallback->priority;
     if (priority < 0 || priority >= NUM_CALLBACK_PRIORITIES) {
-        epicsInterruptContextMessage("callbackRequest: Bad priority\n");
+        epicsInterruptContextMessage("callbackRequest: " ERL_ERROR " Bad priority\n");
         return S_db_badChoice;
     }
     mySet = &callbackQueue[priority];
+    if (!mySet->queue) {
+        epicsInterruptContextMessage("callbackRequest: " ERL_ERROR " Callbacks not initialized\n");
+        return S_db_notInit;
+    }
     if (mySet->queueOverflow) return S_db_bufFull;
 
     pushOK = epicsRingPointerPush(mySet->queue, pcallback);

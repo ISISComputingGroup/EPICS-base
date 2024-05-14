@@ -2,6 +2,7 @@
 * Copyright (c) 2010 Brookhaven National Laboratory.
 * Copyright (c) 2010 Helmholtz-Zentrum Berlin
 *     fuer Materialien und Energie GmbH.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -13,6 +14,7 @@
 #include <stdio.h>
 
 #include "freeList.h"
+#include "caeventmask.h"
 #include "db_field_log.h"
 #include "chfPlugin.h"
 #include "dbState.h"
@@ -93,7 +95,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
     myStruct *my = (myStruct*) pvt;
     int actstate;
 
-    if (pfl->ctx == dbfl_context_read)
+    if (pfl->ctx == dbfl_context_read || (pfl->mask & DBE_PROPERTY))
         return pfl;
 
     actstate = dbStateGet(my->id);

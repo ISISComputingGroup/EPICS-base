@@ -65,6 +65,10 @@ INC += osdVME.h
 INC += epicsMMIO.h
 INC += epicsMMIODef.h
 
+INC_clang += epicsAtomicGCC.h
+INC_gcc   += epicsAtomicGCC.h
+INC += $(INC_$(CMPLR_CLASS))
+
 Com_SRCS += epicsThread.cpp
 Com_SRCS += epicsMutex.cpp
 Com_SRCS += epicsEvent.cpp
@@ -104,7 +108,7 @@ epicsReadline_INCLUDES += $(INCLUDES_$(COMMANDLINE_LIBRARY))
 
 Com_SRCS += epicsReadline.c
 
-Com_SRCS += epicsTempFile.cpp
+Com_SRCS += epicsTempFile.c
 Com_SRCS += epicsStdio.c
 Com_SRCS += osdStdio.c
 
@@ -112,6 +116,7 @@ Com_SRCS += osdStdio.c
 THREAD_CPPFLAGS_NO += -DDONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING
 osdThread_CPPFLAGS += $(THREAD_CPPFLAGS_$(USE_POSIX_THREAD_PRIORITY_SCHEDULING))
 osdSpin_CPPFLAGS += $(THREAD_CPPFLAGS_$(USE_POSIX_THREAD_PRIORITY_SCHEDULING))
+osdMutex_CPPFLAGS += $(THREAD_CPPFLAGS_$(USE_POSIX_THREAD_PRIORITY_SCHEDULING))
 
 Com_SRCS += osdThread.c
 Com_SRCS += osdThreadExtra.c

@@ -5,6 +5,5 @@
 #-------------------------------------------------------
 
 # Include common gnu compiler definitions
-OP_SYS_INCLUDES += -I/usr/include/tirpc
-OP_SYS_LDLIBS += -ltirpc
 include $(CONFIG)/os/CONFIG.linux-x86.linux-x86
+

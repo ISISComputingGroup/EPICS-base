@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -22,7 +23,6 @@
 #include "epicsString.h"
 #include "errlog.h"
 
-#define epicsExportSharedSymbols
 #include "callback.h"
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
@@ -40,6 +40,7 @@
 #include "recGbl.h"
 #include "recSup.h"
 #include "special.h"
+#include "dbConvertJSON.h"
 
 #define MAXLINE 80
 #define MAXMESS 128
@@ -363,8 +364,9 @@ long dbpf(const char *pname,const char *pvalue)
 {
     DBADDR addr;
     long status;
-    short dbrType;
-    size_t n = 1;
+    short dbrType = DBR_STRING;
+    long n = 1;
+    char *array = NULL;
 
     if (!pname || !*pname || !pvalue) {
         printf("Usage: dbpf \"pv name\", \"value\"\n");
@@ -379,16 +381,25 @@ long dbpf(const char *pname,const char *pvalue)
         return -1;
     }
 
-    if (addr.no_elements > 1 &&
-        (addr.dbr_field_type == DBR_CHAR || addr.dbr_field_type == DBR_UCHAR)) {
+    if (addr.no_elements > 1) {
         dbrType = addr.dbr_field_type;
-        n = strlen(pvalue) + 1;
+        if (addr.dbr_field_type == DBR_CHAR || addr.dbr_field_type == DBR_UCHAR) {
+            n = (long)strlen(pvalue) + 1;
+        } else {
+            n = addr.no_elements;
+            array = calloc(n, dbValueSize(dbrType));
+            if (!array) {
+                printf("Out of memory\n");
+                return -1;
+            }
+            status = dbPutConvertJSON(pvalue, dbrType, array, &n);
+            if (status)
+                return status;
+            pvalue = array;
+        }
     }
-    else {
-        dbrType = DBR_STRING;
-    }
-
-    status = dbPutField(&addr, dbrType, pvalue, (long) n);
+    status = dbPutField(&addr, dbrType, pvalue, n);
+    free(array);
     dbgf(pname);
     return status;
 }
@@ -495,62 +506,62 @@ long dbtgf(const char *pname)
     ret_options=0;
 
     dbr_type = DBR_STRING;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/MAX_STRING_SIZE));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/MAX_STRING_SIZE));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_CHAR;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsInt8)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsInt8))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_UCHAR;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsUInt8)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsUInt8))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_SHORT;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsInt16)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsInt16))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_USHORT;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsUInt16)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsUInt16))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_LONG;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsInt32)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsInt32))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_ULONG;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsUInt32)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsUInt32))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_INT64;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsInt64)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsInt64))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_UINT64;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsUInt64)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsUInt64))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_FLOAT;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsFloat32)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsFloat32))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_DOUBLE;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsFloat64)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsFloat64))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_ENUM;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsEnum16)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsEnum16))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
@@ -712,7 +723,7 @@ long dbior(const char *pdrvName,int interest_level)
         for (pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
              pdevSup;
              pdevSup = (devSup *)ellNext(&pdevSup->node)) {
-            struct dset *pdset = pdevSup->pdset;
+            dset *pdset = pdevSup->pdset;
             const char *pname  = pdevSup->name;
 
             if (!pdset || !pname)
@@ -942,13 +953,13 @@ static void printBuffer(
     }
 
     /* Now print values */
-    if (no_elements == 0)
-        return;
-
     if (no_elements == 1)
         sprintf(pmsg, "DBF_%s: ", dbr[dbr_type]);
-    else
+    else {
         sprintf(pmsg, "DBF_%s[%ld]: ", dbr[dbr_type], no_elements);
+        if (no_elements == 0)
+            strcat(pmsg, "(empty)");
+    }
     dbpr_msgOut(pMsgBuff, tab_size);
 
     if (status != 0) {
@@ -985,8 +996,12 @@ static void printBuffer(
                 i = 0;
                 while (len > 0) {
                     int chunk = (len > MAXLINE - 5) ? MAXLINE - 5 : len;
-
-                    sprintf(pmsg, "\"%.*s\"", chunk, (char *)pbuffer + i);
+                    strcpy(pmsg, "\"");
+                    while (epicsStrnEscapedFromRawSize((char *)pbuffer + i, chunk) >= MAXLINE - 5)
+                        chunk--;
+                    epicsStrnEscapedFromRaw(pmsg+1, MAXLINE - 5,
+                        (char *)pbuffer + i, chunk);
+                    strcat(pmsg, "\"");
                     len -= chunk; i += chunk;
                     if (len > 0)
                         strcat(pmsg, " +");
@@ -1289,7 +1304,7 @@ static void dbpr_insert_msg(TAB_BUFFER *pMsgBuff,size_t len,int tab_size)
     current_len = strlen(pMsgBuff->out_buff);
     tot_line = current_len + len;
 
-    /* flush buffer if overflow would occor */
+    /* flush buffer if overflow would occur */
     if (tot_line > MAXLINE)
         dbpr_msg_flush(pMsgBuff, tab_size);
 

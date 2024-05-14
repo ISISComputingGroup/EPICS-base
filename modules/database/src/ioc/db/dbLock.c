@@ -3,9 +3,9 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* SPDX-License-Identifier: EPICS
+* EPICS Base is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #include <stddef.h>
@@ -25,7 +25,6 @@
 #include "epicsThread.h"
 #include "errMdef.h"
 
-#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbBase.h"
@@ -122,8 +121,7 @@ void dbLockIncRef(lockSet* ls)
 {
     int cnt = epicsAtomicIncrIntT(&ls->refcount);
     if(cnt<=1) {
-        errlogPrintf("dbLockIncRef(%p) on dead lockSet. refs: %d\n", ls, cnt);
-        cantProceed(NULL);
+        cantProceed("dbLockIncRef(%p) on dead lockSet. refs: %d\n", ls, cnt);
     }
 }
 
@@ -146,9 +144,8 @@ void dbLockDecRef(lockSet *ls)
     epicsMutexMustLock(ls->lock);
 
     if(ellCount(&ls->lockRecordList)!=0) {
-        errlogPrintf("dbLockDecRef(%p) would free lockSet with %d records\n",
-                     ls, ellCount(&ls->lockRecordList));
-        cantProceed(NULL);
+        cantProceed("dbLockDecRef(%p) would free lockSet with %d records\n",
+                    ls, ellCount(&ls->lockRecordList));
     }
 
     epicsMutexUnlock(ls->lock);
@@ -422,9 +419,8 @@ retry:
 #ifdef LOCKSET_DEBUG
         if(plock->owner) {
             if(plock->owner!=myself || plock->ownercount<1) {
-                errlogPrintf("dbScanLockMany(%p) ownership violation %p (%p) %u\n",
-                             locker, plock->owner, myself, plock->ownercount);
-                cantProceed(NULL);
+                cantProceed("dbScanLockMany(%p) ownership violation %p (%p) %u\n",
+                            locker, plock->owner, myself, plock->ownercount);
             }
             plock->ownercount++;
         } else {
@@ -445,8 +441,7 @@ retry:
         /* if we have at least one lockRecord, then we will always lock
          * at least its present lockSet
          */
-        errlogPrintf("dbScanLockMany(%p) didn't lock anything\n", locker);
-        cantProceed(NULL);
+        cantProceed("dbScanLockMany(%p) didn't lock anything\n", locker);
     }
 }
 
@@ -603,17 +598,15 @@ void dbLockSetMerge(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
 
 #ifdef LOCKSET_DEBUG
     if(locker && (A->owner!=myself || B->owner!=myself)) {
-        errlogPrintf("dbLockSetMerge(%p,\"%s\",\"%s\") ownership violation %p %p (%p)\n",
-                     locker, pfirst->name, psecond->name,
-                     A->owner, B->owner, myself);
-        cantProceed(NULL);
+        cantProceed("dbLockSetMerge(%p,\"%s\",\"%s\") ownership violation %p %p (%p)\n",
+                    locker, pfirst->name, psecond->name,
+                    A->owner, B->owner, myself);
     }
 #endif
     if(locker && (A->ownerlocker!=locker || B->ownerlocker!=locker)) {
-        errlogPrintf("dbLockSetMerge(%p,\"%s\",\"%s\") locker ownership violation %p %p (%p)\n",
-                     locker, pfirst->name, psecond->name,
-                     A->ownerlocker, B->ownerlocker, locker);
-        cantProceed(NULL);
+        cantProceed("dbLockSetMerge(%p,\"%s\",\"%s\") locker ownership violation %p %p (%p)\n",
+                    locker, pfirst->name, psecond->name,
+                    A->ownerlocker, B->ownerlocker, locker);
     }
 
     if(A==B)
@@ -689,19 +682,17 @@ void dbLockSetSplit(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
 
 #ifdef LOCKSET_DEBUG
     if(ls->owner!=myself || psecond->lset->plockSet->owner!=myself) {
-        errlogPrintf("dbLockSetSplit(%p,\"%s\",\"%s\") ownership violation %p %p (%p)\n",
-                     locker, pfirst->name, psecond->name,
-                     ls->owner, psecond->lset->plockSet->owner, myself);
-        cantProceed(NULL);
+        cantProceed("dbLockSetSplit(%p,\"%s\",\"%s\") ownership violation %p %p (%p)\n",
+                    locker, pfirst->name, psecond->name,
+                    ls->owner, psecond->lset->plockSet->owner, myself);
     }
 #endif
 
     /* lockset consistency violation */
     if(ls!=psecond->lset->plockSet) {
-        errlogPrintf("dbLockSetSplit(%p,\"%s\",\"%s\") consistency violation %p %p\n",
-                     locker, pfirst->name, psecond->name,
-                     pfirst->lset->plockSet, psecond->lset->plockSet);
-        cantProceed(NULL);
+        cantProceed("dbLockSetSplit(%p,\"%s\",\"%s\") consistency violation %p %p\n",
+                    locker, pfirst->name, psecond->name,
+                    pfirst->lset->plockSet, psecond->lset->plockSet);
     }
 
 
@@ -743,14 +734,14 @@ void dbLockSetSplit(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
             for(i=0; i<rtype->no_links; i++) {
                 dbFldDes *pdesc = rtype->papFldDes[rtype->link_ind[i]];
                 DBLINK *plink = (DBLINK*)((char*)prec + pdesc->offset);
-                DBADDR *ptarget;
+                dbChannel *chan;
                 lockRecord *lr;
 
                 if(plink->type!=DB_LINK)
                     continue;
 
-                ptarget = plink->value.pv_link.pvt;
-                lr = ptarget->precord->lset;
+                chan = plink->value.pv_link.pvt;
+                lr = dbChannelRecord(chan)->lset;
                 assert(lr);
 
                 if(lr->precord==pfirst) {
@@ -878,20 +869,20 @@ nosplit:
     }
 }
 
-static char *msstring[4]={"NMS","MS","MSI","MSS"};
+static const char *msstring[4]={"NMS","MS","MSI","MSS"};
 
 long dblsr(char *recordname,int level)
 {
-    int			link;
-    DBENTRY		dbentry;
-    DBENTRY		*pdbentry=&dbentry;
-    long		status;
-    dbCommon		*precord;
-    lockSet		*plockSet;
-    lockRecord		*plockRecord;
-    dbRecordType	*pdbRecordType;
-    dbFldDes		*pdbFldDes;
-    DBLINK		*plink;
+    int                 link;
+    DBENTRY             dbentry;
+    DBENTRY             *pdbentry=&dbentry;
+    long                status;
+    dbCommon            *precord;
+    lockSet             *plockSet;
+    lockRecord          *plockRecord;
+    dbRecordType        *pdbRecordType;
+    dbFldDes            *pdbFldDes;
+    DBLINK              *plink;
 
     if (recordname && ((*recordname == '\0') || !strcmp(recordname,"*")))
         recordname = NULL;
@@ -923,7 +914,7 @@ long dblsr(char *recordname,int level)
             printf("%s\n",precord->name);
             if(level<=1) continue;
             for(link=0; (link<pdbRecordType->no_links) ; link++) {
-                DBADDR	*pdbAddr;
+                DBADDR  *pdbAddr;
                 pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[link]];
                 plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
                 if(plink->type != DB_LINK) continue;
@@ -983,8 +974,8 @@ long dbLockShowLocked(int level)
 
 int * dbLockSetAddrTrace(dbCommon *precord)
 {
-    lockRecord	*plockRecord = precord->lset;
-    lockSet	*plockSet = plockRecord->plockSet;
+    lockRecord  *plockRecord = precord->lset;
+    lockSet     *plockSet = plockRecord->plockSet;
 
     return(&plockSet->trace);
 }

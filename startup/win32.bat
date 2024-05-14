@@ -4,6 +4,7 @@ rem  Copyright (c) 2017 UChicago Argonne LLC, as Operator of Argonne
 rem      National Laboratory.
 rem  Copyright (c) 2002 The Regents of the University of California, as
 rem      Operator of Los Alamos National Laboratory.
+rem  SPDX-License-Identifier: EPICS
 rem  EPICS BASE is distributed subject to a Software License Agreement found
 rem  in file LICENSE that is included with this distribution.
 rem *************************************************************************
@@ -53,7 +54,7 @@ rem Strawberry Perl will be added to PATH.
 set _strawberry_perl_home=C:\Strawberry
 
 rem The location of Microsoft Visual Studio (pathname).
-set _visual_studio_home=C:\Program Files (x86)\Microsoft Visual Studio 14.0
+set _visual_studio_home=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community
 
 rem The EPICS host architecture specification for EPICS_HOST_ARCH
 rem (<os>-<arch>[-<toolset>] as defined in configure/CONFIG_SITE).
@@ -82,7 +83,7 @@ set "PATH=%PATH%;%_strawberry_perl_home%\perl\bin"
 :after_add_strawberry_perl
 
 rem locate visual studio
-rem also define VCVERSION environment variable for use in builds 
+rem also define VCVERSION environment variable for use in builds
 if "%ProgramFiles(x86)%" == "" (
     set "_progfiles=C:\Program Files"
 ) else (
@@ -112,7 +113,8 @@ if exist "%_vcvarsalldir%\vcvarsall.bat" (
     @echo ERROR - Cannot locate Visual Studio vcvarsall.bat
 )
 
-rem Set the EPICS host architecture specification if required
+rem Set the EPICS host architecture specification if
+rem not already set
 if "%EPICS_HOST_ARCH%" == "" (
     set "EPICS_HOST_ARCH=%_epics_host_arch%"
 )
@@ -120,7 +122,7 @@ if "%EPICS_HOST_ARCH%" == "" (
 rem Add the EPICS Base host architecture bin directory to PATH
 if "%_auto_path_append%" == "yes" (
   if not "%_epics_base%" == "" (
-    set "PATH=%PATH%;%_epics_base%\bin\%_epics_host_arch%"
+    set "PATH=%PATH%;%_epics_base%\bin\%EPICS_HOST_ARCH%"
   )
 )
 

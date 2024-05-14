@@ -6,6 +6,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -17,6 +18,7 @@
  *          Ralph Lange <Ralph.Lange@bessy.de>
  */
 
+#define EPICS_PRIVATE_API
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -36,7 +38,6 @@
 
 #include "caeventmask.h"
 
-#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbBase.h"
@@ -75,21 +76,23 @@ struct event_que {
     unsigned short          getix;
     unsigned short          quota;          /* the number of assigned entries*/
     unsigned short          nDuplicates;    /* N events duplicated on this q */
-    unsigned short          nCanceled;      /* the number of canceled entries */
+    unsigned                possibleStall;
 };
 
 struct event_user {
     struct event_que    firstque;       /* the first event que */
 
+    ELLLIST             waiters;        /* event_waiter::node */
+
     epicsMutexId        lock;
     epicsEventId        ppendsem;       /* Wait while empty */
-    epicsEventId        pflush_sem;     /* wait for flush */
+    epicsEventId        pexitsem;       /* wait for event task to join */
 
     EXTRALABORFUNC      *extralabor_sub;/* off load to event task */
     void                *extralabor_arg;/* parameter to above */
 
     epicsThreadId       taskid;         /* event handler task id */
-    struct evSubscrip   *pSuicideEvent; /* event that is deleteing itself */
+    epicsUInt32         pflush_seq;     /* worker cycle count for synchronization */
     unsigned            queovr;         /* event que overflow count */
     unsigned char       pendexit;       /* exit pend task */
     unsigned char       extra_labor;    /* if set call extra labor func */
@@ -99,9 +102,14 @@ struct event_user {
     epicsThreadId       init_func_arg;
 };
 
+typedef struct {
+    ELLNODE node; /* event_user::waiters */
+    epicsEventId wake;
+} event_waiter;
+
 /*
  * Reliable intertask communication requires copying the current value of the
- * channel for later queing so 3 stepper motor steps of 10 each do not turn
+ * channel for later queuing so 3 stepper motor steps of 10 each do not turn
  * into only 10 or 20 total steps part of the time.
  */
 
@@ -120,8 +128,9 @@ static void *dbevFieldLogFreeList;
 
 static char *EVENT_PEND_NAME = "eventTask";
 
-static struct evSubscrip canceledEvent;
+static epicsMutexId stopSync;
 
+/* unused space in queue (EVENTQUESIZE when empty) */
 static unsigned short ringSpace ( const struct event_que *pevq )
 {
     if ( pevq->evque[pevq->putix] == EVENTQEMPTY ) {
@@ -135,17 +144,11 @@ static unsigned short ringSpace ( const struct event_que *pevq )
     return 0;
 }
 
-/*
- *  db_event_list ()
- */
 int db_event_list ( const char *pname, unsigned level )
 {
     return dbel ( pname, level );
 }
 
-/*
- * dbel ()
- */
 int dbel ( const char *pname, unsigned level )
 {
     DBADDR              addr;
@@ -156,7 +159,7 @@ int dbel ( const char *pname, unsigned level )
     if ( ! pname ) return DB_EVENT_OK;
     status = dbNameToAddr ( pname, &addr );
     if ( status != 0 ) {
-	    errMessage ( status, " dbNameToAddr failed" );
+        errMessage ( status, " dbNameToAddr failed" );
         return DB_EVENT_ERROR;
     }
 
@@ -165,7 +168,7 @@ int dbel ( const char *pname, unsigned level )
     pevent = (struct evSubscrip *) ellFirst ( &addr.precord->mlis );
 
     if ( ! pevent ) {
-	    printf ( "\"%s\": No PV event subscriptions ( monitors ).\n", pname );
+        printf ( "\"%s\": No PV event subscriptions ( monitors ).\n", pname );
         UNLOCKREC (addr.precord);
         return DB_EVENT_OK;
     }
@@ -177,14 +180,14 @@ int dbel ( const char *pname, unsigned level )
         pdbFldDes = dbChannelFldDes(pevent->chan);
 
         if ( level > 0 ) {
-	        printf ( "%4.4s", pdbFldDes->name );
+            printf ( "%4.4s", pdbFldDes->name );
 
-	        printf ( " { " );
-                if ( pevent->select & DBE_VALUE ) printf( "VALUE " );
-                if ( pevent->select & DBE_LOG ) printf( "LOG " );
-                if ( pevent->select & DBE_ALARM ) printf( "ALARM " );
-                if ( pevent->select & DBE_PROPERTY ) printf( "PROPERTY " );
-	        printf ( "}" );
+            printf ( " { " );
+            if ( pevent->select & DBE_VALUE ) printf( "VALUE " );
+            if ( pevent->select & DBE_LOG ) printf( "LOG " );
+            if ( pevent->select & DBE_ALARM ) printf( "ALARM " );
+            if ( pevent->select & DBE_PROPERTY ) printf( "PROPERTY " );
+            printf ( "}" );
 
             if ( pevent->npend ) {
                 printf ( " undelivered=%ld", pevent->npend );
@@ -213,7 +216,6 @@ int dbel ( const char *pname, unsigned level )
 
             if ( level > 2 ) {
                 unsigned nDuplicates;
-                unsigned nCanceled;
                 if ( pevent->nreplace ) {
                     printf (", discarded by replacement=%ld", pevent->nreplace);
                 }
@@ -222,13 +224,9 @@ int dbel ( const char *pname, unsigned level )
                 }
                 LOCKEVQUE(pevent->ev_que);
                 nDuplicates = pevent->ev_que->nDuplicates;
-                nCanceled = pevent->ev_que->nCanceled;
                 UNLOCKEVQUE(pevent->ev_que);
                 if  ( nDuplicates ) {
                     printf (", duplicate count =%u\n", nDuplicates );
-                }
-                if ( nCanceled ) {
-                    printf (", canceled count =%u\n", nCanceled );
                 }
             }
 
@@ -239,7 +237,7 @@ int dbel ( const char *pname, unsigned level )
                     ( void * ) pevent->ev_que->evUser );
             }
 
-	        printf( "\n" );
+            printf( "\n" );
         }
 
             pevent = (struct evSubscrip *) ellNext ( &pevent->node );
@@ -251,17 +249,18 @@ int dbel ( const char *pname, unsigned level )
 }
 
 /*
- * DB_INIT_EVENTS()
+ * DB_INIT_EVENT_FREELISTS()
  *
  *
- * Initialize the event facility for this task. Must be called at least once
- * by each task which uses the db event facility
+ * Initialize the free lists used by the event facility.
+ * Safe to be called multiple times.
  *
- * returns: ptr to event user block or NULL if memory can't be allocated
  */
-dbEventCtx db_init_events (void)
+void db_init_event_freelists (void)
 {
-    struct event_user * evUser;
+    if (!stopSync) {
+        stopSync = epicsMutexMustCreate();
+    }
 
     if (!dbevEventUserFreeList) {
         freeListInitPvt(&dbevEventUserFreeList,
@@ -279,12 +278,31 @@ dbEventCtx db_init_events (void)
         freeListInitPvt(&dbevFieldLogFreeList,
             sizeof(struct db_field_log),2048);
     }
+}
+
+/*
+ * DB_INIT_EVENTS()
+ *
+ *
+ * Initialize the event facility for this task. Must be called at least once
+ * by each task which uses the db event facility
+ *
+ * returns: ptr to event user block or NULL if memory can't be allocated
+ */
+dbEventCtx db_init_events (void)
+{
+    struct event_user * evUser;
+
+    db_init_event_freelists();
 
     evUser = (struct event_user *)
         freeListCalloc(dbevEventUserFreeList);
     if (!evUser) {
         return NULL;
     }
+
+    /* Flag will be cleared when event task starts */
+    evUser->pendexit = TRUE;
 
     evUser->firstque.evUser = evUser;
     evUser->firstque.writelock = epicsMutexCreate();
@@ -294,16 +312,15 @@ dbEventCtx db_init_events (void)
     evUser->ppendsem = epicsEventCreate(epicsEventEmpty);
     if (!evUser->ppendsem)
         goto fail;
-    evUser->pflush_sem = epicsEventCreate(epicsEventEmpty);
-    if (!evUser->pflush_sem)
-        goto fail;
     evUser->lock = epicsMutexCreate();
     if (!evUser->lock)
+        goto fail;
+    evUser->pexitsem = epicsEventCreate(epicsEventEmpty);
+    if (!evUser->pexitsem)
         goto fail;
 
     evUser->flowCtrlMode = FALSE;
     evUser->extraLaborBusy = FALSE;
-    evUser->pSuicideEvent = NULL;
     return (dbEventCtx) evUser;
 fail:
     if(evUser->lock)
@@ -312,14 +329,14 @@ fail:
         epicsMutexDestroy (evUser->firstque.writelock);
     if(evUser->ppendsem)
         epicsEventDestroy (evUser->ppendsem);
-    if(evUser->pflush_sem)
-        epicsEventDestroy (evUser->pflush_sem);
+    if(evUser->pexitsem)
+        epicsEventDestroy (evUser->pexitsem);
     freeListFree(dbevEventUserFreeList,evUser);
     return NULL;
 }
 
 
-epicsShareFunc void db_cleanup_events(void)
+DBCORE_API void db_cleanup_events(void)
 {
     if(dbevEventUserFreeList) freeListCleanup(dbevEventUserFreeList);
     dbevEventUserFreeList = NULL;
@@ -334,6 +351,7 @@ epicsShareFunc void db_cleanup_events(void)
     dbevFieldLogFreeList = NULL;
 }
 
+    /* intentionally leak stopSync to avoid possible shutdown races */
 /*
  *  DB_CLOSE_EVENTS()
  *
@@ -355,15 +373,30 @@ void db_close_events (dbEventCtx ctx)
      * hazardous to the system's health.
      */
     epicsMutexMustLock ( evUser->lock );
-    evUser->pendexit = TRUE;
+    if(!evUser->pendexit) { /* event task running */
+        evUser->pendexit = TRUE;
+        epicsMutexUnlock ( evUser->lock );
+
+        /* notify the waiting task */
+        epicsEventSignal(evUser->ppendsem);
+        /* wait for task to exit */
+        epicsEventMustWait(evUser->pexitsem);
+        epicsThreadMustJoin(evUser->taskid);
+
+        epicsMutexMustLock ( evUser->lock );
+    }
+
     epicsMutexUnlock ( evUser->lock );
 
-    /* notify the waiting task */
-    epicsEventSignal(evUser->ppendsem);
+    epicsMutexMustLock (stopSync);
 
-    if(evUser->taskid)
-        epicsThreadMustJoin(evUser->taskid);
-    /* evUser has been deleted by the worker */
+    epicsEventDestroy(evUser->pexitsem);
+    epicsEventDestroy(evUser->ppendsem);
+    epicsMutexDestroy(evUser->lock);
+
+    epicsMutexUnlock (stopSync);
+
+    freeListFree(dbevEventUserFreeList, evUser);
 }
 
 /*
@@ -371,7 +404,7 @@ void db_close_events (dbEventCtx ctx)
  */
 static struct event_que * create_ev_que ( struct event_user * const evUser )
 {
-    struct event_que * const ev_que = (struct event_que *) 
+    struct event_que * const ev_que = (struct event_que *)
         freeListCalloc ( dbevEventQueueFreeList );
     if ( ! ev_que ) {
         return NULL;
@@ -415,8 +448,7 @@ dbEventSubscription db_add_event (
     while ( TRUE ) {
         int success = 0;
         LOCKEVQUE ( ev_que );
-        success = ( ev_que->quota + ev_que->nCanceled < 
-                                EVENTQUESIZE - EVENTENTRIES );
+        success = ( ev_que->quota < EVENTQUESIZE - EVENTENTRIES );
         if ( success ) {
             ev_que->quota += EVENTENTRIES;
         }
@@ -533,62 +565,62 @@ static void event_remove ( struct event_que *ev_que,
 void db_cancel_event (dbEventSubscription event)
 {
     struct evSubscrip * const pevent = (struct evSubscrip *) event;
-    unsigned short getix;
+    struct event_que *que = pevent->ev_que;
+    char sync = 0;
 
     db_event_disable ( event );
 
-    /*
-     * flag the event as canceled by NULLing out the callback handler
-     *
-     * make certain that the event isnt being accessed while
-     * its call back changes
-     */
-    LOCKEVQUE (pevent->ev_que);
+    LOCKEVQUE (que);
 
-    pevent->user_sub = NULL;
+    pevent->user_sub = NULL; /* callback pointer doubles as canceled flag */
 
-    /*
-     * purge this event from the queue
-     *
-     * Its better to take this approach rather than waiting
-     * for the event thread to finish removing this event
-     * from the queue because the event thread will not
-     * process if we are in flow control mode. Since blocking
-     * here will block CA's TCP input queue then a dead lock
-     * would be possible.
-     */
-    for (   getix = pevent->ev_que->getix;
-            pevent->ev_que->evque[getix] != EVENTQEMPTY; ) {
-        if ( pevent->ev_que->evque[getix] == pevent ) {
-            assert ( pevent->ev_que->nCanceled < USHRT_MAX );
-            pevent->ev_que->nCanceled++;
-            event_remove ( pevent->ev_que, getix, &canceledEvent );
-        }
-        getix = RNGINC ( getix );
-        if ( getix == pevent->ev_que->getix ) {
-            break;
-        }
-    }
-    assert ( pevent->npend == 0u );
+    if(pevent->callBackInProgress) {
+        /* this event callback is pending or in-progress in event_task. */
+        if(pevent->ev_que->evUser->taskid != epicsThreadGetIdSelf())
+            sync = 1; /* concurrent to event_task, so wait */
 
-    if ( pevent->ev_que->evUser->taskid == epicsThreadGetIdSelf() ) {
-        pevent->ev_que->evUser->pSuicideEvent = pevent;
-    }
-    else {
-        while ( pevent->callBackInProgress ) {
-            UNLOCKEVQUE (pevent->ev_que);
-            epicsEventMustWait ( pevent->ev_que->evUser->pflush_sem );
-            LOCKEVQUE (pevent->ev_que);
-        }
+    } else if(pevent->npend) {
+        /* some (now defunct) events in the queue, defer free() to event_task */
+
+    } else {
+        /* no other references, cleanup now */
+
+        pevent->ev_que->quota -= EVENTENTRIES;
+        freeListFree ( dbevEventSubscriptionFreeList, pevent );
     }
 
-    pevent->ev_que->quota -= EVENTENTRIES;
+    UNLOCKEVQUE (que);
 
-    UNLOCKEVQUE (pevent->ev_que);
+    if(sync) {
+        /* cycle through worker */
+        struct event_user *evUser = que->evUser;
+        epicsUInt32 curSeq;
+        event_waiter wait;
+        wait.wake = epicsEventCreate(epicsEventEmpty); /* may fail */
 
-    freeListFree ( dbevEventSubscriptionFreeList, pevent );
+        epicsMutexMustLock ( evUser->lock );
+        ellAdd(&evUser->waiters, &wait.node);
+        /* grab current cycle counter, then wait for it to change */
+        curSeq = evUser->pflush_seq;
+        do {
+            epicsMutexUnlock( evUser->lock );
+            /* ensure worker will cycle at least once */
+            epicsEventMustTrigger(evUser->ppendsem);
 
-    return;
+            if(wait.wake) {
+                epicsEventMustWait(wait.wake);
+            } else {
+                epicsThreadSleep(0.01); /* ick. but better than cantProceed() */
+            }
+
+            epicsMutexMustLock ( evUser->lock );
+        } while(curSeq == evUser->pflush_seq);
+        ellDelete(&evUser->waiters, &wait.node);
+        /* destroy under lock to ensure epicsEventMustTrigger() has returned */
+        if(wait.wake)
+            epicsEventDestroy(wait.wake);
+        epicsMutexUnlock( evUser->lock );
+    }
 }
 
 /*
@@ -654,27 +686,24 @@ int db_post_extra_labor (dbEventCtx ctx)
     return DB_EVENT_OK;
 }
 
-/*
- *  DB_CREATE_EVENT_LOG()
- *
- *  NOTE: This assumes that the db scan lock is already applied
- *        (as it copies data from the record)
- */
-db_field_log* db_create_event_log (struct evSubscrip *pevent)
+static db_field_log* db_create_field_log (struct dbChannel *chan, int use_val)
 {
     db_field_log *pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);
 
     if (pLog) {
-        struct dbChannel *chan = pevent->chan;
         struct dbCommon  *prec = dbChannelRecord(chan);
-        pLog->ctx = dbfl_context_event;
-        if (pevent->useValque) {
+        pLog->stat = prec->stat;
+        pLog->sevr = prec->sevr;
+        strncpy(pLog->amsg, prec->amsg, sizeof(pLog->amsg)-1);
+        pLog->amsg[sizeof(pLog->amsg)-1] = '\0';
+        pLog->time = prec->time;
+        pLog->utag = prec->utag;
+        pLog->field_type  = dbChannelFieldType(chan);
+        pLog->field_size  = dbChannelFieldSize(chan);
+        pLog->no_elements = dbChannelElements(chan);
+
+        if (use_val) {
             pLog->type = dbfl_type_val;
-            pLog->stat = prec->stat;
-            pLog->sevr = prec->sevr;
-            pLog->time = prec->time;
-            pLog->field_type  = dbChannelFieldType(chan);
-            pLog->no_elements = dbChannelElements(chan);
             /*
              * use memcpy to avoid a bus error on
              * union copy of char in the db at an odd
@@ -684,8 +713,31 @@ db_field_log* db_create_event_log (struct evSubscrip *pevent)
                    dbChannelField(chan),
                    dbChannelFieldSize(chan));
         } else {
-            pLog->type = dbfl_type_rec;
+            pLog->type = dbfl_type_ref;
+
+            /* don't make a copy yet, just reference the field value */
+            pLog->u.r.field = dbChannelField(chan);
+            /* indicate field value still owned by record */
+            pLog->dtor = NULL;
+            /* no private data yet, may be set by a filter */
+            pLog->u.r.pvt = NULL;
         }
+    }
+    return pLog;
+}
+
+/*
+ *  DB_CREATE_EVENT_LOG()
+ *
+ *  NOTE: This assumes that the db scan lock is already applied
+ *        (as it calls rset->get_array_info)
+ */
+db_field_log* db_create_event_log (struct evSubscrip *pevent)
+{
+    db_field_log *pLog = db_create_field_log(pevent->chan, pevent->useValque);
+    if (pLog) {
+        pLog->mask = pevent->select;
+        pLog->ctx  = dbfl_context_event;
     }
     return pLog;
 }
@@ -696,11 +748,12 @@ db_field_log* db_create_event_log (struct evSubscrip *pevent)
  */
 db_field_log* db_create_read_log (struct dbChannel *chan)
 {
-    db_field_log *pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);
-
+    db_field_log *pLog = db_create_field_log(chan,
+        dbChannelElements(chan) == 1 &&
+        dbChannelSpecial(chan) != SPC_DBADDR &&
+        dbChannelFieldSize(chan) <= sizeof(union native_value));
     if (pLog) {
         pLog->ctx  = dbfl_context_read;
-        pLog->type = dbfl_type_rec;
     }
     return pLog;
 }
@@ -723,15 +776,13 @@ static void db_queue_event_log (evSubscrip *pevent, db_field_log *pLog)
 
     LOCKEVQUE (ev_que);
 
-    /*
-     * if we have an event on the queue and both the last
-     * event on the queue and the current event are emtpy
-     * (i.e. of type dbfl_type_rec), simply ignore duplicate
-     * events (saving empty events serves no purpose)
+    /* if we have an event on the queue and both the last
+     * event on the queue and the current event reference
+     * a record field, simply ignore duplicate events.
      */
-    if (pevent->npend > 0u &&
-        (*pevent->pLastLog)->type == dbfl_type_rec &&
-        pLog->type == dbfl_type_rec) {
+    if (pevent->npend > 0u
+            && !dbfl_has_copy(*pevent->pLastLog)
+            && !dbfl_has_copy(pLog)) {
         db_delete_field_log(pLog);
         UNLOCKEVQUE (ev_que);
         return;
@@ -759,7 +810,7 @@ static void db_queue_event_log (evSubscrip *pevent, db_field_log *pLog)
         pevent->nreplace++;
         /*
          * the event task has already been notified about
-         * this so we dont need to post the semaphore
+         * this so we don't need to post the semaphore
          */
         firstEventFlag = 0;
     }
@@ -792,7 +843,7 @@ static void db_queue_event_log (evSubscrip *pevent, db_field_log *pLog)
     UNLOCKEVQUE (ev_que);
 
     /*
-     * its more efficent to notify the event handler
+     * its more efficient to notify the event handler
      * only after the event is ready and the lock
      * is off in case it runs at a higher priority
      * than the caller here.
@@ -834,6 +885,8 @@ unsigned int    caEventMask
         if ( (dbChannelField(pevent->chan) == (void *)pField || pField==NULL) &&
             (caEventMask & pevent->select)) {
             db_field_log *pLog = db_create_event_log(pevent);
+            if(pLog)
+                pLog->mask = caEventMask & pevent->select;
             pLog = dbChannelRunPreChain(pevent->chan, pLog);
             if (pLog) db_queue_event_log(pevent, pLog);
         }
@@ -867,9 +920,7 @@ void db_post_single_event (dbEventSubscription event)
  */
 static int event_read ( struct event_que *ev_que )
 {
-    db_field_log *pfl;
-    void ( *user_sub ) ( void *user_arg, struct dbChannel *chan,
-            int eventsRemaining, db_field_log *pfl );
+    int notifiedRemaining = 0;
 
     /*
      * evUser ring buffer must be locked for the multiple
@@ -889,19 +940,8 @@ static int event_read ( struct event_que *ev_que )
 
     while ( ev_que->evque[ev_que->getix] != EVENTQEMPTY ) {
         struct evSubscrip *pevent = ev_que->evque[ev_que->getix];
-
-        pfl = ev_que->valque[ev_que->getix];
-        if ( pevent == &canceledEvent ) {
-            ev_que->evque[ev_que->getix] = EVENTQEMPTY;
-            if (ev_que->valque[ev_que->getix]) {
-                db_delete_field_log(ev_que->valque[ev_que->getix]);
-                ev_que->valque[ev_que->getix] = NULL;
-            }
-            ev_que->getix = RNGINC ( ev_que->getix );
-            assert ( ev_que->nCanceled > 0 );
-            ev_que->nCanceled--;
-            continue;
-        }
+        int eventsRemaining;
+        db_field_log *pfl = ev_que->valque[ev_que->getix];
 
         /*
          * Simple type values queued up for reliable interprocess
@@ -911,31 +951,24 @@ static int event_read ( struct event_que *ev_que )
 
         event_remove ( ev_que, ev_que->getix, EVENTQEMPTY );
         ev_que->getix = RNGINC ( ev_que->getix );
-
-        /*
-         * create a local copy of the call back parameters while
-         * we still have the lock
-         */
-        user_sub = pevent->user_sub;
+        eventsRemaining = ev_que->evque[ev_que->getix] != EVENTQEMPTY;
 
         /*
          * Next event pointer can be used by event tasks to determine
          * if more events are waiting in the queue
          *
-         * Must remove the lock here so that we dont deadlock if
+         * Must remove the lock here so that we don't deadlock if
          * this calls dbGetField() and blocks on the record lock,
          * dbPutField() is in progress in another task, it has the
          * record lock, and it is calling db_post_events() waiting
          * for the event queue lock (which this thread now has).
          */
-        if ( user_sub ) {
-            /*
-             * This provides a way to test to see if an event is in use
-             * despite the fact that the event queue does not point to
-             * it.
-             */
+        if ( pevent->user_sub ) {
+            EVENTFUNC* user_sub = pevent->user_sub;
             pevent->callBackInProgress = TRUE;
+
             UNLOCKEVQUE (ev_que);
+
             /* Run post-event-queue filter chain */
             if (ellCount(&pevent->chan->post_chain)) {
                 pfl = dbChannelRunPostChain(pevent->chan, pfl);
@@ -943,31 +976,25 @@ static int event_read ( struct event_que *ev_que )
             if (pfl) {
                 /* Issue user callback */
                 ( *user_sub ) ( pevent->user_arg, pevent->chan,
-                                ev_que->evque[ev_que->getix] != EVENTQEMPTY, pfl );
+                                eventsRemaining, pfl );
+                notifiedRemaining = eventsRemaining;
             }
+
             LOCKEVQUE (ev_que);
 
-            /*
-             * check to see if this event has been canceled each
-             * time that the callBackInProgress flag is set to false
-             * while we have the event queue lock, and post the flush
-             * complete sem if there are no longer any events on the
-             * queue
-             */
-            if ( ev_que->evUser->pSuicideEvent == pevent ) {
-                ev_que->evUser->pSuicideEvent = NULL;
-            }
-            else {
-                if ( pevent->user_sub==NULL && pevent->npend==0u ) {
-                    pevent->callBackInProgress = FALSE;
-                    epicsEventSignal ( ev_que->evUser->pflush_sem );
-                }
-                else {
-                    pevent->callBackInProgress = FALSE;
-                }
-            }
+            pevent->callBackInProgress = FALSE;
+        }
+        /* callback may have called db_cancel_event(), so must check user_sub again */
+        if(!pevent->user_sub && !pevent->npend) {
+            pevent->ev_que->quota -= EVENTENTRIES;
+            freeListFree ( dbevEventSubscriptionFreeList, pevent );
         }
         db_delete_field_log(pfl);
+    }
+
+    if(notifiedRemaining && !ev_que->possibleStall) {
+        ev_que->possibleStall = 1;
+        errlogPrintf(ERL_WARNING " dbEvent possible queue stall\n");
     }
 
     UNLOCKEVQUE (ev_que);
@@ -975,9 +1002,6 @@ static int event_read ( struct event_que *ev_que )
     return DB_EVENT_OK;
 }
 
-/*
- * EVENT_TASK()
- */
 static void event_task (void *pParm)
 {
     struct event_user * const evUser = (struct event_user *) pParm;
@@ -1018,13 +1042,25 @@ static void event_task (void *pParm)
         }
         evUser->extraLaborBusy = FALSE;
 
-        for ( ev_que = &evUser->firstque; ev_que;
-                ev_que = ev_que->nextque ) {
+        for ( ev_que = &evUser->firstque; ev_que; ev_que = ev_que->nextque ) {
+            /* unlock during iteration is safe as event_que will not be free'd */
             epicsMutexUnlock ( evUser->lock );
             event_read (ev_que);
             epicsMutexMustLock ( evUser->lock );
         }
         pendexit = evUser->pendexit;
+
+        evUser->pflush_seq++;
+        if(ellCount(&evUser->waiters)) {
+            /* hold lock throughout to avoid race between event trigger and destroy */
+            ELLNODE *cur;
+            for(cur = ellFirst(&evUser->waiters); cur; cur = ellNext(cur)) {
+                event_waiter *w = CONTAINER(cur, event_waiter, node);
+                if(w->wake)
+                    epicsEventMustTrigger(w->wake);
+            }
+        }
+
         epicsMutexUnlock ( evUser->lock );
 
     } while( ! pendexit );
@@ -1043,13 +1079,16 @@ static void event_task (void *pParm)
         }
     }
 
-    epicsEventDestroy(evUser->ppendsem);
-    epicsEventDestroy(evUser->pflush_sem);
-    epicsMutexDestroy(evUser->lock);
-
-    freeListFree(dbevEventUserFreeList, evUser);
-
     taskwdRemove(epicsThreadGetIdSelf());
+
+    /* use stopSync to ensure pexitsem is not destroy'd
+     * until epicsEventSignal() has returned.
+     */
+    epicsMutexMustLock (stopSync);
+
+    epicsEventSignal(evUser->pexitsem);
+
+    epicsMutexUnlock(stopSync);
 
     return;
 }
@@ -1090,6 +1129,7 @@ int db_start_events (
          epicsMutexUnlock ( evUser->lock );
          return DB_EVENT_ERROR;
      }
+     evUser->pendexit = FALSE;
      epicsMutexUnlock ( evUser->lock );
      return DB_EVENT_OK;
 }
@@ -1097,7 +1137,7 @@ int db_start_events (
 /*
  * db_event_change_priority()
  */
-void db_event_change_priority ( dbEventCtx ctx, 
+void db_event_change_priority ( dbEventCtx ctx,
                                         unsigned epicsPriority )
 {
     struct event_user * const evUser = ( struct event_user * ) ctx;
@@ -1118,9 +1158,6 @@ void db_event_flow_ctrl_mode_on (dbEventCtx ctx)
      * notify the event handler task
      */
     epicsEventSignal(evUser->ppendsem);
-#ifdef DEBUG
-    printf("fc on %lu\n", tickGet());
-#endif
 }
 
 /*
@@ -1137,9 +1174,6 @@ void db_event_flow_ctrl_mode_off (dbEventCtx ctx)
      * notify the event handler task
      */
     epicsEventSignal (evUser->ppendsem);
-#ifdef DEBUG
-    printf("fc off %lu\n", tickGet());
-#endif
 }
 
 /*
@@ -1149,7 +1183,7 @@ void db_delete_field_log (db_field_log *pfl)
 {
     if (pfl) {
         /* Free field if reference type field log and dtor is set */
-        if (pfl->type == dbfl_type_ref && pfl->u.r.dtor) pfl->u.r.dtor(pfl);
+        if (pfl->type == dbfl_type_ref && pfl->dtor) pfl->dtor(pfl);
         /* Free the field log chunk */
         freeListFree(dbevFieldLogFreeList, pfl);
     }

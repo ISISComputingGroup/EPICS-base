@@ -3,6 +3,7 @@
 * National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 * Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
 * in the file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -263,7 +264,7 @@ static void addMacroReplacements(MAC_HANDLE * const macPvt,
     if (status) {
         status = macInstallMacros(macPvt, pairs);
         if (!status) {
-            fprintf(stderr, "Error from macInstallMacros\n");
+            fprintf(stderr, ERL_ERROR " from macInstallMacros\n");
             usageExit(1);
         }
         free(pairs);
@@ -300,11 +301,11 @@ static void makeSubstitutions(inputData * const inputPvt,
             char *pstart;
             char *pend;
             int  cmdind=-1;
-            int  i;
+            size_t  i;
 
             for (i = 0; i < NELEMENTS(cmdNames); i++) {
                 if (strstr(command, cmdNames[i])) {
-                    cmdind = i;
+                    cmdind = (int)i;
                 }
             }
             if (cmdind < 0) goto endcmd;
@@ -316,7 +317,7 @@ static void makeSubstitutions(inputData * const inputPvt,
             pstart = ++p;
             /*Look for end quote*/
             while (*p && (*p != '"')) {
-                /*allow escape for embeded quote*/
+                /*allow escape for embedded quote*/
                 if ((p[0] == '\\') && p[1] == '"') {
                     p += 2;
                     continue;
@@ -521,7 +522,7 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
     }
 
     if (!fp) {
-        fprintf(stderr, "msi: Can't open file '%s'\n", filename);
+        fprintf(stderr, ERL_ERROR " msi: Can't open file '%s'\n", filename);
         inputErrPrint(pinputData);
         abortExit(1);
     }
@@ -671,7 +672,7 @@ static void substituteOpen(subInfo **ppvt, const std::string& substitutionName)
 
     fp = fopen(substitutionName.c_str(), "r");
     if (!fp) {
-        fprintf(stderr, "msi: Can't open file '%s'\n", substitutionName.c_str());
+        fprintf(stderr, ERL_ERROR " msi: Can't open file '%s'\n", substitutionName.c_str());
         abortExit(1);
     }
 
@@ -1027,7 +1028,7 @@ static tokenType subGetNextToken(subFile *psubFile)
                 subFileErrPrint(psubFile, "Strings must be on single line\n");
                 abortExit(1);
             }
-            /*allow  escape for embeded quote*/
+            /*allow  escape for embedded quote*/
             if ((p[0] == '\\') && p[1] == '"') {
                 *pto++ = *p++;
                 *pto++ = *p++;

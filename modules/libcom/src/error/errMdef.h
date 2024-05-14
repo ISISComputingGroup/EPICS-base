@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -18,6 +19,7 @@
 #define RTN_SUCCESS(STATUS) ((STATUS)==0)
 
 /* Module numbers start above 500 for compatibility with vxWorks errnoLib */
+#define MIN_MODULE_NUM 501
 
 /* FIXME: M_xxx values could be declared as integer variables and set
  * at runtime from registration routines; the S_xxx definitions would
@@ -31,6 +33,7 @@
 #define M_stdlib        (504 << 16) /* EPICS Standard library */
 #define M_pool          (505 << 16) /* Thread pool */
 #define M_time          (506 << 16) /* epicsTime */
+#define M_err           (507 << 16) /* Error */
 
 /* ioc */
 #define M_dbAccess      (511 << 16) /* Database Access Routines */

@@ -8,6 +8,7 @@
 #include <dbAccess.h>
 #include <dbChannel.h>
 #include <dbStaticLib.h>
+#include <asLib.h>
 
 #include <pv/pvAccess.h>
 #include <pv/configuration.h>
@@ -334,7 +335,7 @@ PDBGroupPut::PDBGroupPut(const PDBGroupChannel::shared_pointer& channel,
     {
         PDBGroupPV::Info& info = channel->pv->members[i];
 
-        pvif[i].reset(info.builder->attach(info.chan, pvf, info.attachment));
+        pvif[i].reset(info.builder->attach(pvf, info.attachment));
     }
 }
 
@@ -349,13 +350,26 @@ void PDBGroupPut::put(pvd::PVStructure::shared_pointer const & value,
     // assume value may be a different struct each time... lot of wasted prep work
     const size_t npvs = channel->pv->members.size();
     std::vector<std::tr1::shared_ptr<PVIF> > putpvif(npvs);
+    pvd::shared_vector<AsWritePvt> asWritePvt(npvs);
 
     for(size_t i=0; i<npvs; i++)
     {
         PDBGroupPV::Info& info = channel->pv->members[i];
-        if(!info.allowProc) continue;
 
-        putpvif[i].reset(info.builder->attach(info.chan, value, info.attachment));
+        AsWritePvt wrt(asTrapWriteWithData(
+                           channel->aspvt.at(i).aspvt,
+                           &channel->cred.user[0],
+                           &channel->cred.host[0],
+                           info.chan.chan,
+                           info.chan->final_type,
+                           info.chan->final_no_elements,
+                           NULL
+                           )
+                       );
+        asWritePvt[i].swap(wrt);
+
+        if(!info.allowProc) continue;
+        putpvif[i].reset(info.builder->attach(value, info.attachment));
     }
 
     pvd::Status ret;
@@ -364,7 +378,7 @@ void PDBGroupPut::put(pvd::PVStructure::shared_pointer const & value,
         for(size_t i=0; ret && i<npvs; i++) {
             if(!putpvif[i].get()) continue;
 
-            ret |= putpvif[i]->get(*changed, doProc);
+            ret |= putpvif[i]->get(*changed, doProc, channel->aspvt[i].canWrite());
         }
 
     } else {
@@ -394,8 +408,10 @@ void PDBGroupPut::get()
     changed->clear();
     if(atomic) {
         DBManyLocker L(channel->pv->locker);
-        for(size_t i=0; i<npvs; i++)
-            pvif[i]->put(*changed, DBE_VALUE|DBE_ALARM|DBE_PROPERTY, NULL);
+        for(size_t i=0; i<npvs; i++) {
+            LocalFL FL(NULL, channel->pv->members[i].chan);
+            pvif[i]->put(*changed, DBE_VALUE|DBE_ALARM|DBE_PROPERTY, FL.pfl);
+        }
     } else {
 
         for(size_t i=0; i<npvs; i++)
@@ -403,7 +419,8 @@ void PDBGroupPut::get()
             PDBGroupPV::Info& info = channel->pv->members[i];
 
             DBScanLocker L(dbChannelRecord(info.chan));
-            pvif[i]->put(*changed, DBE_VALUE|DBE_ALARM|DBE_PROPERTY, NULL);
+            LocalFL FL(NULL, info.chan);
+            pvif[i]->put(*changed, DBE_VALUE|DBE_ALARM|DBE_PROPERTY, FL.pfl);
         }
     }
     //TODO: report unused fields as changed?
