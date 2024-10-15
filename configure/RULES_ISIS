@@ -2,14 +2,13 @@ ifeq ($(STATIC_BUILD),YES)
 ifneq ($(findstring linux,$(EPICS_HOST_ARCH)),)
 MYSQLLIB = mysqlcppconn-static mysqlclient
 else
-MYSQLLIB = mysqlcppconn
-#MYSQLLIB = mysqlcppconn-static mysqlclient
+MYSQLLIB = mysqlcppconn8 mysqlcppconn
 endif
 else
 ifneq ($(findstring linux,$(EPICS_HOST_ARCH)),)
-MYSQLLIB = mysqlcppconn # mysqlclient
+MYSQLLIB = mysqlcppconn8
 else
-MYSQLLIB = mysqlcppconn # libmysql
+MYSQLLIB = mysqlcppconn8 mysqlcppconn
 endif
 endif
 
