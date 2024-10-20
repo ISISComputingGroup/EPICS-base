@@ -90,7 +90,7 @@ sub MyChmod {
         # then remove read-only, otherwise set it
         if ($mode & 0222)
         {
-            $attr &= $WINATTR_READONLY;
+            $attr &= ~$WINATTR_READONLY;
         }
         else
         {
