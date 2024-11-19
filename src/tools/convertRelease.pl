@@ -143,11 +143,18 @@ sub dllCopy {
     open(OUT, ">$outfile") or die "$! creating $outfile";
     print OUT "\@ECHO OFF\n";
     print OUT "setlocal\n";
-    print OUT "set MYDIR=\%~dp0\n";
+    print OUT "set \"MYDIR=\%~dp0\"\n";
+    print OUT "set \"MYARCHSRC=$arch\"\n";
+    print OUT "set \"MYARCHDST=$arch\"\n";
+    print OUT "echo Copy DLLs for IOC in %MYDIR%\n";
+    print OUT "CHOICE /C YN /M \"Do you wish to continue?\"\n";
+    print OUT "IF %errorLevel% neq 1 exit /b 1\n";
     foreach my $dir (binDirs()) {
+        $dir =~ s!/bin/$arch!/bin/%MYARCHSRC%!g;
         $dir =~ s%/%\\%g;
-        print OUT "XCOPY /R /I /Q /Y ",$dir,"\\*.dll \%MYDIR\%..\\..\\bin\\$arch\n";
+        print OUT "XCOPY /R /I /Q /Y ",$dir,"\\*.dll \%MYDIR\%..\\..\\bin\\%MYARCHDST%\n";
     }
+    print OUT "pause\n";
     close OUT;
 }
 
