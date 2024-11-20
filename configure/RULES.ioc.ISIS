@@ -1,5 +1,7 @@
 # Cannot use $(OS_CLASS) here
-runIOC.bat : dllPath-$(EPICS_HOST_ARCH).bat
+# runIOC.bat doesn't really depend on dllCopy.bat this is just a convenient
+# way to force it to build
+runIOC.bat : dllPath-$(EPICS_HOST_ARCH).bat dllCopy.bat
 
 # $(ARCH) is arch set in Makefile, it will create RunIOC.bat tied to
 # EPICS_HOST_ARCH of first build. If we use %%EPICS_HOST_ARCH%% the file
