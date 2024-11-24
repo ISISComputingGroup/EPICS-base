@@ -31,6 +31,6 @@ include $(TOP)/configure/RULES_TOP
 CONVERTRELEASE_PATH = $(INSTALL_LOCATION_BIN)/$(EPICS_HOST_ARCH)/convertRelease.pl
 CONVERTRELEASE_WINPATH = $(subst /,\,$(CONVERTRELEASE_PATH))
 preuninstall::
-ifneq ($(findstring windows,$(BUILD_ARCHS)),)
+ifneq ($(findstring windows,$(EPICS_HOST_ARCH)),)
 	if exist $(CONVERTRELEASE_WINPATH) del /f $(CONVERTRELEASE_WINPATH)
 endif
