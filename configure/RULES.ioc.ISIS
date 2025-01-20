@@ -18,6 +18,9 @@ ifeq ($(findstring cygwin,$(EPICS_HOST_ARCH)),)
 	@echo set EPICS_CAS_INTF_ADDR_LIST=127.0.0.1>> $@
 	@echo set EPICS_CAS_BEACON_ADDR_LIST=127.255.255.255>> $@
 	@echo set EPICS_CAS_AUTO_BEACON_ADDR_LIST=NO>> $@
+	@echo set EPICS_PVAS_INTF_ADDR_LIST=127.0.0.1>> $@
+	@echo set EPICS_PVAS_BEACON_ADDR_LIST=127.255.255.255>> $@
+	@echo set EPICS_PVAS_AUTO_BEACON_ADDR_LIST=NO>> $@
 	@echo for /F %%%%I in ( "%%MYDIRROOT%%" ) do set IOCDIRNAME=%%%%~nI>> $@
 	@echo set IOCEXE=%%IOCDIRNAME:~3%%.exe>>$@
 	@echo set "OLDPATH=%%PATH%%">> $@
