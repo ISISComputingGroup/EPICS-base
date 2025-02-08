@@ -1,0 +1,17 @@
+ifeq ($(STATIC_BUILD),YES)
+ifneq ($(findstring linux,$(EPICS_HOST_ARCH)),)
+MYSQLLIB = mysqlcppconn8-static mysqlcppconn-static
+USR_SYS_LIBS += mysqlclient
+USR_LDFLAGS += -L/usr/lib64/mysql
+else
+MYSQLLIB = mysqlcppconn8 mysqlcppconn
+endif
+else
+ifneq ($(findstring linux,$(EPICS_HOST_ARCH)),)
+MYSQLLIB = mysqlcppconn8 mysqlcppconn
+USR_SYS_LIBS += mysqlclient
+USR_LDFLAGS += -L/usr/lib64/mysql
+else
+MYSQLLIB = mysqlcppconn8 mysqlcppconn
+endif
+endif
