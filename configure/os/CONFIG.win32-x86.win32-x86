@@ -167,7 +167,7 @@ RANLIB=
 # -debug generate debugging info
 LINK_OPT_FLAGS_WHOLE_YES = -LTCG
 LINK_OPT_FLAGS_YES = $(LINK_OPT_FLAGS_WHOLE_$(OPT_WHOLE_PROGRAM))
-LINK_OPT_FLAGS_YES += -debug -incremental:no -opt:ref
+LINK_OPT_FLAGS_YES += -debug -opt:ref,noicf -incremental:no
 LINK_OPT_FLAGS_YES += -release $(PROD_VERSION:%=-version:%)
 LINK_OPT_FLAGS_NO = -debug -incremental:no -fixed:no
 OPT_LDFLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT))
