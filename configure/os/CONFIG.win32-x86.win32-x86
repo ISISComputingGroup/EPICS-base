@@ -209,8 +209,8 @@ DLL_DEF_FLAG = $(addprefix -def:,$(wildcard ../$(addsuffix .def,$*)))
 #	x.exp: what you need to build the dll (in no variable)
 LINK.shrlib = $(WINLINK) -nologo $(WIN32_DLLFLAGS) -out:$@ \
     -implib:$(@:%$(SHRLIB_SUFFIX)=%$(LIB_SUFFIX)) \
-    $(DLL_DEF_FLAG) $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
-
+    $(DLL_DEF_FLAG) $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS) \
+    delayimp.lib $(patsubst %.lib,/DELAYLOAD:%.dll,$(notdir $(SHRLIB_LDLIBS)))
 # Adjust names of libraries to build
 SHRLIB_SUFFIX_BASE = .dll
 SHRLIB_SUFFIX = $(SHRLIB_SUFFIX_BASE)
@@ -288,7 +288,8 @@ SHRLIB_LDLIBS += $(addsuffix .lib, \
 #--------------------------------------------------
 # Linker definition
 LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(STATIC_LDFLAGS_EXTRA_$(STATIC_BUILD)) $(LDFLAGS) $(PROD_LDFLAGS) \
-    -out:$@ $(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS)
+    -out:$@ $(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS) \
+    delayimp.lib $(patsubst %.lib,/DELAYLOAD:%.dll,$(notdir $(PROD_LDLIBS)))
 
 #--------------------------------------------------
 # UseManifestTool.pl checks MS Visual c++ compiler version number to
