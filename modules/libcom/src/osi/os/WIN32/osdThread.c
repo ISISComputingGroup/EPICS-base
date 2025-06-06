@@ -661,6 +661,7 @@ epicsThreadId epicsThreadCreateOpt (
 
     }
 
+    setThreadName ( pParmWIN32->id, pParmWIN32->pName );
     osdPriority = epicsThreadGetOsdPriorityValue (opts->priority);
     bstat = SetThreadPriority ( pParmWIN32->handle, osdPriority );
     if (!bstat) {

@@ -23,7 +23,8 @@ vpath %.rc $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.h $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.hpp $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.H $(USR_VPATH) $(ALL_SRC_DIRS)
-vpath %.html $(USR_VPATH) $(ALL_SRC_DIRS)
+vpath %.html $(USR_VPATH) $(ALL_SRC_DIRS) $(COMMON_DIR)
+vpath %.md $(USR_VPATH) $(ALL_SRC_DIRS) $(COMMON_DIR)
 vpath %.skel.static $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.y $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.l $(USR_VPATH) $(ALL_SRC_DIRS)
@@ -113,7 +114,7 @@ endif
 #---------------------------------------------------------------
 # Read dependency files
 
-ifneq (inc,$(strip $(MAKECMDGOALS)))
+ifneq ($(filter-out inc,$(strip $(MAKECMDGOALS))),)
 ifneq (,$(strip $(HDEPENDS_FILES)))
 $(filter-out $(wildcard *$(DEP)), $(HDEPENDS_FILES)): | $(COMMON_INC)
 -include $(HDEPENDS_FILES)
@@ -167,12 +168,12 @@ build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODTARGETS) \
 	$(TARGETS) $(TESTSCRIPTS) $(INSTALL_LIB_INSTALLS)
 
 inc: $(COMMON_INC) $(INSTALL_INC) $(INSTALL_CONFIGS) $(INSTALLS_CFG) \
-	$(INSTALL_HTMLS) $(INSTALLS_PERL_MODULES) $(INSTALL_SCRIPTS)
+	$(INSTALL_HTMLS) $(INSTALLS_PERL_MODULES) $(INSTALL_SCRIPTS) \
+	$(INSTALL_DOCS)
 
 buildInstall: \
 	$(INSTALL_PROD) $(INSTALL_MUNCHS) \
 	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX) \
-	$(INSTALL_DOCS) \
 	$(INSTALL_OBJS) \
 	$(INSTALL_TEMPLATE) \
 	$(INSTALL_BIN_INSTALLS)
@@ -552,11 +553,11 @@ endif # LOADABLE_SHRLIB_SUFFIX
 ifneq ($(INSTALL_CONFIGS),)
 $(INSTALL_CONFIG)/%: %
 	$(ECHO) "Installing config file $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $(abspath $< $(@D))
 
 $(INSTALL_CONFIG)/%: ../%
 	$(ECHO) "Installing config file $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $(abspath $< $(@D))
 endif
 
 $(INSTALL_INCLUDE)/%: $(COMMON_DIR)/%
@@ -573,6 +574,10 @@ $(INSTALL_INCLUDE)/os/$(OS_CLASS)/%: %
 
 $(INSTALL_INCLUDE)/compiler/$(CMPLR_CLASS)/%: %
 	$(ECHO) "Installing compiler dependent include file $@"
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+
+$(INSTALL_DOC)/%: $(COMMON_DIR)/%
+	$(ECHO) "Installing generated doc $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_DOC)/%: %

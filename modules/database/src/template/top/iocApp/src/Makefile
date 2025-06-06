@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2003 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 TOP=../..
 # This file should do very little - it's purpose is to set the APPNAME and then load build.mak
 
