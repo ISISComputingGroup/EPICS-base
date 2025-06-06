@@ -174,6 +174,9 @@ int epicsStdCall ca_context_create (
             ca_preemptive_callback_select premptiveCallbackSelect )
 {
     ca_client_context *pcac;
+    if (premptiveCallbackSelect != ca_enable_preemptive_callback) {
+        fprintf(stderr, "ca_context_create: a non pre-emptive context was requested\n");
+    }
 
     try {
         epicsThreadOnce ( & caClientContextIdOnce, ca_init_client_context, 0);
