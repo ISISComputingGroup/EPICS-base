@@ -34,7 +34,6 @@ vpath %.l $(USR_VPATH) $(ALL_SRC_DIRS)
 include $(CONFIG)/CONFIG_ADDONS
 
 #---------------------------------------------------------------
-# Set PROD, TESTPROD, OBJS, and LIBRARY
 
 SCRIPTS_HOST += $(PERL_SCRIPTS)
 # PERL_SCRIPTS are installed into existing $(INSTALL_BIN) for Host systems
