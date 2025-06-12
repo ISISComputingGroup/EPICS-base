@@ -20,86 +20,59 @@
 #include <stdio.h>
 #include <limits.h>
 
-#define VC_EXTRALEAN
-#define STRICT
-#include <windows.h>
-#if _WIN32_WINNT < 0x0501
-#   error Minimum supported is Windows XP
-#endif
-
 #define EPICS_PRIVATE_API
 
 #include "libComAPI.h"
 #include "epicsMutex.h"
+#include "epicsMutexImpl.h"
+#include "epicsThread.h"
 #include "epicsAssert.h"
 #include "epicsStdio.h"
 
-typedef struct epicsMutexOSD {
-    union {
-        CRITICAL_SECTION criticalSection;
-    } os;
-} epicsMutexOSD;
-
-/*
- * epicsMutexCreate ()
- */
-epicsMutexOSD * epicsMutexOsdCreate ( void )
+static epicsThreadOnceId epicsMutexOsdOnce = EPICS_THREAD_ONCE_INIT;
+static void epicsMutexOsdInit(void* unused)
 {
-    epicsMutexOSD * pSem;
-
-    pSem = malloc ( sizeof (*pSem) );
-    if ( pSem ) {
-        InitializeCriticalSection ( &pSem->os.criticalSection );
-    }
-    return pSem;
+    (void)unused;
+    InitializeCriticalSection(&epicsMutexGlobalLock.osd);
 }
 
-/*
- * epicsMutexOsdDestroy ()
- */
-void epicsMutexOsdDestroy ( epicsMutexOSD * pSem )
+void epicsMutexOsdSetup()
 {
-    DeleteCriticalSection  ( &pSem->os.criticalSection );
-    free ( pSem );
+    epicsThreadOnce(&epicsMutexOsdOnce, &epicsMutexOsdInit, NULL);
 }
 
-/*
- * epicsMutexOsdUnlock ()
- */
-void epicsMutexOsdUnlock ( epicsMutexOSD * pSem )
+long epicsMutexOsdPrepare(struct epicsMutexParm *mutex)
 {
-    LeaveCriticalSection ( &pSem->os.criticalSection );
+    InitializeCriticalSection(&mutex->osd);
+    return 0;
 }
 
-/*
- * epicsMutexOsdLock ()
- */
-epicsMutexLockStatus epicsMutexOsdLock ( epicsMutexOSD * pSem )
+void epicsMutexOsdCleanup(struct epicsMutexParm *mutex)
 {
-    EnterCriticalSection ( &pSem->os.criticalSection );
+    DeleteCriticalSection(&mutex->osd);
+}
+
+void epicsStdCall epicsMutexUnlock ( struct epicsMutexParm *mutex )
+{
+    LeaveCriticalSection ( &mutex->osd );
+}
+
+epicsMutexLockStatus epicsStdCall epicsMutexLock ( struct epicsMutexParm *mutex )
+{
+    EnterCriticalSection ( &mutex->osd );
     return epicsMutexLockOK;
 }
 
-/*
- * epicsMutexOsdTryLock ()
- */
-epicsMutexLockStatus epicsMutexOsdTryLock ( epicsMutexOSD * pSem )
+epicsMutexLockStatus epicsStdCall epicsMutexTryLock ( struct epicsMutexParm *mutex )
 {
-    if ( TryEnterCriticalSection ( &pSem->os.criticalSection ) ) {
-        return epicsMutexLockOK;
-    }
-    else {
-        return epicsMutexLockTimeout;
-    }
+    return TryEnterCriticalSection ( &mutex->osd ) ? epicsMutexLockOK : epicsMutexLockTimeout;
 }
 
-/*
- * epicsMutexOsdShow ()
- */
-void epicsMutexOsdShow ( epicsMutexOSD * pSem, unsigned level )
+void epicsMutexOsdShow ( struct epicsMutexParm *mutex, unsigned level )
 {
+    (void)level;
     printf ("epicsMutex: win32 critical section at %p\n",
-        (void * ) & pSem->os.criticalSection );
+        (void * ) & mutex->osd );
 }
 
 void epicsMutexOsdShowAll(void) {}

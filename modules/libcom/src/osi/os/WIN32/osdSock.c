@@ -119,7 +119,7 @@ LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
     return socket ( domain, type, protocol );
 }
 
-LIBCOM_API SOCKET epicsStdCall epicsSocketAccept ( 
+LIBCOM_API SOCKET epicsStdCall epicsSocketAccept (
     SOCKET sock, struct sockaddr * pAddr, osiSocklen_t * addrlen )
 {
     return accept ( sock, pAddr, addrlen );

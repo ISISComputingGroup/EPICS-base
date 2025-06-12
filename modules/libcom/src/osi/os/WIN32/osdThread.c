@@ -657,10 +657,9 @@ epicsThreadId epicsThreadCreateOpt (
         }
         /* weird win32 interface threadId parameter inconsistency */
         pParmWIN32->id = ( DWORD ) threadId ;
-        setThreadName ( pParmWIN32->id, pParmWIN32->pName );
-
     }
 
+    setThreadName ( pParmWIN32->id, pParmWIN32->pName );
     osdPriority = epicsThreadGetOsdPriorityValue (opts->priority);
     bstat = SetThreadPriority ( pParmWIN32->handle, osdPriority );
     if (!bstat) {
