@@ -1324,6 +1324,14 @@ iocsh (const char *pathname)
     static int first_call = 1;
     if (first_call)
     {
+        // see https://learn.microsoft.com/en-us/windows/win32/debug/error-mode
+        // Best practice is that all applications call the process-wide SetErrorMode function
+        // with a parameter of SEM_FAILCRITICALERRORS at startup. This is to prevent
+        // error mode dialogs from hanging the application.
+        UINT error_mode = GetErrorMode();
+        error_mode |= SEM_FAILCRITICALERRORS;
+        SetErrorMode(error_mode);
+
         if (setvbuf(stderr, NULL, _IONBF, BUFSIZ) != 0)
         {
             fprintf(stderr, "iocsh: error setting stderr buffering\n");
