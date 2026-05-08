@@ -87,7 +87,7 @@ double getMaxPeriod()
             }
         }
         else {
-            epicsPrintf ( "EPICS \"%s\" wasnt a real number\n",
+            epicsPrintf ( "EPICS \"%s\" wasn't a real number\n",
                             EPICS_CA_MAX_SEARCH_PERIOD.name );
             epicsPrintf ( "Setting \"%s\" = %f seconds\n",
                 EPICS_CA_MAX_SEARCH_PERIOD.name, maxPeriod );
@@ -1370,6 +1370,12 @@ const char * udpiiu::pHostName (
     epicsGuard < epicsMutex > & cacGuard ) const throw ()
 {
     return netiiu::pHostName ( cacGuard );
+}
+
+unsigned udpiiu::getHostMinorProtocol ( 
+    epicsGuard < epicsMutex > & cacGuard ) const throw ()
+{
+    return netiiu::getHostMinorProtocol ( cacGuard );
 }
 
 bool udpiiu::ca_v42_ok (
