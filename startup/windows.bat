@@ -107,6 +107,13 @@ if not "%IBEX_USEOLDVC%" == "YES" (
                 set "_vcvarsalldir=%ProgramFiles%\Microsoft Visual Studio\2022\%%i\VC\Auxiliary\Build"
             )
         )
+        REM VS2026 has changed naming scheme away from using the year
+        for %%i in ( Community Professional Enterprise ) do (
+            if exist "%ProgramFiles%\Microsoft Visual Studio\18\%%i\VC\Auxiliary\Build" (
+                set "VCVERSION=18.0"
+                set "_vcvarsalldir=%ProgramFiles%\Microsoft Visual Studio\18\%%i\VC\Auxiliary\Build"
+            )
+        )
     )
 )
 
