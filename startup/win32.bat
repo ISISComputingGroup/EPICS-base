@@ -104,6 +104,12 @@ for %%i in ( Community Professional Enterprise ) do (
             set "_vcvarsalldir=%ProgramFiles%\Microsoft Visual Studio\2022\%%i\VC\Auxiliary\Build"
         )
     )
+    for %%i in ( Community Professional Enterprise ) do (
+        if exist "%ProgramFiles%\Microsoft Visual Studio\18\%%i\VC\Auxiliary\Build" (
+            set "VCVERSION=18.0"
+            set "_vcvarsalldir=%ProgramFiles%\Microsoft Visual Studio\18\%%i\VC\Auxiliary\Build"
+        )
+    )
 )
 
 if exist "%_vcvarsalldir%\vcvarsall.bat" (
