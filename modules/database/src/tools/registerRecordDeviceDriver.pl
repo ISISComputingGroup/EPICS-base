@@ -22,10 +22,10 @@ use EPICS::Path;
 use EPICS::Getopts;
 use Text::Wrap;
 
-our ($opt_D, @opt_I, $opt_o, $opt_l);
+our ($opt_D, @opt_I, $opt_o, $opt_l, $opt_L);
 
-getopts('Dlo:I@') or
-    die "Usage: registerRecordDeviceDriver [-D] [-l] [-o out.c] [-I dir] in.dbd subname [TOP]";
+getopts('Dlo:L:I@') or
+    die "Usage: registerRecordDeviceDriver [-D] [-l] [-o out.c] [-I dir] [-L in_local.dbd] in.dbd subname [TOP]";
 
 my @path = map { split /[:;]/ } @opt_I; # FIXME: Broken on Win32?
 
@@ -35,7 +35,12 @@ my ($file, $subname, $bldTop) = @ARGV;
 $DBD::Parser::allowAutoDeclarations = 1;
 
 my $dbd = DBD->new();
+my $dbdL = DBD->new();
+
 ParseDBD($dbd, Readfile($file, "", \@path));
+if ($opt_L) {
+    ParseDBD($dbdL, Readfile($opt_L, "", \@path));
+}
 
 if ($opt_D) {   # Output dependencies only
     my %filecount;
@@ -213,6 +218,46 @@ if (%variables) {
     print $out "    {NULL, iocshArgInt, NULL}\n};\n\n";
 }
 
+print $out (<< "END") if $opt_L;
+#define epicsExportSharedSymbols
+#include "shareLib.h"
+
+END
+
+my @registrarsL;
+my %variablesL;
+
+if ($opt_L) {
+    @registrarsL = sort keys %{$dbdL->registrars};
+    my @functions = sort keys %{$dbdL->functions};
+    push @registrarsL, map {"register_func_$_"} @functions;
+    if (@registrarsL) {
+        # Declare the registrar functions
+        print $out wrap('epicsShareExtern reg_func ', '    ',
+            join(', ', map {"pvar_func_$_"} @registrarsL)), ";\n\n";
+    }
+
+    %variablesL = %{$dbdL->variables};
+    if (%variablesL) {
+        my @varnames = sort keys %variablesL;
+
+        # Declare the variables
+        for my $var (@varnames) {
+            my $vtype = $variablesL{$var}->var_type;
+            print $out "epicsShareExtern $vtype * const pvar_${vtype}_$var;\n";
+        }
+
+        # Generate the structure for registering variables with iocsh
+        print $out "\nstatic struct iocshVarDef vardefsL[] = {\n";
+        for my $var (@varnames) {
+            my $vtype = $variablesL{$var}->var_type;
+            my $itype = $variablesL{$var}->iocshArg_type;
+            print $out "    {\"$var\", $itype, pvar_${vtype}_$var},\n";
+        }
+        print $out "    {NULL, iocshArgInt, NULL}\n};\n\n";
+    }
+}
+
 # Now for actual registration routine
 
 print $out (<< "END");
@@ -266,8 +311,15 @@ print $out (<< "END") for @registrars;
     runRegistrarOnce(pvar_func_$_);
 END
 
+print $out (<< "END") for @registrarsL;
+    runRegistrarOnce(pvar_func_$_);
+END
+
 print $out (<< 'END') if %variables;
     iocshRegisterVariable(vardefs);
+END
+print $out (<< 'END') if %variablesL;
+    iocshRegisterVariable(vardefsL);
 END
 
 print $out (<< "END");
