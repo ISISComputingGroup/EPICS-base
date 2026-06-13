@@ -505,14 +505,14 @@ static void acceptNewClient ( void *pParam )
      * this task will find out and exit
      */
     {
-        long true = 1;
+        long True = 1;
 
         status = setsockopt(
                 pclient->insock,
                 SOL_SOCKET,
                 SO_KEEPALIVE,
-                (char *)&true,
-                sizeof(true) );
+                (char *)&True,
+                sizeof(True) );
         if(status<0){
             fprintf(stderr, "Keepalive option set failed\n");
         }
@@ -710,7 +710,7 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
         }
         else {
             if (status != ntci) {
-                fprintf(stderr, "iocLogServer: didnt calculate number of characters correctly?\n");
+                fprintf(stderr, "iocLogServer: didn't calculate number of characters correctly?\n");
             }
             pclient->pserver->filePos += status;
         }
